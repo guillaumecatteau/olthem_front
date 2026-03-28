@@ -1,0 +1,11 @@
+{
+  "name": "olthem-frontend",
+  "private": true,
+  "scripts": {
+    "scss:build": "node_modules\\.bin\\sass.cmd --style=expanded --no-source-map src/scss/style.scss assets/css/style.css",
+    "scss:watch": "node_modules\\.bin\\sass.cmd --watch --style=expanded src/scss/style.scss:assets/css/style.css"
+  },
+  "devDependencies": {
+    "sass": "^1.93.2"
+  }
+}

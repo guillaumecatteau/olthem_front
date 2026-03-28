@@ -1,0 +1,144 @@
+@use "../base/variables" as *;
+
+// ─── Wrapper (occupe toute la section thématiques) ────────────────────────────
+
+.thm-carousel-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 62px; // 30px (débord bas card ×1.1) + 32px gap visuel voulu
+  overflow: hidden;
+
+  // --slot-w retiré : l'espacement est calculé directement en JS (_carouselOffset)
+}
+
+// ─── Viewport du carroussel ───────────────────────────────────────────────────
+
+.thm-carousel {
+  position: relative;
+  width: 100%;
+  height: 600px;
+  overflow-x: clip;     // clip horizontal uniquement — né crée pas de scroll container
+  overflow-y: visible;  // laisse la card active (110%) dépasser verticalement
+  flex-shrink: 0;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+
+  &:active { cursor: grabbing; }
+
+  // Dégradé latéral : un seul pseudo-élément pleine largeur.
+  // Une fenêtre transparente centrée (±270px) laisse la card active visible.
+  // Les bords montent à 100% d'opacité pour l'effet de disparition.
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 15;
+    pointer-events: none;
+    background: linear-gradient(
+      to right,
+      rgba($dark, 1.0)  0%,
+      transparent       calc(50% - 270px),
+      transparent       calc(50% + 270px),
+      rgba($dark, 1.0)  100%
+    );
+  }
+
+  &::after { content: none; }
+
+  // Le track est le conteneur absolu dont les cards utilisent left: 50%
+  &__track {
+    position: absolute;
+    inset: 0;
+  }
+
+  // ── Boutons prev / next ─────────────────────────────────────────────────────
+
+  &__btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 20;
+    background: rgba($white, 0.85);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    border: none;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: $grey;
+    transition: background 0.2s ease, transform 0.2s ease;
+
+    &:hover {
+      background: $white;
+      transform: translateY(-50%) scale(1.08);
+    }
+
+    &--prev { left:  clamp(12px, 3vw, 40px); }
+    &--next { right: clamp(12px, 3vw, 40px); }
+
+    .thm-arrow { height: 18px; }
+  }
+}
+
+// ─── Pastilles de navigation ──────────────────────────────────────────────────
+
+.thm-carousel-dots {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+
+  &__dot {
+    height: 10px;
+    width: 10px;
+    border-radius: 50%;
+    background: $grey-light;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition:
+      width        0.3s ease,
+      border-radius 0.3s ease,
+      background    0.3s ease;
+
+    &.is-active {
+      width: 30px;
+      border-radius: 5px;
+      background: $white;
+    }
+
+    &:hover:not(.is-active) {
+      background: $grey;
+    }
+  }
+}
+
+// ─── Responsive ───────────────────────────────────────────────────────────────
+
+@media (max-width: 768px) {
+  .thm-carousel-wrapper {
+    gap: 16px;
+    --slot-w: 300;
+  }
+
+  .thm-carousel {
+    height: 380px;
+
+    &__btn {
+      width: 36px;
+      height: 36px;
+
+      .thm-arrow { height: 14px; }
+    }
+  }
+}

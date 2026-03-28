@@ -1,0 +1,73 @@
+@use "../base/variables" as *;
+
+// ─── Scroll viewport ─────────────────────────────────────────────────────────
+// Full-page magnetic scroll — viewport is pinned below the fixed header
+
+#scroll-viewport {
+  position: fixed;
+  top: var(--header-height);
+  left: 0;
+  width: 100vw;
+  height: calc(100vh - var(--header-height));
+  overflow: hidden;
+}
+
+// ─── Scroll track ─────────────────────────────────────────────────────────────
+// The track holds all sections stacked vertically and is translated by JS
+
+#scroll-track {
+  will-change: transform;
+  transform: translateY(0);
+}
+
+// ─── Full-page section ────────────────────────────────────────────────────────
+
+.full-section {
+  width: 100vw;
+  height: calc(100vh - var(--header-height));
+  position: relative;
+  overflow: hidden;
+}
+
+.section-inner {
+  width: 100%;
+  max-width: $container-max-width;
+  height: 100%;
+  margin: 0 auto;
+  padding: clamp(2rem, 4vw, 4rem) 22px;
+  box-sizing: border-box;
+}
+
+// ─── Section debug backgrounds (temporary — remove when design is finalized) ──
+
+#accueil     { background: #0d1b2a; }
+#initiative  { background: #1b2d0d; }
+#thematiques { background: $dark; }
+#ressources  { background: #1b1b00; }
+#ateliers    { background: #0d2d2d; }
+#partenaires { background: #1f0d2d; }
+
+// ─── Partenaires — section containing the footer ──────────────────────────────
+
+#partenaires {
+  display: flex;
+  flex-direction: column;
+
+  .section-inner {
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .site-footer {
+    flex-shrink: 0;
+    padding: 16px 22px;
+    box-sizing: border-box;
+    border-top: 1px solid $grey-dark;
+    font-size: 12px;
+    font-weight: $font-weight-light;
+    color: $grey-light;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+}

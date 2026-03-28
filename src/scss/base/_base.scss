@@ -1,0 +1,89 @@
+@use "variables" as *;
+
+:root {
+  --color-dark:       #{$dark};
+  --color-grey-dark:  #{$grey-dark};
+  --color-grey:       #{$grey};
+  --color-grey-light: #{$grey-light};
+  --color-white:      #{$white};
+
+  --header-height: #{$header-height};
+  --container:     960px;
+  --radius-lg:     20px;
+  --radius-md:     12px;
+  --space-section: clamp(2rem, 4vw, 4rem);
+}
+
+html {
+  overflow-x: hidden;
+  overflow-y: scroll; // toujours afficher la barre — évite les sautes de layout
+}
+
+body {
+  overflow: hidden;  // empêche le scroll natif du body (scroll magnétique JS)
+}
+
+body {
+  min-height: 100vh;
+  font-family: $font-family;
+  font-optical-sizing: auto;
+  font-style: $font-style-normal;
+  font-weight: $font-weight-regular;
+  background: var(--color-dark);
+  color: var(--color-white);
+}
+
+.site-shell {
+  min-height: 100vh;
+}
+
+.section {
+  width: min(calc(100% - 2rem), var(--container));
+  margin: 0 auto;
+  padding: var(--space-section) 0;
+}
+
+p {
+  font-size: $font-size-body;
+  font-weight: $font-weight-light;
+  font-style: $font-style-normal;
+  color: var(--color-white);
+  line-height: 1.6;
+}
+
+h1 {
+  font-size: $font-size-h1;
+  font-weight: $font-weight-bold;
+  font-style: $font-style-normal;
+  color: var(--color-white);
+  line-height: 1.1;
+}
+
+h2 {
+  font-size: $font-size-h2;
+  font-weight: $font-weight-regular;
+  font-style: $font-style-normal;
+  color: var(--color-grey-light);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.text-italic {
+  font-style: $font-style-italic;
+}
+
+.text-light {
+  font-weight: $font-weight-light;
+}
+
+.text-regular {
+  font-weight: $font-weight-regular;
+}
+
+.text-bold {
+  font-weight: $font-weight-bold;
+}
+
+.text-black {
+  font-weight: $font-weight-black;
+}

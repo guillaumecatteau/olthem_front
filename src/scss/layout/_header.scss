@@ -1,0 +1,146 @@
+@use "../base/variables" as *;
+
+// ─── Site Header ─────────────────────────────────────────────────────────────
+
+.site-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: var(--header-height);
+  padding: 26px 22px;
+  box-sizing: border-box;
+  z-index: 1000;
+  background: $dark;
+
+  &__inner {
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+    height: 100%;
+  }
+
+  // ── Left block — logo ───────────────────────────────────────────────────────
+  &__left {
+    width: 500px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  // ── Center — navigation ─────────────────────────────────────────────────────
+  &__center {
+    flex: 1;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+
+  // ── Right block — actions ───────────────────────────────────────────────────
+  &__right {
+    width: 500px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+  }
+}
+
+// ─── Site Logo ────────────────────────────────────────────────────────────────
+
+.site-logo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  &__img {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    // Force white rendering — remove if SVG is already white
+    filter: brightness(0) invert(1);
+  }
+
+  &__tagline {
+    font-family: $font-family;
+    font-size: 12px;
+    font-weight: $font-weight-regular;
+    color: $grey-light;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    line-height: 1;
+    margin: 0;
+  }
+}
+
+// ─── Navigation ───────────────────────────────────────────────────────────────
+
+.site-nav {
+  display: flex;
+  align-items: flex-end;
+  gap: 32px;
+
+  &__link {
+    display: inline-block;
+    font-family: $font-family;
+    font-size: 18px;
+    font-weight: $font-weight-regular;
+    color: $grey-light;
+    text-transform: uppercase;
+    text-decoration: none;
+    letter-spacing: 0.05em;
+    line-height: 1;
+    transition: color 0.3s ease, font-size 0.3s ease;
+    white-space: nowrap;
+
+    &.is-active {
+      font-size: 21px;
+      color: $white;
+    }
+
+    &:hover:not(.is-active) {
+      color: $white;
+    }
+  }
+}
+
+// ─── Header Actions (right content group) ────────────────────────────────────
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+// ─── Search field ─────────────────────────────────────────────────────────────
+
+.site-search {
+  &__input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid $grey;
+    color: $white;
+    font-family: $font-family;
+    font-size: 14px;
+    font-weight: $font-weight-regular;
+    padding: 4px 6px;
+    width: 160px;
+    outline: none;
+    transition: border-color 0.3s ease;
+
+    &::placeholder {
+      color: $grey-light;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 12px;
+    }
+
+    &::-webkit-search-cancel-button {
+      display: none;
+    }
+
+    &:focus {
+      border-bottom-color: $white;
+    }
+  }
+}

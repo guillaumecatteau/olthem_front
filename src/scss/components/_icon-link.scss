@@ -1,0 +1,45 @@
+@use "../base/variables" as *;
+
+// ─── Icon Link ────────────────────────────────────────────────────────────────
+// Reusable pattern: icon (16px) + label, vertically centered with 5px gap.
+// Usage: <a class="icon-link"><img class="icon-link__icon" /><span class="icon-link__label">Label</span></a>
+
+.icon-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+
+  &__icon {
+    height: 16px;
+    width: auto;
+    flex-shrink: 0;
+    // Force white then tint to $grey-light (#7F7F85) using brightness
+    // Works for any SVG as long as it's a monochrome icon
+    filter: brightness(0) invert(1) opacity(0.5);
+    transition: filter 0.2s ease;
+  }
+
+  &__label {
+    font-family: $font-family;
+    font-size: 14px;
+    font-weight: $font-weight-regular;
+    color: $grey-light;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    line-height: 1;
+    transition: color 0.2s ease;
+  }
+
+  &:hover {
+    .icon-link__icon {
+      filter: brightness(0) invert(1) opacity(1);
+    }
+
+    .icon-link__label {
+      color: $white;
+    }
+  }
+}

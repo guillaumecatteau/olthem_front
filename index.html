@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Olthem</title>
+    <meta name="description" content="Frontend headless Olthem." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Geologica:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./assets/css/style.css" />
+  </head>
+  <body>
+
+    <!-- ── Top navigation bar ──────────────────────────────────────────────── -->
+    <header class="site-header" id="site-header">
+      <div class="site-header__inner">
+
+        <!-- Left: Logo + Tagline -->
+        <div class="site-header__left">
+          <div class="site-logo">
+            <img
+              class="site-logo__img"
+              src="./assets/images/logos/logo_Olthem.svg"
+              alt="Olthem"
+            />
+            <p class="site-logo__tagline">Plongez dans l'éducation aux médias !</p>
+          </div>
+        </div>
+
+        <!-- Center: Navigation -->
+        <nav class="site-header__center site-nav" aria-label="Navigation principale">
+          <a class="site-nav__link is-active" href="#accueil"     data-section="accueil">Accueil</a>
+          <a class="site-nav__link"           href="#initiative"  data-section="initiative">Initiative</a>
+          <a class="site-nav__link"           href="#thematiques" data-section="thematiques">Thématiques</a>
+          <a class="site-nav__link"           href="#ressources"  data-section="ressources">Ressources</a>
+          <a class="site-nav__link"           href="#ateliers"    data-section="ateliers">Ateliers</a>
+          <a class="site-nav__link"           href="#partenaires" data-section="partenaires">Partenaires</a>
+        </nav>
+
+        <!-- Right: Connexion + Search -->
+        <div class="site-header__right">
+          <div class="header-actions">
+            <a class="icon-link" href="#connexion" aria-label="Se connecter">
+              <img class="icon-link__icon" src="./assets/images/icons/icon_connexion.svg" alt="" aria-hidden="true" />
+              <span class="icon-link__label">Connexion</span>
+            </a>
+            <div class="site-search">
+              <input
+                class="site-search__input"
+                type="search"
+                placeholder="Rechercher…"
+                aria-label="Rechercher dans le site"
+              />
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </header>
+
+    <!-- ── Full-page magnetic scroll container ─────────────────────────────── -->
+    <div id="scroll-viewport">
+      <div id="scroll-track">
+
+        <section class="full-section" id="accueil" data-slug="accueil" aria-label="Accueil">
+          <div class="accueil-header-cards" id="accueil-header-cards"></div>
+        </section>
+
+        <section class="full-section" id="initiative" data-slug="initiative" aria-label="Initiative">
+          <div class="section-inner"></div>
+        </section>
+
+        <section class="full-section" id="thematiques" data-slug="thematiques" aria-label="Thématiques">
+          <div class="thm-carousel-wrapper">
+            <div class="thm-carousel" id="thm-carousel">
+              <div class="thm-carousel__track" id="thm-carousel-track"></div>
+              <button class="thm-carousel__btn thm-carousel__btn--prev" aria-label="Thématique précédente">
+                <span class="thm-arrow thm-arrow--left" style="--arrow-color: #3F3F48" aria-hidden="true"></span>
+              </button>
+              <button class="thm-carousel__btn thm-carousel__btn--next" aria-label="Thématique suivante">
+                <span class="thm-arrow thm-arrow--right" style="--arrow-color: #3F3F48" aria-hidden="true"></span>
+              </button>
+            </div>
+            <div class="thm-carousel-dots" id="thm-carousel-dots"></div>
+          </div>
+        </section>
+
+        <section class="full-section" id="ressources" data-slug="ressources" aria-label="Ressources">
+          <div class="section-inner"></div>
+        </section>
+
+        <section class="full-section" id="ateliers" data-slug="ateliers" aria-label="Ateliers">
+          <div class="section-inner"></div>
+        </section>
+
+        <section class="full-section" id="partenaires" data-slug="partenaires" aria-label="Partenaires">
+          <div class="section-inner"></div>
+          <footer class="site-footer" role="contentinfo">
+            <p>Olthem &copy; <span id="current-year"></span></p>
+          </footer>
+        </section>
+
+      </div>
+    </div>
+
+    <script type="module" src="./src/js/main.js"></script>
+    <script type="module" src="./src/js/scroll.js"></script>
+    <script type="module" src="./src/js/thematiques.js"></script>
+
+    <!-- ── Sous-menu (glisse depuis sous le menu principal) ──────────────── -->
+    <div class="site-submenu" id="site-submenu" aria-hidden="true">
+      <nav class="site-submenu__nav" id="site-submenu-nav"></nav>
+      <button class="site-submenu__retour icon-link" id="site-submenu-retour"
+              type="button" aria-label="Retour">
+        <img class="icon-link__icon" src="./assets/images/icons/icon_Retour.svg"
+             alt="" aria-hidden="true" />
+        <span class="icon-link__label">Retour</span>
+      </button>
+    </div>
+
+    <!-- ── Overlay thématique ────────────────────────────────────────────── -->
+    <div class="thm-overlay" id="thm-overlay" aria-hidden="true">
+      <div class="thm-overlay__bg-image" id="thm-overlay-bg-image"></div>
+      <div class="thm-overlay__bg-pattern"></div>
+      <div class="thm-overlay__inner" id="thm-overlay-inner"></div>
+    </div>
+  </body>
+</html>
