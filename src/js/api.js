@@ -6,21 +6,52 @@ function stripHtml(html) {
   return template.content.textContent?.trim() || "";
 }
 
-export async function fetchThematiques() {
-  const url = new URL(`${config.apiRoot}/wp/v2/thematiques`);
-  url.searchParams.set("per_page", "100");
-  url.searchParams.set("orderby", "menu_order");
-  url.searchParams.set("order", "asc");
+function getApiRoots() {
+  const roots = Array.isArray(config.apiRoots) && config.apiRoots.length
+    ? config.apiRoots
+    : [config.apiRoot];
 
-  const response = await fetch(url, {
-    headers: { Accept: "application/json" }
-  });
+  return [...new Set(roots.filter(Boolean))];
+}
 
-  if (!response.ok) {
-    throw new Error(`API error: ${response.status}`);
+async function requestJson(pathname, params = {}) {
+  const roots = getApiRoots();
+  const failures = [];
+
+  for (const root of roots) {
+    const url = new URL(`${root}${pathname}`);
+    Object.entries(params).forEach(([key, value]) => {
+      url.searchParams.set(key, String(value));
+    });
+
+    try {
+      const response = await fetch(url, {
+        headers: { Accept: "application/json" }
+      });
+
+      if (!response.ok) {
+        failures.push(`${url.origin} -> HTTP ${response.status}`);
+        continue;
+      }
+
+      return response.json();
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : "Network error";
+      failures.push(`${url.origin} -> ${reason}`);
+    }
   }
 
-  const items = await response.json();
+  throw new Error(
+    `Unable to reach WordPress API. Tried: ${failures.join(" | ") || roots.join(", ")}`
+  );
+}
+
+export async function fetchThematiques() {
+  const items = await requestJson("/wp/v2/thematiques", {
+    per_page: 100,
+    orderby: "menu_order",
+    order: "asc"
+  });
 
   return items.map(item => ({
     id:                  item.id,
@@ -39,21 +70,10 @@ export async function fetchThematiques() {
 }
 
 export async function fetchLatestPosts() {
-  const url = new URL(`${config.apiRoot}/wp/v2/posts`);
-  url.searchParams.set("per_page", String(config.postsPerPage));
-  url.searchParams.set("_embed", "1");
-
-  const response = await fetch(url, {
-    headers: {
-      Accept: "application/json"
-    }
+  const posts = await requestJson("/wp/v2/posts", {
+    per_page: config.postsPerPage,
+    _embed: 1
   });
-
-  if (!response.ok) {
-    throw new Error(`API error: ${response.status}`);
-  }
-
-  const posts = await response.json();
 
   return posts.map((post) => ({
     id: post.id,

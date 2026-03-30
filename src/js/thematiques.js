@@ -648,6 +648,14 @@ async function init() {
     renderCarousel(thematiques);
   } catch (err) {
     console.error('[thematiques]', err);
+    const container = document.getElementById('accueil-header-cards');
+    if (container) {
+      container.innerHTML = `
+        <p style="padding:16px;max-width:720px;margin:24px auto;font:600 14px/1.5 Geologica,sans-serif;color:#fff;background:#8c1d40;border-radius:8px;">
+          Impossible de charger les thématiques depuis l'API WordPress. Vérifiez que votre backend local est démarré
+          et, si besoin, forcez l'URL avec ?apiRoot=http://localhost:10010/wp-json
+        </p>`;
+    }
   }
 }
 
