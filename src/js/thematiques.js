@@ -193,13 +193,77 @@ function _renderSubsectionContent(container, subSection, color) {
   });
 }
 
+// ─── Header thématique pour le mode subSection unique ───────────────────────
+// Miroir du buildCard : épisode = [flèche] personnage [flèche] + titre en dessous,
+// neutre = [flèche] titre [flèche].
+
+function _buildThmOverlayHeader(thm) {
+  const isEpisode = thm.episode && thm.personnage;
+
+  if (isEpisode) {
+    return `
+      <div class="thm-overlay__thm-header thm-overlay__thm-header--episode">
+        <div class="thm-overlay__title-wrap">
+          ${arrowSpan('right')}
+          <span class="thm-overlay__thm-personnage">${esc(thm.personnage)}</span>
+          ${arrowSpan('left')}
+        </div>
+        <span class="thm-overlay__thm-episode">Épisode ${esc(thm.episode_numero ?? '')}</span>
+        <span class="thm-overlay__thm-titre">${esc(thm.titre)}</span>
+      </div>`;
+  }
+
+  return `
+    <div class="thm-overlay__thm-header">
+      <div class="thm-overlay__title-wrap">
+        ${arrowSpan('right')}
+        <span class="thm-overlay__thm-titre">${esc(thm.titre)}</span>
+        ${arrowSpan('left')}
+      </div>
+    </div>`;
+}
+
+// Collecte tous les layouts de contenu du builder (hors subsectiontitle),
+// utilisé quand aucune subSection titrée n'est définie.
+
+function _allLayouts(builder) {
+  if (!Array.isArray(builder)) return [];
+  return builder.flatMap(row => {
+    const layouts = Array.isArray(row.subsection) ? row.subsection : [];
+    return layouts.filter(l => l.acf_fc_layout !== 'subsectiontitle');
+  });
+}
+
+// Rendu du contenu pour le cas subSection unique : header thématique + layouts.
+
+function _renderSingleSubSection(container, subSection, thm) {
+  if (!container) return;
+  container.style.setProperty('--thm-color', esc(thm.couleur || '#3F3F48'));
+  container.innerHTML = _buildThmOverlayHeader(thm) + subSection.layouts.map(_renderLayout).join('');
+
+  const texts = [...container.querySelectorAll('.layout-text')];
+  texts.forEach(el => {
+    el.style.marginBottom = el.nextElementSibling ? '32px' : '';
+  });
+  container.querySelectorAll('.layout-paragraph-title').forEach(el => {
+    if (el.previousElementSibling) el.previousElementSibling.style.marginBottom = '0';
+  });
+}
+
 function openOverlay(thm) {
-  const submenu = document.getElementById('site-submenu');
-  const overlay  = document.getElementById('thm-overlay');
-  const nav      = document.getElementById('site-submenu-nav');
-  const inner    = document.getElementById('thm-overlay-inner');
-  const retour   = document.getElementById('site-submenu-retour');
+  const submenu       = document.getElementById('site-submenu');
+  const overlay       = document.getElementById('thm-overlay');
+  const nav           = document.getElementById('site-submenu-nav');
+  const inner         = document.getElementById('thm-overlay-inner');
+  const retour        = document.getElementById('site-submenu-retour');
+  const overlayRetour = document.getElementById('thm-overlay-retour');
   if (!submenu || !overlay || !nav) return;
+
+  // Naviguer silencieusement vers la section thématiques (sans animation ni
+  // transition sur le menu principal) quelle que soit la section d'origine.
+  window.dispatchEvent(new CustomEvent('scroll:goto', {
+    detail: { section: 'thematiques', animate: false }
+  }));
 
   // Couleur du sous-menu : thématique à 50% opacité
   submenu.style.setProperty('--submenu-bg', _hexToRgba(thm.couleur, 0.5));
@@ -213,39 +277,57 @@ function openOverlay(thm) {
 
   // ── SubSections issues du builder ACF ─────────────────────────────────
   const subSections = _parseSubSections(thm.builder);
+  const isSingle    = subSections.length <= 1;
 
-  // Construire les items du sous-menu
-  if (subSections.length) {
-    nav.innerHTML = subSections
-      .map((ss, i) =>
-        `<button class="site-submenu__item${i === 0 ? ' is-active' : ''}" type="button" data-ss-index="${i}">${esc(ss.title)}</button>`
-      ).join('');
+  if (isSingle) {
+    // Cas 0 ou 1 subSection : masquer le sous-menu, afficher le header thématique
+    // Dans les deux cas on utilise _allLayouts pour ramasser tout le contenu
+    // de tous les rows du builder, peu importe dans quel row se trouve le titre.
+    const ss = {
+      ...(subSections[0] ?? { title: '', subtitle: '', showSubtitle: false }),
+      layouts: _allLayouts(thm.builder),
+    };
+    overlay.classList.add('thm-overlay--no-submenu');
+    // --thm-color sur l'overlay entier (pas seulement inner) pour le bouton retour
+    overlay.style.setProperty('--thm-color', esc(thm.couleur || '#3F3F48'));
+    _renderSingleSubSection(inner, ss, thm);
+    overlayRetour?.addEventListener('click', closeOverlay, { once: true });
   } else {
-    // Pas de subSections définies : afficher le titre de la thématique seul
-    nav.innerHTML = `<button class="site-submenu__item is-active" type="button">${esc(thm.titre)}</button>`;
-  }
+    overlay.classList.remove('thm-overlay--no-submenu');
 
-  // Afficher la première subSection
-  if (subSections.length) {
-    _renderSubsectionContent(inner, subSections[0], thm.couleur);
-  }
+    // Construire les items du sous-menu
+    if (subSections.length) {
+      nav.innerHTML = subSections
+        .map((ss, i) =>
+          `<button class="site-submenu__item${i === 0 ? ' is-active' : ''}" type="button" data-ss-index="${i}">${esc(ss.title)}</button>`
+        ).join('');
+    } else {
+      // Pas de subSections définies : afficher le titre de la thématique seul
+      nav.innerHTML = `<button class="site-submenu__item is-active" type="button">${esc(thm.titre)}</button>`;
+    }
 
-  // Switch de subSection au clic dans le sous-menu
-  nav.querySelectorAll('.site-submenu__item').forEach(btn => {
-    btn.addEventListener('click', () => {
-      nav.querySelectorAll('.site-submenu__item').forEach(b => b.classList.remove('is-active'));
-      btn.classList.add('is-active');
-      const idx = parseInt(btn.dataset.ssIndex ?? '0', 10);
-      if (subSections[idx]) _renderSubsectionContent(inner, subSections[idx], thm.couleur);
+    // Afficher la première subSection
+    if (subSections.length) {
+      _renderSubsectionContent(inner, subSections[0], thm.couleur);
+    }
+
+    // Switch de subSection au clic dans le sous-menu
+    nav.querySelectorAll('.site-submenu__item').forEach(btn => {
+      btn.addEventListener('click', () => {
+        nav.querySelectorAll('.site-submenu__item').forEach(b => b.classList.remove('is-active'));
+        btn.classList.add('is-active');
+        const idx = parseInt(btn.dataset.ssIndex ?? '0', 10);
+        if (subSections[idx]) _renderSubsectionContent(inner, subSections[idx], thm.couleur);
+      });
     });
-  });
 
-  submenu.classList.add('is-visible');
-  submenu.setAttribute('aria-hidden', 'false');
+    submenu.classList.add('is-visible');
+    submenu.setAttribute('aria-hidden', 'false');
+    retour?.addEventListener('click', closeOverlay, { once: true });
+  }
+
   overlay.classList.add('is-visible');
   overlay.setAttribute('aria-hidden', 'false');
-
-  retour?.addEventListener('click', closeOverlay, { once: true });
 }
 
 function closeOverlay() {
@@ -255,6 +337,8 @@ function closeOverlay() {
   submenu?.setAttribute('aria-hidden', 'true');
   overlay?.classList.remove('is-visible');
   overlay?.setAttribute('aria-hidden', 'true');
+  // Retirer --no-submenu après la fin du fade (0.35s) pour éviter le saut de __inner
+  setTimeout(() => overlay?.classList.remove('thm-overlay--no-submenu'), 350);
 }
 // ─── Facade vidéo : charge l'iframe au clic ─────────────────────────────────────────
 

@@ -153,13 +153,48 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
+// ── Ferme l'overlay thématique si ouvert, retourne true si c'était le cas ────
+
+function closeOverlayIfOpen() {
+  const overlay = document.getElementById('thm-overlay');
+  if (!overlay?.classList.contains('is-visible')) return false;
+  const submenu = document.getElementById('site-submenu');
+  submenu?.classList.remove('is-visible');
+  submenu?.setAttribute('aria-hidden', 'true');
+  overlay.classList.remove('is-visible');
+  overlay.setAttribute('aria-hidden', 'true');
+  // Retirer --no-submenu après la fin du fade (0.35s) pour éviter le saut de __inner
+  setTimeout(() => overlay.classList.remove('thm-overlay--no-submenu'), 350);
+  return true;
+}
+
 // ── Nav link clicks ───────────────────────────────────────────────────────────
 
 navLinks.forEach((link) => {
   link.addEventListener('click', (e) => {
     e.preventDefault();
     const idx = SECTIONS.indexOf(link.dataset.section);
-    if (idx !== -1) goTo(idx);
+    if (idx === -1) return;
+    const wasOpen = closeOverlayIfOpen();
+    // Si l'overlay était ouvert et qu'on est déjà sur la bonne section → juste fermer
+    if (wasOpen && idx === currentIndex) return;
+    goTo(idx);
+  });
+});
+
+// ── Navigation silencieuse depuis un autre module (ex: overlay thématique) ──
+// Reçoit { section: string, animate: boolean }
+// Supprime la transition CSS du menu principal pour ne pas montrer le glissement.
+
+window.addEventListener('scroll:goto', (e) => {
+  const { section, animate = true } = e.detail ?? {};
+  const idx = SECTIONS.indexOf(section);
+  if (idx === -1) return;
+  // Figer la transition nav le temps du changement
+  navLinks.forEach(l => { l.style.transition = 'none'; });
+  goTo(idx, { animate });
+  requestAnimationFrame(() => {
+    navLinks.forEach(l => { l.style.transition = ''; });
   });
 });
 
