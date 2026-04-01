@@ -1,8 +1,8 @@
 const DEFAULT_API_ROOTS = [
-  "https://olthem.local/wp-json",
-  "http://olthem.local/wp-json",
   "http://localhost:10010/wp-json",
-  "http://localhost/wp-json"
+  "http://localhost/wp-json",
+  "https://olthem.local/wp-json",
+  "http://olthem.local/wp-json"
 ];
 
 function getRuntimeApiRoot() {

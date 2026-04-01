@@ -65,6 +65,7 @@ export async function fetchThematiques() {
     header_position:     item.header_position    ?? "premier",
     visuel:              item.visuel             ?? null,
     couleur:             item.couleur            ?? "#3F3F48",
+    couleur_sombre:      item.couleur_sombre      ?? null,
     builder:             Array.isArray(item.builder) ? item.builder : []
   }));
 }

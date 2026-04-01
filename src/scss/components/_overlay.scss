@@ -149,7 +149,7 @@
     flex-shrink: 0;
     height: 16px;
     width: 16px;
-    background-color: var(--thm-color);
+    background-color: $grey-light;
     -webkit-mask-image: url('../images/icons/icon_Retour.svg');
             mask-image: url('../images/icons/icon_Retour.svg');
     -webkit-mask-repeat: no-repeat;
@@ -165,7 +165,7 @@
     font-family: $font-family;
     font-size: 14px;
     font-weight: $font-weight-regular;
-    color: var(--thm-color);
+    color: $grey-light;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     line-height: 1;
@@ -324,6 +324,53 @@
   margin-bottom: 48px;
   color: $white;
 
+  // Rythme vertical du contenu WYSIWYG (paragraphes, listes, etc.)
+  > * + * {
+    margin-top: 16px;
+  }
+
+  :is(p, ul, ol, blockquote, h1, h2, h3, h4, h5, h6, figure, table, pre)
+  + :is(p, ul, ol, blockquote, h1, h2, h3, h4, h5, h6, figure, table, pre) {
+    margin-top: 16px;
+  }
+
+  p + p {
+    margin-top: 16px;
+  }
+
+  ul,
+  ol {
+    padding-left: 64px;
+  }
+
+  // Espace renforcé autour des groupes de puces
+  p + ul,
+  p + ol,
+  ul + p,
+  ol + p,
+  ul + ul,
+  ol + ol,
+  ul + ol,
+  ol + ul {
+    margin-top: 32px;
+  }
+
+  li + li {
+    margin-top: 16px;
+  }
+
+  a,
+  a:visited {
+    color: var(--thm-color);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  a:hover,
+  a:focus-visible {
+    color: $white;
+  }
+
   // Textbloc suivi d’un autre textbloc : espace réduit à 32px
   &--compact {
     margin-bottom: 32px;
@@ -331,9 +378,18 @@
 
   &--perso,
   &--perso p {
+    font-size: 20px;
     font-weight: 600; // semibold
     font-style: $font-style-italic;
-    color: $white;
+    color: var(--thm-color);
+  }
+
+  &--no-spacing {
+    > * + * { margin-top: 0; }
+    p + p { margin-top: 0; }
+    p + ul, p + ol, ul + p, ol + p,
+    ul + ul, ol + ol, ul + ol, ol + ul { margin-top: 0; }
+    li + li { margin-top: 0; }
   }
 }
 
@@ -374,6 +430,65 @@
     display: block;
     accent-color: var(--thm-color); // colorise les contrôles dans les navigateurs compatibles
     border-radius: 8px;
+  }
+}
+
+// ─── buttonpdf ──────────────────────────────────────────────────────────────
+
+.layout-pdf-button {
+  width: 100%;
+  max-width: $container-max-width;
+  padding: 0 22px;
+  box-sizing: border-box;
+  margin-bottom: 48px;
+  display: flex;
+  justify-content: center;
+
+  .buttonRound {
+    background: var(--thm-color);
+    border-color: transparent;
+    color: $dark;
+
+    &:hover {
+      background: $white;
+      color: var(--thm-color);
+      border-color: var(--thm-color);
+    }
+
+    &:disabled {
+      opacity: 0.7;
+      cursor: wait;
+    }
+  }
+}
+
+// ─── imagesolo ───────────────────────────────────────────────────────────────
+
+.layout-image-solo {
+  width: 100%;
+  max-width: $container-max-width;
+  padding: 0 22px;
+  box-sizing: border-box;
+  margin-bottom: 48px;
+
+  &__wrapper {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: 16px;
+  }
+
+  &__img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    object-position: clamp(0%, var(--img-x-pos, 50%), 100%) clamp(0%, var(--img-y-pos, 50%), 100%);
+    transform: scale(var(--img-scale, 1));
+    transform-origin: clamp(0%, var(--img-x-pos, 50%), 100%) clamp(0%, var(--img-y-pos, 50%), 100%);
   }
 }
 
@@ -421,5 +536,179 @@
 
     &--top  { margin: 0 0 8px; }
     &--bottom { margin: 8px 0 0; }
+  }
+}
+
+// ─── imagegallerie (caroussel et canvas) ──────────────────────────────────────
+
+.layout-image-gallerie {
+  width: 100%;
+  max-width: $container-max-width;
+  padding: 0 22px;
+  box-sizing: border-box;
+  margin-bottom: 48px;
+}
+
+// ─── Mode caroussel ───────────────────────────────────────────────────────
+
+.layout-image-gallerie--carousel {
+  .img-gallerie-carousel {
+    position: relative;
+    width: 100%;
+    margin-bottom: 20px;
+
+    &__viewport {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      overflow: hidden;
+      border-radius: 16px;
+    }
+
+    &__track {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      width: 100%;
+      height: 100%;
+    }
+
+    &__slide {
+      position: relative;
+      flex: 0 0 100%;
+      width: 100%;
+      height: 100%;
+    }
+
+    &__img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+  }
+
+  // ─── Boutons de navigation : centre du bouton sur le bord de l'image ───
+
+  .img-gallerie-carousel__btn {
+    position: absolute;
+    top: 50%;
+    z-index: 20;
+    background: rgba($white, 0.85);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    border: none;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: $grey;
+    transition: background 0.2s ease, transform 0.2s ease;
+
+    &--prev {
+      left: 0;
+      transform: translate(-50%, -50%);
+    }
+
+    &--next {
+      right: 0;
+      transform: translate(50%, -50%);
+    }
+
+    &:hover {
+      background: $white;
+    }
+
+    &--prev:hover {
+      transform: translate(-50%, -50%) scale(1.08);
+    }
+
+    &--next:hover {
+      transform: translate(50%, -50%) scale(1.08);
+    }
+
+    .thm-arrow { height: 18px; }
+  }
+}
+
+// ─── Dots du caroussel ─────────────────────────────────────────────────────
+
+.img-gallerie-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  width: 100%;
+
+  &__dot {
+    height: 10px;
+    width: 10px;
+    border-radius: 50%;
+    background: $grey-light;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition:
+      width        0.3s ease,
+      border-radius 0.3s ease,
+      background    0.3s ease;
+
+    &.is-active {
+      width: 30px;
+      border-radius: 5px;
+      background: $white;
+    }
+
+    &:hover:not(.is-active) {
+      background: $grey;
+    }
+  }
+}
+
+// ─── Mode canvas (grid) ───────────────────────────────────────────────────
+
+.layout-image-gallerie--canvas {
+  .img-gallerie-canvas {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    width: 100%;
+
+    &__item {
+      position: relative;
+      aspect-ratio: 1;
+      overflow: hidden;
+      border-radius: 16px;
+
+      img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      // Première image affichée plus grande
+      &--featured {
+        grid-column: span 2;
+        grid-row: span 2;
+        aspect-ratio: auto;
+
+        @media (max-width: 640px) {
+          grid-column: span 1;
+          grid-row: span 1;
+          aspect-ratio: 1;
+        }
+      }
+    }
   }
 }

@@ -30,6 +30,12 @@ function arrowSpan(dir) {
 
 // ─── Overlay thématique + sous-menu ─────────────────────────────────────────
 
+// Retourne la couleur à utiliser sur les backgrounds sombres (overlay).
+// Si couleur_sombre est définie, elle a priorité ; sinon, on retombe sur couleur.
+function _overlayColor(thm) {
+  return thm.couleur_sombre || thm.couleur || '#3F3F48';
+}
+
 function _hexToRgba(hex, alpha) {
   const h = (hex || '#3F3F48').replace('#', '');
   const r = parseInt(h.slice(0, 2), 16);
@@ -44,17 +50,20 @@ function _hexToRgba(hex, alpha) {
 //     - subsectiontitle : { title, subtitle, displaytile, displaysubtitle }
 //     - videosolo       : { videolink, videotitle, videotext, displayvideotitle, displayvideotext }
 //     - textbloc        : { text, persotext }
+//     - imagesolo       : { imagesolo, imagescale, xoffset, yoffset, aligntop, alignbottom }
 
 function _parseSubSections(builder) {
   if (!Array.isArray(builder)) return [];
   return builder.map(row => {
-    const layouts = Array.isArray(row.subsection) ? row.subsection : [];
-    const header  = layouts.find(l => l.acf_fc_layout === 'subsectiontitle');
-    const content = layouts.filter(l => l.acf_fc_layout !== 'subsectiontitle');
+    const layouts = _getSubsectionLayouts(row);
+    const header  = layouts.find(l => _isLayout(l, 'subsectiontitle'));
+    const content = layouts.filter(l => !_isLayout(l, 'subsectiontitle'));
+    const imageSolo = _extractImageSoloConfig(header) ?? _extractImageSoloConfig(row);
     return {
       title:       header?.title    ?? '',
       subtitle:    header?.subtitle ?? '',
       showSubtitle: !!(header?.displaysubtitle && header?.subtitle),
+      imageSolo,
       layouts:     content,
     };
   }).filter(ss => ss.title);
@@ -80,6 +89,381 @@ function _extractIframeSrc(raw) {
   return cleaned;
 }
 
+function _num(raw, fallback = 0) {
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function _bool(raw) {
+  return raw === true || raw === 1 || raw === '1' || raw === 'true';
+}
+
+function _normKey(raw) {
+  return String(raw ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function _pickField(obj, names) {
+  if (!obj) return undefined;
+  // 1) Tentative exacte (rapide)
+  for (const name of names) {
+    if (obj[name] !== undefined && obj[name] !== null && obj[name] !== '') {
+      return obj[name];
+    }
+  }
+
+  // 2) Fallback insensible à la casse / underscore / tirets
+  const keyByNorm = new Map();
+  Object.keys(obj).forEach((key) => {
+    const nk = _normKey(key);
+    if (nk && !keyByNorm.has(nk)) keyByNorm.set(nk, key);
+  });
+
+  for (const name of names) {
+    const matchKey = keyByNorm.get(_normKey(name));
+    if (!matchKey) continue;
+    const value = obj[matchKey];
+    if (value !== undefined && value !== null && value !== '') {
+      return value;
+    }
+  }
+
+  return undefined;
+}
+
+function _getSubsectionLayouts(row) {
+  const layouts = _pickField(row, ['subsection', 'subSection', 'SubSection', 'layouts', 'layout']);
+  return Array.isArray(layouts) ? layouts : [];
+}
+
+function _isLayout(layout, name) {
+  return _normKey(layout?.acf_fc_layout) === _normKey(name);
+}
+
+function _imageUrl(raw) {
+  if (!raw) return null;
+  if (typeof raw === 'string') return raw;
+  if (typeof raw === 'object') {
+    return raw.url ?? raw.sizes?.large ?? raw.sizes?.medium_large ?? raw.sizes?.medium ?? raw.src ?? null;
+  }
+  return null;
+}
+
+function _fileUrl(raw) {
+  if (!raw) return null;
+  if (typeof raw === 'string') return raw;
+  if (typeof raw === 'object') {
+    return raw.url ?? raw.link ?? raw.guid?.rendered ?? null;
+  }
+  return null;
+}
+
+function _fileName(raw, fallbackUrl) {
+  if (raw && typeof raw === 'object') {
+    if (raw.filename) return String(raw.filename);
+    if (raw.title) return String(raw.title);
+  }
+
+  if (fallbackUrl) {
+    try {
+      const pathname = new URL(fallbackUrl, window.location.origin).pathname;
+      const last = pathname.split('/').filter(Boolean).pop();
+      if (last) return decodeURIComponent(last);
+    } catch {
+      // ignore
+    }
+  }
+
+  return 'document.pdf';
+}
+
+function _cardDescriptifHtml(raw) {
+  if (!raw) return '';
+
+  const tmp = document.createElement('div');
+  tmp.innerHTML = raw;
+
+  const paragraphs = Array.from(tmp.querySelectorAll('p'))
+    .map((p) => p.textContent?.trim() ?? '')
+    .filter(Boolean);
+
+  if (paragraphs.length) {
+    return paragraphs.map((text) => `<p>${esc(text)}</p>`).join('');
+  }
+
+  const brLines = String(raw)
+    .split(/<br\s*\/?>/i)
+    .map((text) => text.replace(/<[^>]+>/g, '').trim())
+    .filter(Boolean);
+
+  if (brLines.length > 1) {
+    return brLines.map((text) => `<p>${esc(text)}</p>`).join('');
+  }
+
+  const fallback = String(raw)
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .split(/\n{2,}/)
+    .map((text) => text.trim())
+    .filter(Boolean);
+
+  return fallback.map((text) => `<p>${esc(text).replace(/\n/g, '<br>')}</p>`).join('');
+}
+
+function _extractImageSoloConfig(source) {
+  if (!source || typeof source !== 'object') return null;
+
+  const groupOrImage = _pickField(source, ['imagesolo', 'imageSolo', 'ImageSolo', 'image_solo', 'image']);
+  const groupedValues = (groupOrImage && typeof groupOrImage === 'object' && !_imageUrl(groupOrImage))
+    ? groupOrImage
+    : source;
+
+  const imageRaw = _pickField(groupedValues, ['imagesolo', 'imageSolo', 'ImageSolo', 'image_solo', 'image', 'url', 'src']) ?? groupOrImage;
+  const imageUrl = _imageUrl(imageRaw);
+  if (!imageUrl) return null;
+
+  const imageScale = Math.max(1, _num(_pickField(groupedValues, ['imagescale', 'imageScale', 'ImageScale', 'image_scale']), 1));
+  const xOffset = _num(_pickField(groupedValues, ['xoffset', 'xOffset', 'Xoffset', 'x_offset']), 0);
+  const yOffset = _num(_pickField(groupedValues, ['yoffset', 'yOffset', 'Yoffset', 'y_offset']), 0);
+  const alignTop = _bool(_pickField(groupedValues, ['aligntop', 'alignTop', 'AlignTop', 'align_top']));
+  const alignBottom = _bool(_pickField(groupedValues, ['alignbottom', 'alignBottom', 'AlignBottom', 'align_bottom']));
+
+  return {
+    imageUrl,
+    imageScale,
+    xOffset,
+    yOffset,
+    useAlignTop: alignTop,
+    useAlignBottom: !alignTop && alignBottom,
+  };
+}
+
+function _renderImageSolo(config) {
+  if (!config?.imageUrl) return '';
+
+  // Les offsets sont saisis sur la maquette desktop (content 960px, ratio 16/9 => 540px de haut).
+  const xPct = (config.xOffset / 960) * 100;
+  const yPct = (config.yOffset / 540) * 100;
+  const xPos = 50 + xPct;
+  const yBase = config.useAlignTop ? 0 : (config.useAlignBottom ? 100 : 50);
+  const yPos = yBase + yPct;
+
+  return `
+    <div
+      class="layout-image-solo"
+      style="--img-scale:${config.imageScale}; --img-x-pos:${xPos}%; --img-y-pos:${yPos}%;"
+    >
+      <div class="layout-image-solo__wrapper">
+        <img class="layout-image-solo__img" src="${esc(config.imageUrl)}" alt="" loading="lazy" />
+      </div>
+    </div>`;
+}
+
+// ─── ImageGallerie layout ────────────────────────────────────────────────
+
+function _extractImageGallerieConfig(source) {
+  if (!source || typeof source !== 'object') return null;
+
+  const gallerie = _pickField(source, ['gallerie', 'Gallerie', 'galerie', 'Galerie']);
+  if (!Array.isArray(gallerie) || gallerie.length === 0) return null;
+
+  // Extraire les URLs des images
+  const images = gallerie.map(img => {
+    if (typeof img === 'object') {
+      return _imageUrl(_pickField(img, ['image', 'Image', 'url', 'URL', 'src']));
+    }
+    return _imageUrl(img);
+  }).filter(Boolean);
+
+  if (images.length === 0) return null;
+
+  const affichageCaroussel = _bool(_pickField(source, ['affichagecaroussel', 'AffichageCaroussel', 'affichage_carousel', 'AffichageCarousel']));
+  const affichageCanvas = _bool(_pickField(source, ['affichagecanvas', 'AffichageCanvas', 'affichage_canvas', 'AffichageCanvas']));
+
+  // Les deux modes sont mutuellement exclusifs : le caroussel a priorité
+  const showCarousel = affichageCaroussel;
+  const showCanvas = !affichageCaroussel && affichageCanvas;
+
+  return {
+    images,
+    showCarousel,
+    showCanvas,
+  };
+}
+
+function _renderImageGallerieCarousel(config) {
+  if (!config?.images || config.images.length === 0) return '';
+
+  const trackId = `img-carousel-track-${Math.random().toString(36).substr(2, 9)}`;
+  const dotsId = `img-carousel-dots-${Math.random().toString(36).substr(2, 9)}`;
+  const controllerId = `img-carousel-${Math.random().toString(36).substr(2, 9)}`;
+
+  const imagesHtml = config.images
+    .map((imgUrl, idx) => `
+      <div class="img-gallerie-carousel__slide" data-idx="${idx}">
+        <img class="img-gallerie-carousel__img" src="${esc(imgUrl)}" alt="Image ${idx + 1}" loading="lazy" />
+      </div>`)
+    .join('');
+
+  const dotsHtml = config.images
+    .map((_, idx) => `<button class="img-gallerie-dots__dot" aria-label="Image ${idx + 1}"></button>`)
+    .join('');
+
+  const html = `
+    <div class="layout-image-gallerie layout-image-gallerie--carousel" id="${controllerId}">
+      <div class="img-gallerie-carousel">
+        <button class="img-gallerie-carousel__btn img-gallerie-carousel__btn--prev" type="button" aria-label="Image précédente">${arrowSpan('left')}</button>
+        <div class="img-gallerie-carousel__viewport">
+          <div class="img-gallerie-carousel__track" id="${trackId}">
+            ${imagesHtml}
+          </div>
+        </div>
+        <button class="img-gallerie-carousel__btn img-gallerie-carousel__btn--next" type="button" aria-label="Image suivante">${arrowSpan('right')}</button>
+      </div>
+      <div class="img-gallerie-dots" id="${dotsId}">
+        ${dotsHtml}
+      </div>
+    </div>`;
+
+  // Initialiser le caroussel après le rendu
+  setTimeout(() => {
+    const track = document.getElementById(trackId);
+    const dotsContainer = document.getElementById(dotsId);
+    const controller = document.getElementById(controllerId);
+    if (track && dotsContainer && controller) {
+      new ImgGallerieCarousel(track, dotsContainer, controller, config.images.length);
+    }
+  }, 0);
+
+  return html;
+}
+
+function _renderImageGallerieCanvas(config) {
+  if (!config?.images || config.images.length === 0) return '';
+
+  const gridHtml = config.images
+    .map((imgUrl, idx) => `
+      <div class="img-gallerie-canvas__item${idx === 0 ? ' img-gallerie-canvas__item--featured' : ''}" data-idx="${idx}">
+        <img src="${esc(imgUrl)}" alt="Image ${idx + 1}" loading="lazy" />
+      </div>`)
+    .join('');
+
+  return `
+    <div class="layout-image-gallerie layout-image-gallerie--canvas">
+      <div class="img-gallerie-canvas">
+        ${gridHtml}
+      </div>
+    </div>`;
+}
+
+function _renderImageGallerie(config) {
+  if (!config?.images || config.images.length === 0) return '';
+
+  if (config.showCarousel) {
+    return _renderImageGallerieCarousel(config);
+  } else if (config.showCanvas) {
+    return _renderImageGallerieCanvas(config);
+  }
+
+  // Fallback sur le canvas si aucun mode n'est explicitement activé
+  return _renderImageGallerieCanvas(config);
+}
+
+// ─── Classe pour gérer le caroussel d'images ──────────────────────────────
+
+class ImgGallerieCarousel {
+  constructor(track, dotsContainer, controller, totalImages) {
+    this.track = track;
+    this.dotsContainer = dotsContainer;
+    this.controller = controller;
+    this.totalOriginal = totalImages;
+    this.current = 1; // index interne (apres le clone de debut)
+    this._animMs = 500;
+
+    this.dots = Array.from(dotsContainer.querySelectorAll('.img-gallerie-dots__dot'));
+    this._setupInfiniteTrack();
+    this._bindButtons();
+    this._bindDots();
+    this._bindTransitionEnd();
+    this._jumpTo(this.current);
+    this._syncDots();
+  }
+
+  _setupInfiniteTrack() {
+    const slides = Array.from(this.track.querySelectorAll('.img-gallerie-carousel__slide'));
+    if (slides.length <= 1) return;
+
+    const firstClone = slides[0].cloneNode(true);
+    const lastClone = slides[slides.length - 1].cloneNode(true);
+
+    firstClone.dataset.clone = 'first';
+    lastClone.dataset.clone = 'last';
+
+    this.track.insertBefore(lastClone, slides[0]);
+    this.track.appendChild(firstClone);
+  }
+
+  _bindDots() {
+    this.dots.forEach((dot, i) => {
+      dot.addEventListener('click', () => this.goTo(i + 1));
+    });
+  }
+
+  _bindButtons() {
+    const prevBtn = this.controller.querySelector('.img-gallerie-carousel__btn--prev');
+    const nextBtn = this.controller.querySelector('.img-gallerie-carousel__btn--next');
+    if (prevBtn) prevBtn.addEventListener('click', () => this.prev());
+    if (nextBtn) nextBtn.addEventListener('click', () => this.next());
+  }
+
+  _bindTransitionEnd() {
+    this.track.addEventListener('transitionend', () => {
+      if (this.totalOriginal <= 1) return;
+
+      // 0 = clone de la derniere image, total+1 = clone de la premiere
+      if (this.current === 0) {
+        this.current = this.totalOriginal;
+        this._jumpTo(this.current);
+      } else if (this.current === this.totalOriginal + 1) {
+        this.current = 1;
+        this._jumpTo(this.current);
+      }
+
+      this._syncDots();
+    });
+  }
+
+  _jumpTo(index) {
+    this.track.style.transition = 'none';
+    this.track.style.transform = `translateX(-${index * 100}%)`;
+    void this.track.offsetHeight;
+    this.track.style.transition = `transform ${this._animMs}ms cubic-bezier(0.4, 0, 0.2, 1)`;
+  }
+
+  _syncDots() {
+    const dotIndex = ((this.current - 1) % this.totalOriginal + this.totalOriginal) % this.totalOriginal;
+    this.dots.forEach((dot, i) => {
+      dot.classList.toggle('is-active', i === dotIndex);
+    });
+  }
+
+  goTo(index) {
+    if (this.totalOriginal <= 1) return;
+    this.current = index;
+    this.track.style.transform = `translateX(-${this.current * 100}%)`;
+    this._syncDots();
+  }
+
+  next() {
+    if (this.totalOriginal <= 1) return;
+    this.goTo(this.current + 1);
+  }
+
+  prev() {
+    if (this.totalOriginal <= 1) return;
+    this.goTo(this.current - 1);
+  }
+}
+
 function _renderLayout(layout) {
   switch (layout.acf_fc_layout) {
     case 'videosolo': {
@@ -89,8 +473,8 @@ function _renderLayout(layout) {
           <div class="layout-video__facade" data-yt-id="${esc(ytId)}">
             <img
               class="layout-video__thumb"
-              src="https://img.youtube.com/vi/${esc(ytId)}/maxresdefault.jpg"
-              onerror="this.src='https://img.youtube.com/vi/${esc(ytId)}/hqdefault.jpg'"
+              data-yt-id="${esc(ytId)}"
+              src="https://img.youtube.com/vi/${esc(ytId)}/sddefault.jpg"
               alt=""
               loading="lazy"
             />
@@ -104,9 +488,9 @@ function _renderLayout(layout) {
       return `<div class="layout-video">${embed}${title}${text}</div>`;
     }
     case 'textbloc': {
-      const cls = layout.persotext == '1' || layout.persotext === true || layout.persotext === 1 || layout.persotext === 'true'
-        ? 'layout-text layout-text--perso'
-        : 'layout-text';
+      const isPerso = layout.persotext == '1' || layout.persotext === true || layout.persotext === 1 || layout.persotext === 'true';
+      const ignoreSpacing = _bool(_pickField(layout, ['ignorespacing', 'IgnoreSpacing', 'ignore_spacing']));
+      const cls = ['layout-text', isPerso ? 'layout-text--perso' : '', ignoreSpacing ? 'layout-text--no-spacing' : ''].filter(Boolean).join(' ');
       return `<div class="${cls}">${layout.text ?? ''}</div>`;
     }
     case 'paragraphetitle': {
@@ -151,9 +535,124 @@ function _renderLayout(layout) {
           ${linkBottom}
         </div>`;
     }
+    case 'buttonpdf':
+    case 'ButtonPDF': {
+      const pdfRaw = _pickField(layout, ['pdf_file', 'pdfFile', 'PdfFile']);
+      const url = _fileUrl(pdfRaw);
+      if (!url) return '';
+
+      const label = _pickField(layout, ['pdf_label', 'pdfLabel', 'PdfLabel']) || 'Telecharger le PDF';
+      const fileName = _fileName(pdfRaw, url);
+
+      return `
+        <div class="layout-pdf-button">
+          <button
+            class="buttonRound layout-pdf-button__action"
+            type="button"
+            data-pdf-url="${esc(url)}"
+            data-pdf-filename="${esc(fileName)}"
+            aria-label="${esc(label)}"
+          >${esc(label)}</button>
+        </div>`;
+    }
+    case 'imagesolo':
+    case 'ImageSolo': {
+      return _renderImageSolo(_extractImageSoloConfig(layout));
+    }
+    case 'image_solo': {
+      return _renderLayout({ ...layout, acf_fc_layout: 'imagesolo' });
+    }
+    case 'imagegallerie':
+    case 'ImageGallerie': {
+      return _renderImageGallerie(_extractImageGallerieConfig(layout));
+    }
+    case 'image_gallerie': {
+      return _renderLayout({ ...layout, acf_fc_layout: 'imagegallerie' });
+    }
     default:
       return '';
   }
+}
+
+function _hasImageSoloLayout(layouts) {
+  if (!Array.isArray(layouts)) return false;
+  return layouts.some((layout) => _isLayout(layout, 'imagesolo') || _isLayout(layout, 'image_solo'));
+}
+
+function _applyWysiwygSpacing(container) {
+  if (!container) return;
+
+  const blockTags = new Set(['P', 'UL', 'OL', 'BLOCKQUOTE', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'FIGURE', 'TABLE', 'PRE']);
+  const listTags = new Set(['UL', 'OL']);
+  const textBlocks = container.querySelectorAll('.layout-text');
+
+  textBlocks.forEach((block) => {
+    if (block.classList.contains('layout-text--no-spacing')) return;
+
+    const parents = [block, ...block.querySelectorAll('*')];
+
+    parents.forEach((parent) => {
+      let prevBlockTag = null;
+      [...parent.children].forEach((child) => {
+        const isBlock = blockTags.has(child.tagName);
+        if (isBlock) {
+          if (!prevBlockTag) {
+            child.style.marginTop = '';
+          } else {
+            const aroundList = listTags.has(prevBlockTag) || listTags.has(child.tagName);
+            child.style.marginTop = aroundList ? '32px' : '16px';
+          }
+
+          if (listTags.has(child.tagName)) {
+            child.style.paddingLeft = '64px';
+          }
+
+          prevBlockTag = child.tagName;
+        } else {
+          prevBlockTag = null;
+        }
+      });
+    });
+  });
+}
+
+function _setupVideoThumbFallback(container) {
+  if (!container) return;
+
+  const candidates = ['sddefault', 'hqdefault', 'mqdefault', 'default'];
+
+  container.querySelectorAll('.layout-video__thumb[data-yt-id]').forEach((img) => {
+    const ytId = img.dataset.ytId;
+    if (!ytId) return;
+
+    let idx = 0;
+
+    const setSrc = (nextIdx) => {
+      idx = nextIdx;
+      img.src = `https://img.youtube.com/vi/${ytId}/${candidates[idx]}.jpg`;
+    };
+
+    const goNext = () => {
+      if (idx >= candidates.length - 1) {
+        img.onerror = null;
+        img.onload = null;
+        return;
+      }
+      setSrc(idx + 1);
+    };
+
+    img.onerror = goNext;
+    img.onload = () => {
+      // Certaines réponses YouTube peuvent renvoyer une miniature générique petite.
+      // Si la vignette est trop petite, on essaie la suivante.
+      if ((img.naturalWidth <= 120 || img.naturalHeight <= 90) && idx < candidates.length - 1) {
+        goNext();
+      }
+    };
+
+    // Garantit que l'ordre des fallbacks est toujours celui attendu.
+    setSrc(0);
+  });
 }
 
 function _renderSubsectionContent(container, subSection, color) {
@@ -177,7 +676,11 @@ function _renderSubsectionContent(container, subSection, color) {
       ${subtitleHtml}
     </div>`;
 
-  container.innerHTML = titleBlock + subSection.layouts.map(_renderLayout).join('');
+  const imageSoloBlock = _hasImageSoloLayout(subSection.layouts) ? '' : _renderImageSolo(subSection.imageSolo);
+  container.innerHTML = titleBlock + imageSoloBlock + subSection.layouts.map(_renderLayout).join('');
+  _setupVideoThumbFallback(container);
+
+  _applyWysiwygSpacing(container);
 
   // 32px entre un textbloc et l'élément qui suit (quel qu'il soit)
   const texts = [...container.querySelectorAll('.layout-text')];
@@ -229,17 +732,40 @@ function _buildThmOverlayHeader(thm) {
 function _allLayouts(builder) {
   if (!Array.isArray(builder)) return [];
   return builder.flatMap(row => {
-    const layouts = Array.isArray(row.subsection) ? row.subsection : [];
-    return layouts.filter(l => l.acf_fc_layout !== 'subsectiontitle');
+    const layouts = _getSubsectionLayouts(row);
+    return layouts.filter(l => !_isLayout(l, 'subsectiontitle'));
   });
+}
+
+function _firstImageSoloFromBuilder(builder) {
+  if (!Array.isArray(builder)) return null;
+
+  for (const row of builder) {
+    const layouts = _getSubsectionLayouts(row);
+    const header = layouts.find(l => _isLayout(l, 'subsectiontitle'));
+
+    const fromHeaderOrRow = _extractImageSoloConfig(header) ?? _extractImageSoloConfig(row);
+    if (fromHeaderOrRow) return fromHeaderOrRow;
+
+    for (const layout of layouts) {
+      const fromLayout = _extractImageSoloConfig(layout);
+      if (fromLayout) return fromLayout;
+    }
+  }
+
+  return null;
 }
 
 // Rendu du contenu pour le cas subSection unique : header thématique + layouts.
 
 function _renderSingleSubSection(container, subSection, thm) {
   if (!container) return;
-  container.style.setProperty('--thm-color', esc(thm.couleur || '#3F3F48'));
-  container.innerHTML = _buildThmOverlayHeader(thm) + subSection.layouts.map(_renderLayout).join('');
+  container.style.setProperty('--thm-color', esc(_overlayColor(thm)));
+  const imageSoloBlock = _hasImageSoloLayout(subSection.layouts) ? '' : _renderImageSolo(subSection.imageSolo);
+  container.innerHTML = _buildThmOverlayHeader(thm) + imageSoloBlock + subSection.layouts.map(_renderLayout).join('');
+  _setupVideoThumbFallback(container);
+
+  _applyWysiwygSpacing(container);
 
   const texts = [...container.querySelectorAll('.layout-text')];
   texts.forEach(el => {
@@ -265,8 +791,8 @@ function openOverlay(thm) {
     detail: { section: 'thematiques', animate: false }
   }));
 
-  // Couleur du sous-menu : thématique à 50% opacité
-  submenu.style.setProperty('--submenu-bg', _hexToRgba(thm.couleur, 0.5));
+  // Couleur du sous-menu : thématique à 50% opacité (couleur sombre si définie)
+  submenu.style.setProperty('--submenu-bg', _hexToRgba(_overlayColor(thm), 0.5));
 
   // Visuel de fond de l'overlay (image thématique floue)
   const bgImg = document.getElementById('thm-overlay-bg-image');
@@ -285,11 +811,12 @@ function openOverlay(thm) {
     // de tous les rows du builder, peu importe dans quel row se trouve le titre.
     const ss = {
       ...(subSections[0] ?? { title: '', subtitle: '', showSubtitle: false }),
+      imageSolo: subSections[0]?.imageSolo ?? _firstImageSoloFromBuilder(thm.builder),
       layouts: _allLayouts(thm.builder),
     };
     overlay.classList.add('thm-overlay--no-submenu');
     // --thm-color sur l'overlay entier (pas seulement inner) pour le bouton retour
-    overlay.style.setProperty('--thm-color', esc(thm.couleur || '#3F3F48'));
+    overlay.style.setProperty('--thm-color', esc(_overlayColor(thm)));
     _renderSingleSubSection(inner, ss, thm);
     overlayRetour?.addEventListener('click', closeOverlay, { once: true });
   } else {
@@ -308,7 +835,7 @@ function openOverlay(thm) {
 
     // Afficher la première subSection
     if (subSections.length) {
-      _renderSubsectionContent(inner, subSections[0], thm.couleur);
+      _renderSubsectionContent(inner, subSections[0], _overlayColor(thm));
     }
 
     // Switch de subSection au clic dans le sous-menu
@@ -317,7 +844,7 @@ function openOverlay(thm) {
         nav.querySelectorAll('.site-submenu__item').forEach(b => b.classList.remove('is-active'));
         btn.classList.add('is-active');
         const idx = parseInt(btn.dataset.ssIndex ?? '0', 10);
-        if (subSections[idx]) _renderSubsectionContent(inner, subSections[idx], thm.couleur);
+        if (subSections[idx]) _renderSubsectionContent(inner, subSections[idx], _overlayColor(thm));
       });
     });
 
@@ -353,6 +880,52 @@ document.addEventListener('click', e => {
   iframe.allowFullscreen = true;
   iframe.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:none;display:block;';
   facade.replaceWith(iframe);
+});
+
+document.addEventListener('click', async (e) => {
+  const btn = e.target.closest('.layout-pdf-button__action');
+  if (!btn) return;
+
+  e.preventDefault();
+
+  const url = btn.dataset.pdfUrl;
+  const fileName = btn.dataset.pdfFilename || 'document.pdf';
+  if (!url) return;
+
+  const previous = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Telechargement...';
+
+  try {
+    const response = await fetch(url, { credentials: 'same-origin' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    const blob = await response.blob();
+    const blobUrl = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = fileName.toLowerCase().endsWith('.pdf') ? fileName : `${fileName}.pdf`;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    URL.revokeObjectURL(blobUrl);
+  } catch {
+    // Fallback si fetch/blob est bloque : tentative de download direct.
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName.toLowerCase().endsWith('.pdf') ? fileName : `${fileName}.pdf`;
+    a.rel = 'noopener';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } finally {
+    btn.disabled = false;
+    btn.textContent = previous;
+  }
 });
 // ─── Délégation globale : click sur bouton "Voir la thématique" ───────────────
 // Couvre les cards du header ET du carrousel
@@ -435,13 +1008,7 @@ function buildCard(thm, context) {
       </div>`;
 
   const rawDescriptif = thm.descriptif_desktop ?? '';
-  // 1. Replace <br> par \n, 2. strip les autres tags, 3. esc() le texte, 4. remet les <br>
-  const descriptif = esc(
-    rawDescriptif
-      .replace(/<br\s*\/?>/gi, '\n')
-      .replace(/<[^>]+>/g, '')
-      .trim()
-  ).replace(/\n/g, '<br>');
+  const descriptif = _cardDescriptifHtml(rawDescriptif);
 
   return `
     <article
@@ -453,7 +1020,7 @@ function buildCard(thm, context) {
       <div class="thm-card__visual">${visualEl}</div>
       <div class="thm-card__overlay-bg"></div>
       <div class="thm-card__overlay-pattern"></div>
-      <p class="thm-card__descriptif">${descriptif}</p>
+      <div class="thm-card__descriptif">${descriptif}</div>
       ${episodeBox}
       ${banner}
       <div class="thm-card__action">
