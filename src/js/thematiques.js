@@ -466,6 +466,21 @@ class ImgGallerieCarousel {
 
 function _renderLayout(layout) {
   switch (layout.acf_fc_layout) {
+    case 'title':
+    case 'Title': {
+      const title = _pickField(layout, ['title', 'Title']);
+      const subtitle = _pickField(layout, ['subtitle', 'subTitle', 'SubTitle']);
+      if (!title && !subtitle) return '';
+
+      const titleHtml = title ? `<p class="layout-title__title">${esc(title)}</p>` : '';
+      const subtitleHtml = subtitle ? `<p class="layout-title__subtitle">${esc(subtitle)}</p>` : '';
+
+      return `
+        <div class="layout-title">
+          ${titleHtml}
+          ${subtitleHtml}
+        </div>`;
+    }
     case 'videosolo': {
       const ytId = _youtubeId(layout.videolink);
       const embed = ytId ? `

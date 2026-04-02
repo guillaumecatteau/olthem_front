@@ -87,3 +87,82 @@ export async function fetchLatestPosts() {
       null
   }));
 }
+
+export async function fetchSections() {
+  const items = await requestJson("/wp/v2/sections", {
+    per_page: 100,
+    orderby: "menu_order",
+    order: "asc"
+  });
+
+  return items.map((item) => ({
+    id: item.id,
+    slug: item.slug || "",
+    title: stripHtml(item.title?.rendered ?? ""),
+    builder: Array.isArray(item.builder) ? item.builder : []
+  }));
+}
+
+export async function fetchPage(options = {}) {
+  const {
+    id = null,
+    slug = null,
+    search = null,
+    exactTitle = null
+  } = options;
+
+  if (id) {
+    const item = await requestJson(`/wp/v2/pages/${id}`);
+
+    return {
+      id: item.id,
+      slug: item.slug || "",
+      title: stripHtml(item.title?.rendered ?? ""),
+      content: item.content?.rendered ?? ""
+    };
+  }
+
+  const params = { per_page: 20 };
+  if (slug) params.slug = slug;
+  if (search) params.search = search;
+
+  const items = await requestJson("/wp/v2/pages", params);
+
+  const norm = (value) => stripHtml(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+
+  const target = exactTitle ? norm(exactTitle) : null;
+  const match = target
+    ? items.find((item) => norm(item.title?.rendered) === target)
+    : items[0];
+
+  if (!match) return null;
+
+  return {
+    id: match.id,
+    slug: match.slug || "",
+    title: stripHtml(match.title?.rendered ?? ""),
+    content: match.content?.rendered ?? ""
+  };
+}
+
+export async function fetchOptions() {
+  try {
+    const data = await requestJson("/wp/v2/options");
+    return {
+      facebook_url: data.facebook_url || "https://www.facebook.com/Mundaneum.officiel/",
+      X_url: data.X_url || "https://x.com/mundaneumasbl?lang=fr",
+      instagram_url: data.instagram_url || "https://www.instagram.com/mundaneumasbl/?hl=fr"
+    };
+  } catch (error) {
+    console.warn("Impossible de charger les informations générales", error);
+    return {
+      facebook_url: "https://www.facebook.com/Mundaneum.officiel/",
+      X_url: "https://x.com/mundaneumasbl?lang=fr",
+      instagram_url: "https://www.instagram.com/mundaneumasbl/?hl=fr"
+    };
+  }
+}

@@ -26,6 +26,7 @@ const SNAP_DELAY      = 350;  // ms — idle time before snap-back fires
 
 const track    = document.getElementById('scroll-track');
 const navLinks = [...document.querySelectorAll('.site-nav__link[data-section]')];
+const siteHeader = document.getElementById('site-header');
 
 // ── State ─────────────────────────────────────────────────────────────────────
 
@@ -41,7 +42,8 @@ function sectionH() {
 }
 
 function isOverlayOpen() {
-  return !!document.getElementById('thm-overlay')?.classList.contains('is-visible');
+  return !!document.getElementById('thm-overlay')?.classList.contains('is-visible')
+    || !!document.getElementById('page-overlay')?.classList.contains('is-visible');
 }
 
 function updateNav(idx) {
@@ -54,6 +56,10 @@ function updateURL(idx) {
   const slug = SECTIONS[idx];
   const hash = slug === 'accueil' ? '' : '#' + slug;
   history.pushState({ sectionIndex: idx }, '', window.location.pathname + hash);
+}
+
+function updateHeaderState(idx) {
+  siteHeader?.classList.toggle('is-away-from-home', idx !== 0);
 }
 
 function indexFromHash() {
@@ -86,6 +92,7 @@ function goTo(idx, { pushState = true, animate = true } = {}) {
   }
 
   updateNav(idx);
+  updateHeaderState(idx);
   if (pushState) updateURL(idx);
 }
 
@@ -157,15 +164,31 @@ window.addEventListener('keydown', (e) => {
 
 function closeOverlayIfOpen() {
   const overlay = document.getElementById('thm-overlay');
-  if (!overlay?.classList.contains('is-visible')) return false;
-  const submenu = document.getElementById('site-submenu');
-  submenu?.classList.remove('is-visible');
-  submenu?.setAttribute('aria-hidden', 'true');
-  overlay.classList.remove('is-visible');
-  overlay.setAttribute('aria-hidden', 'true');
-  // Retirer --no-submenu après la fin du fade (0.35s) pour éviter le saut de __inner
-  setTimeout(() => overlay.classList.remove('thm-overlay--no-submenu'), 350);
-  return true;
+  const pageOverlay = document.getElementById('page-overlay');
+  let wasOpen = false;
+
+  if (overlay?.classList.contains('is-visible')) {
+    const submenu = document.getElementById('site-submenu');
+    submenu?.classList.remove('is-visible');
+    submenu?.setAttribute('aria-hidden', 'true');
+    overlay.classList.remove('is-visible');
+    overlay.setAttribute('aria-hidden', 'true');
+    // Retirer --no-submenu après la fin du fade (0.35s) pour éviter le saut de __inner
+    setTimeout(() => overlay.classList.remove('thm-overlay--no-submenu'), 350);
+    wasOpen = true;
+  }
+
+  if (pageOverlay?.classList.contains('is-visible')) {
+    if (typeof window.__closePageOverlay === 'function') {
+      window.__closePageOverlay();
+    } else {
+      pageOverlay.classList.remove('is-visible');
+      pageOverlay.setAttribute('aria-hidden', 'true');
+    }
+    wasOpen = true;
+  }
+
+  return wasOpen;
 }
 
 // ── Nav link clicks ───────────────────────────────────────────────────────────
@@ -218,6 +241,7 @@ window.addEventListener('popstate', (e) => {
   applyTransform(idx, 'none');
   currentIndex = idx;
   updateNav(idx);
+  updateHeaderState(idx);
   // Seed history state so popstate works reliably on first back press
   history.replaceState({ sectionIndex: idx }, '', window.location.href);
 })();

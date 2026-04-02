@@ -13,6 +13,19 @@
   z-index: 1000;
   background: $dark;
 
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: $grey-dark;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+    pointer-events: none;
+  }
+
   &__inner {
     display: flex;
     align-items: stretch;
@@ -43,6 +56,12 @@
     display: flex;
     align-items: flex-start;
     justify-content: flex-end;
+  }
+}
+
+.site-header.is-away-from-home {
+  &::after {
+    opacity: 1;
   }
 }
 
