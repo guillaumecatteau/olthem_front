@@ -6,8 +6,8 @@
 // background-color : thématique (50% opacité) ou gris pour autres sections.
 
 .site-submenu {
-  position: fixed;
-  top: var(--header-height);
+  position: absolute;
+  top: 0;
   left: 0;
   right: 0;
   height: 48px;

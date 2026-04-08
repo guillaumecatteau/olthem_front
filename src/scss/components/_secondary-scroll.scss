@@ -1,0 +1,121 @@
+@use "../base/variables" as *;
+
+@property --secondary-fade-top {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --secondary-fade-bottom {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+.js-secondary-scroll {
+  --secondary-pad-top: 0px;
+  --secondary-pad-bottom: 0px;
+  --secondary-fade-top: 0px;
+  --secondary-fade-bottom: 0px;
+
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  /* The content itself fades and is fully hidden in top/bottom padding zones. */
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent var(--secondary-pad-top),
+    #000 calc(var(--secondary-pad-top) + var(--secondary-fade-top)),
+    #000 calc(100% - var(--secondary-pad-bottom) - var(--secondary-fade-bottom)),
+    transparent calc(100% - var(--secondary-pad-bottom)),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent var(--secondary-pad-top),
+    #000 calc(var(--secondary-pad-top) + var(--secondary-fade-top)),
+    #000 calc(100% - var(--secondary-pad-bottom) - var(--secondary-fade-bottom)),
+    transparent calc(100% - var(--secondary-pad-bottom)),
+    transparent 100%
+  );
+  transition: --secondary-fade-top 300ms ease, --secondary-fade-bottom 300ms ease;
+
+  &::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+}
+
+.has-secondary-scroll-layer {
+  --secondary-scroll-top: 0px;
+  --secondary-scroll-bottom: 0px;
+  --secondary-rail-width: 6px;
+  --secondary-line-width: 2px;
+  --secondary-fade-anim: 320ms;
+
+  .secondary-scrollbar {
+    position: absolute;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity var(--secondary-fade-anim) ease;
+  }
+
+  &.has-scrollable-content {
+    .secondary-scrollbar {
+      opacity: 1;
+    }
+  }
+}
+
+.secondary-scrollbar {
+  top: var(--secondary-scroll-top);
+  bottom: var(--secondary-scroll-bottom);
+  width: var(--secondary-rail-width);
+  right: max(19px, calc((100% - min(1200px, 100% - 44px)) / 2));
+  z-index: 1002;
+
+  &__line,
+  &__thumb {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 999px;
+  }
+
+  &__line {
+    top: 0;
+    bottom: 0;
+    width: var(--secondary-line-width);
+    background: rgba($grey-dark, 0.9);
+  }
+
+  &__thumb {
+    top: 0;
+    width: var(--secondary-rail-width);
+    min-height: 30px;
+    height: 0;
+    background: rgba($grey-light, 0.92);
+    transition: background-color 220ms ease;
+    pointer-events: auto;
+    cursor: grab;
+    user-select: none;
+
+    &:hover,
+    &.is-dragging {
+      background: $white;
+    }
+
+    &.is-dragging {
+      cursor: grabbing;
+    }
+  }
+}
+
+body.is-secondary-scroll-dragging,
+body.is-secondary-scroll-dragging * {
+  cursor: grabbing !important;
+}
+

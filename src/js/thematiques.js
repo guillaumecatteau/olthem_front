@@ -8,6 +8,22 @@ const HEADER_ORDER = { premier: 1, deuxieme: 2, troisieme: 3 };
 
 let _thematiquesStore = [];
 
+function _mountThematicLayersInSection() {
+  const section = document.getElementById('thematiques');
+  if (!section) return;
+
+  const submenu = document.getElementById('site-submenu');
+  const overlay = document.getElementById('thm-overlay');
+
+  if (submenu && submenu.parentElement !== section) {
+    section.appendChild(submenu);
+  }
+
+  if (overlay && overlay.parentElement !== section) {
+    section.appendChild(overlay);
+  }
+}
+
 // ─── Utilitaires ──────────────────────────────────────────────────────────────
 
 function esc(str) {
@@ -340,6 +356,9 @@ function _renderImageGallerieCarousel(config) {
 function _renderImageGallerieCanvas(config) {
   if (!config?.images || config.images.length === 0) return '';
 
+  const shouldBalanceCanvas = config.images.length > 1 && (config.images.length % 2 === 1);
+  const canvasClass = shouldBalanceCanvas ? ' img-gallerie-canvas--balanced' : '';
+
   const gridHtml = config.images
     .map((imgUrl, idx) => `
       <div class="img-gallerie-canvas__item${idx === 0 ? ' img-gallerie-canvas__item--featured' : ''}" data-idx="${idx}">
@@ -349,7 +368,7 @@ function _renderImageGallerieCanvas(config) {
 
   return `
     <div class="layout-image-gallerie layout-image-gallerie--canvas">
-      <div class="img-gallerie-canvas">
+      <div class="img-gallerie-canvas${canvasClass}">
         ${gridHtml}
       </div>
     </div>`;
@@ -497,10 +516,10 @@ function _renderLayout(layout) {
           </div>
         </div>` : '';
       const title = layout.displayvideotitle && layout.videotitle
-        ? `<p class="layout-video__title">${esc(layout.videotitle)}</p>` : '';
+        ? `<p class="layout-video__heading">${esc(layout.videotitle)}</p>` : '';
       const text  = layout.displayvideotext && layout.videotext
         ? `<p class="layout-video__text">${esc(layout.videotext)}</p>`  : '';
-      return `<div class="layout-video">${embed}${title}${text}</div>`;
+      return `<div class="layout-video">${title}${embed}${text}</div>`;
     }
     case 'textbloc': {
       const isPerso = layout.persotext == '1' || layout.persotext === true || layout.persotext === 1 || layout.persotext === 'true';
@@ -792,6 +811,8 @@ function _renderSingleSubSection(container, subSection, thm) {
 }
 
 function openOverlay(thm) {
+  _mountThematicLayersInSection();
+
   const submenu       = document.getElementById('site-submenu');
   const overlay       = document.getElementById('thm-overlay');
   const nav           = document.getElementById('site-submenu-nav');
@@ -870,6 +891,7 @@ function openOverlay(thm) {
 
   overlay.classList.add('is-visible');
   overlay.setAttribute('aria-hidden', 'false');
+  window.dispatchEvent(new CustomEvent('secondary-scroll:refresh'));
 }
 
 function closeOverlay() {
@@ -881,6 +903,7 @@ function closeOverlay() {
   overlay?.setAttribute('aria-hidden', 'true');
   // Retirer --no-submenu après la fin du fade (0.35s) pour éviter le saut de __inner
   setTimeout(() => overlay?.classList.remove('thm-overlay--no-submenu'), 350);
+  window.dispatchEvent(new CustomEvent('secondary-scroll:refresh'));
 }
 // ─── Facade vidéo : charge l'iframe au clic ─────────────────────────────────────────
 

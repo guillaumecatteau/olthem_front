@@ -88,6 +88,60 @@ function getRowLayouts(row) {
   return [];
 }
 
+function isSubsectionRow(row) {
+  return normKey(row?.acf_fc_layout) === "subsection"
+    || Array.isArray(pickField(row, ["subsection", "subSection", "SubSection"]));
+}
+
+function parseSectionSubsections(builder) {
+  if (!Array.isArray(builder)) return [];
+
+  return builder
+    .filter((row) => isSubsectionRow(row))
+    .map((row, index) => {
+      const layouts = getRowLayouts(row);
+      const titleLayout = layouts.find((layout) => normKey(layout?.acf_fc_layout) === "subsectiontitle");
+      const contentLayouts = layouts.filter((layout) => normKey(layout?.acf_fc_layout) !== "subsectiontitle");
+
+      const title = plainText(pickField(titleLayout, ["title", "Title"]));
+      const subtitle = plainText(pickField(titleLayout, ["subtitle", "subTitle", "SubTitle"]));
+      const showTitle = !!pickField(titleLayout, ["displaytitle", "displaytile", "displayTitle", "displayTile"]);
+      const showSubtitle = !!pickField(titleLayout, ["displaysubtitle", "displaySubtitle"]);
+
+      const rowLabel = title || subtitle || `Sous-section ${index + 1}`;
+
+      return {
+        title: rowLabel,
+        subtitle,
+        showTitle,
+        showSubtitle,
+        layouts: contentLayouts
+      };
+    })
+    .filter((sub) => sub.layouts.length > 0);
+}
+
+function extractIframeSrc(raw) {
+  if (!raw) return null;
+
+  const tmp = document.createElement("div");
+  tmp.innerHTML = String(raw);
+  const text = (tmp.querySelector("a")?.href ?? tmp.textContent ?? "").trim();
+  const cleaned = text.replace(/^(?:https?:\/\/)?src=["'’]?/i, "").replace(/["'’]$/, "");
+
+  if (!cleaned) return null;
+  if (cleaned.startsWith("//")) return cleaned;
+  if (cleaned.startsWith("http")) return cleaned;
+  return null;
+}
+
+function youtubeId(raw) {
+  if (!raw) return null;
+  const content = String(raw);
+  const match = content.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([^?&\s"']{11})/);
+  return match ? match[1] : null;
+}
+
 function flattenLayouts(builder) {
   if (!Array.isArray(builder)) return [];
   return builder.flatMap((row) => getRowLayouts(row));
@@ -212,6 +266,20 @@ async function getOverlayPage(options) {
 function renderSectionLayout(layout) {
   const key = normKey(layout?.acf_fc_layout);
 
+  if (key === "innertitle") {
+    const text = plainText(pickField(layout, ["innertitle", "innerTitle", "inner_title", "title", "Title"]));
+    if (!text) return "";
+
+    return `
+      <div class="section-builder-inner-title">
+        <div class="section-builder-inner-title__wrap">
+          ${arrowSpan("right")}
+          <h3 class="section-builder-inner-title__text">${esc(text)}</h3>
+          ${arrowSpan("left")}
+        </div>
+      </div>`;
+  }
+
   if (key === "title") {
     const title = plainText(pickField(layout, ["title", "Title"]));
     const subtitle = plainText(pickField(layout, ["subtitle", "subTitle", "SubTitle"]));
@@ -290,7 +358,144 @@ function renderSectionLayout(layout) {
       </section>`;
   }
 
+  if (key === "textbloc") {
+    const html = String(layout.text ?? "");
+    if (!html) return "";
+    const cls = layout.persotext ? "layout-text layout-text--perso" : "layout-text";
+    return `<div class="${cls}">${html}</div>`;
+  }
+
+  if (key === "paragraphetitle") {
+    const name = plainText(pickField(layout, ["paragraphename", "paragrapheName", "paragraphName"]));
+    return name ? `<div class="layout-paragraph-title">${esc(name)}</div>` : "";
+  }
+
+  if (key === "videosolo") {
+    const ytId = youtubeId(layout.videolink);
+    const embed = ytId
+      ? `
+        <div class="layout-video__wrapper">
+          <div class="layout-video__facade" data-yt-id="${esc(ytId)}">
+            <img
+              class="layout-video__thumb"
+              data-yt-id="${esc(ytId)}"
+              src="https://img.youtube.com/vi/${esc(ytId)}/sddefault.jpg"
+              alt=""
+              loading="lazy"
+            />
+            <button class="layout-video__play" type="button" aria-label="Lire la vidéo"></button>
+          </div>
+        </div>`
+      : "";
+    const title = layout.displayvideotitle && layout.videotitle
+      ? `<p class="layout-video__heading">${esc(layout.videotitle)}</p>`
+      : "";
+    const text = layout.displayvideotext && layout.videotext
+      ? `<p class="layout-video__text">${esc(layout.videotext)}</p>`
+      : "";
+
+    return `<div class="layout-video">${title}${embed}${text}</div>`;
+  }
+
+  if (key === "imagegallerie") {
+    const gallery = pickField(layout, ["gallerie", "galerie", "Gallerie", "Galerie"]);
+    const items = Array.isArray(gallery) ? gallery : [];
+    const shouldBalanceCanvas = items.length > 1 && (items.length % 2 === 1);
+    const canvasClass = shouldBalanceCanvas ? " img-gallerie-canvas--balanced" : "";
+    const imagesHtml = items
+      .map((item, idx) => {
+        const url = imageUrl(item);
+        if (!url) return "";
+        return `<div class="img-gallerie-canvas__item${idx === 0 ? " img-gallerie-canvas__item--featured" : ""}" data-idx="${idx}"><img src="${esc(url)}" alt="Image ${idx + 1}" loading="lazy" /></div>`;
+      })
+      .join("");
+
+    if (!imagesHtml) return "";
+
+    return `
+      <div class="layout-image-gallerie layout-image-gallerie--canvas">
+        <div class="img-gallerie-canvas${canvasClass}">${imagesHtml}</div>
+      </div>`;
+  }
+
+  if (key === "audiofile") {
+    if (!layout.audiofile) return "";
+    const title = layout.audiotitle ? `<p class="layout-audio__title">${esc(layout.audiotitle)}</p>` : "";
+    return `
+      <div class="layout-audio">
+        ${title}
+        <audio class="layout-audio__player" controls preload="metadata">
+          <source src="${esc(layout.audiofile)}" type="audio/mpeg">
+        </audio>
+      </div>`;
+  }
+
+  if (key === "iframe") {
+    const src = extractIframeSrc(layout.iframe);
+    if (!src) return "";
+    return `
+      <div class="layout-iframe">
+        <div class="layout-iframe__wrapper">
+          <iframe src="${esc(src)}" allowfullscreen scrolling="no" loading="lazy"></iframe>
+        </div>
+      </div>`;
+  }
+
   return "";
+}
+
+function renderSectionSubsections(host, subsections) {
+  if (!host || !Array.isArray(subsections) || !subsections.length) return;
+
+  host.classList.add("section-inner--subsections");
+
+  const hasNav = subsections.length > 1;
+  const navHtml = hasNav
+    ? `<nav class="section-subsections__nav" aria-label="Sous-sections">${subsections.map((sub, idx) => `<button class="section-subsections__item${idx === 0 ? " is-active" : ""}" type="button" data-subsection-index="${idx}">${esc(sub.title)}</button>`).join("")}</nav>`
+    : "";
+
+  host.innerHTML = `
+    <div class="section-subsections${hasNav ? " has-nav" : ""}">
+      ${navHtml}
+      <div class="section-subsections__content js-section-subsections-scroll"></div>
+    </div>`;
+
+  const content = host.querySelector(".section-subsections__content");
+  const buttons = host.querySelectorAll(".section-subsections__item");
+
+  const renderSubsectionAt = (index) => {
+    const current = subsections[index];
+    if (!content || !current) return;
+
+    const showTitle = current.showTitle !== false;
+    const titleText = current.title || "";
+    const titleHtml = showTitle && titleText
+      ? `<div class="section-subsections__title-block"><div class="section-subsections__title-wrap">${arrowSpan("right")}<h2 class="section-subsections__title">${esc(titleText)}</h2>${arrowSpan("left")}</div>${current.showSubtitle && current.subtitle ? `<p class="section-subsections__subtitle">${esc(current.subtitle)}</p>` : ""}</div>`
+      : "";
+
+    content.innerHTML = titleHtml + current.layouts.map(renderSectionLayout).join("");
+
+    // Align spacing behavior with paragraph titles: the element before a title
+    // yields its bottom margin so only the title spacing drives the gap.
+    content.querySelectorAll(".layout-paragraph-title, .section-builder-inner-title").forEach((el) => {
+      if (el.previousElementSibling) {
+        el.previousElementSibling.style.marginBottom = "0";
+      }
+    });
+
+    window.dispatchEvent(new CustomEvent("secondary-scroll:refresh"));
+  };
+
+  buttons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const index = Number(button.dataset.subsectionIndex ?? 0);
+      buttons.forEach((btn) => btn.classList.remove("is-active"));
+      button.classList.add("is-active");
+      renderSubsectionAt(index);
+    });
+  });
+
+  renderSubsectionAt(0);
 }
 
 function bindSectionScrollLinks() {
@@ -344,6 +549,13 @@ async function hydrateMainSections() {
     }
 
     if (!host) return;
+
+    const sectionSubsections = parseSectionSubsections(section.builder);
+
+    if (sectionSubsections.length > 0) {
+      renderSectionSubsections(host, sectionSubsections);
+      return;
+    }
 
     const html = flattenLayouts(section.builder).map(renderSectionLayout).join("");
     if (html) host.innerHTML = `<div class="section-builder-stack">${html}</div>`;
@@ -404,6 +616,7 @@ function openPageOverlay(trigger) {
   overlay.setAttribute("aria-hidden", "false");
   setPageOverlayLoading(fallbackTitle);
   syncPageOverlayUrl(request);
+  window.dispatchEvent(new CustomEvent("secondary-scroll:refresh"));
 
   getOverlayPage(request)
     .then((page) => setPageOverlayContent(page, fallbackTitle))
@@ -417,6 +630,7 @@ function closePageOverlay() {
   overlay.classList.remove("is-visible");
   overlay.setAttribute("aria-hidden", "true");
   restorePageOverlayUrl();
+  window.dispatchEvent(new CustomEvent("secondary-scroll:refresh"));
 }
 
 function bindPageOverlay() {
@@ -496,7 +710,11 @@ function setCurrentYear() {
 }
 
 setCurrentYear();
-hydrateMainSections().catch(() => {});
+hydrateMainSections()
+  .then(() => {
+    window.dispatchEvent(new CustomEvent("secondary-scroll:refresh"));
+  })
+  .catch(() => {});
 hydrateSocialLinks().catch(() => {});
 bindPageOverlay();
 bindSectionScrollLinks();
