@@ -1,4 +1,5 @@
 import { config } from "./config.js";
+import { requestJsonAcrossRoots } from "./rest-client.js";
 
 function stripHtml(html) {
   const template = document.createElement("template");
@@ -6,51 +7,13 @@ function stripHtml(html) {
   return template.content.textContent?.trim() || "";
 }
 
-function getApiRoots() {
-  const roots = Array.isArray(config.apiRoots) && config.apiRoots.length
-    ? config.apiRoots
-    : [config.apiRoot];
-
-  return [...new Set(roots.filter(Boolean))];
-}
-
-async function requestJson(pathname, params = {}) {
-  const roots = getApiRoots();
-  const failures = [];
-
-  for (const root of roots) {
-    const url = new URL(`${root}${pathname}`);
-    Object.entries(params).forEach(([key, value]) => {
-      url.searchParams.set(key, String(value));
-    });
-
-    try {
-      const response = await fetch(url, {
-        headers: { Accept: "application/json" }
-      });
-
-      if (!response.ok) {
-        failures.push(`${url.origin} -> HTTP ${response.status}`);
-        continue;
-      }
-
-      return response.json();
-    } catch (error) {
-      const reason = error instanceof Error ? error.message : "Network error";
-      failures.push(`${url.origin} -> ${reason}`);
-    }
-  }
-
-  throw new Error(
-    `Unable to reach WordPress API. Tried: ${failures.join(" | ") || roots.join(", ")}`
-  );
-}
-
 export async function fetchThematiques() {
-  const items = await requestJson("/wp/v2/thematiques", {
-    per_page: 100,
-    orderby: "menu_order",
-    order: "asc"
+  const items = await requestJsonAcrossRoots("/wp/v2/thematiques", {
+    params: {
+      per_page: 100,
+      orderby: "menu_order",
+      order: "asc"
+    }
   });
 
   return items.map(item => ({
@@ -71,9 +34,11 @@ export async function fetchThematiques() {
 }
 
 export async function fetchLatestPosts() {
-  const posts = await requestJson("/wp/v2/posts", {
-    per_page: config.postsPerPage,
-    _embed: 1
+  const posts = await requestJsonAcrossRoots("/wp/v2/posts", {
+    params: {
+      per_page: config.postsPerPage,
+      _embed: 1
+    }
   });
 
   return posts.map((post) => ({
@@ -89,10 +54,12 @@ export async function fetchLatestPosts() {
 }
 
 export async function fetchSections() {
-  const items = await requestJson("/wp/v2/sections", {
-    per_page: 100,
-    orderby: "menu_order",
-    order: "asc"
+  const items = await requestJsonAcrossRoots("/wp/v2/sections", {
+    params: {
+      per_page: 100,
+      orderby: "menu_order",
+      order: "asc"
+    }
   });
 
   return items.map((item) => ({
@@ -112,13 +79,16 @@ export async function fetchPage(options = {}) {
   } = options;
 
   if (id) {
-    const item = await requestJson(`/wp/v2/pages/${id}`);
+    const item = await requestJsonAcrossRoots(`/wp/v2/pages/${id}`);
 
     return {
       id: item.id,
       slug: item.slug || "",
       title: stripHtml(item.title?.rendered ?? ""),
-      content: item.content?.rendered ?? ""
+      content: item.content?.rendered ?? "",
+      builder: Array.isArray(item.builder)
+        ? item.builder
+        : (Array.isArray(item.acf?.builder) ? item.acf.builder : [])
     };
   }
 
@@ -126,7 +96,7 @@ export async function fetchPage(options = {}) {
   if (slug) params.slug = slug;
   if (search) params.search = search;
 
-  const items = await requestJson("/wp/v2/pages", params);
+  const items = await requestJsonAcrossRoots("/wp/v2/pages", { params });
 
   const norm = (value) => stripHtml(value ?? "")
     .normalize("NFD")
@@ -145,13 +115,16 @@ export async function fetchPage(options = {}) {
     id: match.id,
     slug: match.slug || "",
     title: stripHtml(match.title?.rendered ?? ""),
-    content: match.content?.rendered ?? ""
+    content: match.content?.rendered ?? "",
+    builder: Array.isArray(match.builder)
+      ? match.builder
+      : (Array.isArray(match.acf?.builder) ? match.acf.builder : [])
   };
 }
 
 export async function fetchOptions() {
   try {
-    const data = await requestJson("/wp/v2/options");
+    const data = await requestJsonAcrossRoots("/wp/v2/options");
     return {
       facebook_url: data.facebook_url || "https://www.facebook.com/Mundaneum.officiel/",
       X_url: data.X_url || "https://x.com/mundaneumasbl?lang=fr",

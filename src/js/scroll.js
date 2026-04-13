@@ -71,6 +71,10 @@ function isOverlayOpen() {
     || !!document.getElementById('page-overlay')?.classList.contains('is-visible');
 }
 
+function isMainOverlayLockActive() {
+  return document.body.classList.contains('is-main-overlay-open');
+}
+
 function applyTransform(idx, easing) {
   track.style.transition = easing;
   track.style.transform  = `translateY(${-idx * sectionH()}px)`;
@@ -187,6 +191,13 @@ window.addEventListener('scroll:goto', (e) => {
 });
 
 window.addEventListener('wheel', (e) => {
+  if (isMainOverlayLockActive()) {
+    e.preventDefault();
+    accumulatedDelta = 0;
+    clearTimeout(snapTimer);
+    return;
+  }
+
   const routedToSecondary = typeof window.__routeWheelToSecondaryScroll === 'function'
     ? window.__routeWheelToSecondaryScroll(e)
     : false;
@@ -237,7 +248,7 @@ window.addEventListener('touchstart', (e) => {
 }, { passive: true });
 
 window.addEventListener('touchend', (e) => {
-  if (isAnimating || isOverlayOpen()) return;
+  if (isAnimating || isOverlayOpen() || isMainOverlayLockActive()) return;
   const delta = touchStartY - e.changedTouches[0].clientY;
   if (Math.abs(delta) >= 50) {
     goTo(currentIndex + (delta > 0 ? 1 : -1));
@@ -245,6 +256,13 @@ window.addEventListener('touchend', (e) => {
 }, { passive: true });
 
 window.addEventListener('keydown', (e) => {
+  if (isMainOverlayLockActive()) {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'PageDown' || e.key === 'PageUp' || e.key === 'Home' || e.key === 'End' || e.key === ' ') {
+      e.preventDefault();
+    }
+    return;
+  }
+
   if (isOverlayOpen()) {
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'PageDown' || e.key === 'PageUp' || e.key === 'Home' || e.key === 'End' || e.key === ' ') {
       e.preventDefault();

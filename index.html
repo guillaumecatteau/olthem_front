@@ -73,23 +73,183 @@
         <!-- Right: Connexion + Search -->
         <div class="site-header__right">
           <div class="header-actions">
-            <a class="icon-link" href="#connexion" aria-label="Se connecter">
-              <img
-                class="icon-link__icon"
-                src="./assets/images/icons/icon_connexion.svg"
-                alt=""
-                aria-hidden="true"
-              />
-              <span class="icon-link__label">Connexion</span>
-            </a>
-            <div class="site-search">
+            <div class="header-actions__top-row">
+              <div class="header-actions__auth-group">
+                <a
+                  class="icon-link header-actions__connexion-trigger"
+                  href="#connexion"
+                  aria-label="Se connecter"
+                >
+                  <img
+                    class="icon-link__icon"
+                    src="./assets/images/icons/icon_Connexion.svg"
+                    alt=""
+                    aria-hidden="true"
+                  />
+                  <span class="icon-link__label">Connexion</span>
+                </a>
+
+                <div
+                  class="header-user-actions"
+                  id="header-user-actions"
+                  hidden
+                >
+                  <button
+                    class="icon-link icon-link--plain-case"
+                    id="header-account-link"
+                    type="button"
+                    data-page-overlay="title:Compte utilisateur|search:compte utilisateur|back:Retour au site"
+                    aria-label="Ouvrir le compte utilisateur"
+                  >
+                    <img
+                      class="icon-link__icon"
+                      id="header-user-icon"
+                      src="./assets/images/icons/icon_User.svg"
+                      alt=""
+                      aria-hidden="true"
+                    />
+                    <span class="icon-link__label" id="header-user-label"
+                      >Compte utilisateur</span
+                    >
+                  </button>
+
+                  <button
+                    class="icon-link"
+                    id="header-logout-link"
+                    type="button"
+                    aria-label="Se déconnecter"
+                  >
+                    <img
+                      class="icon-link__icon"
+                      src="./assets/images/icons/icon_Deconnexion.svg"
+                      alt=""
+                      aria-hidden="true"
+                    />
+                    <span class="icon-link__label">Déconnexion</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="header-search" id="header-search">
+                <button
+                  class="header-search__toggle"
+                  id="header-search-toggle"
+                  type="button"
+                  aria-label="Ouvrir la recherche"
+                  aria-expanded="false"
+                  aria-controls="header-search-panel"
+                >
+                  <img
+                    class="header-search__icon"
+                    src="./assets/images/icons/icon_Recherche.svg"
+                    alt=""
+                    aria-hidden="true"
+                  />
+                </button>
+              </div>
+            </div>
+
+            <div class="site-search" id="header-search-panel" aria-hidden="true">
               <input
                 class="site-search__input"
+                id="header-search-input"
                 type="search"
                 placeholder="Rechercher…"
                 aria-label="Rechercher dans le site"
               />
             </div>
+
+            <form
+              class="header-auth"
+              id="header-auth"
+              autocomplete="on"
+              novalidate
+            >
+              <div class="header-auth__line header-auth__line--fields">
+                <div class="header-auth__field-block header-auth__field-block--email">
+                  <input
+                    class="header-auth__field"
+                    id="header-auth-email"
+                    type="email"
+                    inputmode="email"
+                    placeholder="Adresse mail"
+                    aria-label="Adresse mail"
+                    required
+                  />
+                  <p
+                    class="header-auth__error"
+                    id="header-auth-email-error"
+                    aria-live="polite"
+                  ></p>
+                </div>
+
+                <div class="header-auth__field-block header-auth__field-block--password">
+                  <input
+                    class="header-auth__field"
+                    id="header-auth-password"
+                    type="password"
+                    placeholder="Mot de passe"
+                    aria-label="Mot de passe"
+                    required
+                  />
+                  <button
+                    class="header-auth__password-toggle"
+                    id="header-auth-password-toggle"
+                    type="button"
+                    aria-label="Afficher le mot de passe"
+                    aria-pressed="false"
+                  >
+                    <img
+                      class="header-auth__password-toggle-icon"
+                      id="header-auth-password-toggle-icon"
+                      src="./assets/images/icons/icon_EyeClosed.svg"
+                      alt=""
+                      aria-hidden="true"
+                    />
+                  </button>
+                  <p
+                    class="header-auth__error"
+                    id="header-auth-password-error"
+                    aria-live="polite"
+                  ></p>
+                </div>
+
+                <button
+                  class="header-auth__submit"
+                  id="header-auth-submit"
+                  type="submit"
+                  aria-label="Se connecter"
+                  disabled
+                >
+                  <img
+                    src="./assets/images/icons/icon_Connexion.svg"
+                    alt=""
+                    aria-hidden="true"
+                  />
+                </button>
+              </div>
+
+              <div class="header-auth__line">
+                <button
+                  class="header-auth__text-link"
+                  type="button"
+                  data-page-overlay="title:Récupération de mot de passe|search:recuperation de mot de passe|back:Retour au site"
+                >
+                  Mot de passe oublié ?
+                </button>
+              </div>
+
+              <div class="header-auth__line header-auth__line--signup">
+                <span class="header-auth__text-static">Pas encore de compte ?</span>
+                <button
+                  class="header-auth__text-link header-auth__text-link--uppercase"
+                  type="button"
+                  data-page-overlay="title:Inscription|search:inscription|logo:icon_InfoHead_white|back:Retour au site"
+                >
+                  Inscrivez-vous
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       </div>
