@@ -570,6 +570,7 @@
     }
 
     &:disabled {
+      background: $grey-dark;
       opacity: 0.55;
       cursor: default;
     }
@@ -589,6 +590,10 @@
         background: $white;
         color: $dark;
         border-color: transparent;
+      }
+
+      &:disabled {
+        background: $grey-dark;
       }
     }
   }

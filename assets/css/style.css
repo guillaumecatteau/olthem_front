@@ -1066,6 +1066,7 @@ h2 {
   border-color: transparent;
 }
 .layout-formbuilder__submit:disabled {
+  background: #20202A;
   opacity: 0.55;
   cursor: default;
 }
@@ -1083,6 +1084,9 @@ h2 {
   background: #FFFFFF;
   color: #00000C;
   border-color: transparent;
+}
+.layout-formbuilder__submit.buttonRound:disabled {
+  background: #20202A;
 }
 .layout-formbuilder__message {
   margin: 0;
@@ -2319,6 +2323,9 @@ h2 {
   font-weight: 300;
 }
 .page-overlay__token-username {
+  font-weight: 700;
+}
+.page-overlay__token-alert {
   font-weight: 700;
 }
 .page-overlay__token-brand {

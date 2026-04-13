@@ -645,6 +645,19 @@ function getFormBuilderRegistrationUsername(values = {}, fallback = "") {
   return plainText(entry[1] ?? "");
 }
 
+function getRegistrationAlertMessage(error) {
+  const payloadMessage = String(error?.payload?.message || "");
+  const payloadCode = String(error?.payload?.code || "");
+  const genericMessage = String(error?.message || "");
+  const haystack = `${payloadMessage} ${payloadCode} ${genericMessage}`.toLowerCase();
+
+  if (/(email|mail|adresse).*(deja|déjà|exist)|exist.*(email|mail|adresse)|existing_user_email|email_exists|already.*(exist|registered)/.test(haystack)) {
+    return "L'adresse email existe déjà !";
+  }
+
+  return "Problème technique";
+}
+
 function hydrateFormBuilderFromDraft(form) {
   const shouldRestore = isFormBuilderRetryMode();
 
@@ -828,8 +841,9 @@ function bindFormBuilderSubmissions() {
     message.classList.remove("layout-formbuilder__message--error", "layout-formbuilder__message--success");
     if (submitButton instanceof HTMLButtonElement) submitButton.disabled = true;
 
+    const isRegistration = String(payload.process ?? "").toLowerCase() === "inscription";
+
     try {
-      const isRegistration = String(payload.process ?? "").toLowerCase() === "inscription";
       if (isRegistration) {
         const remember = getFormBuilderRememberChoice(payload.values);
         const credentials = getFormBuilderAuthCredentials(form);
@@ -888,6 +902,24 @@ function bindFormBuilderSubmissions() {
       const apiMessage = typeof error?.payload?.message === "string"
         ? error.payload.message
         : (error instanceof Error ? error.message : "Erreur lors de l'envoi.");
+
+      if (isRegistration) {
+        const alertMessage = getRegistrationAlertMessage(error);
+        pageOverlayLastAlertMessage = alertMessage;
+
+        openPageOverlayWithRequest({
+          exactTitle: "Inscription refusée",
+          search: "Inscription refusée",
+          backLabel: "Retour à l'inscription",
+          overlayMode: "overlayTotal",
+          username: pageOverlayLastRegisteredUsername,
+          alert: alertMessage,
+          inlineReturnToInscription: true,
+          logo: defaultOverlayLogo({ exactTitle: "Inscription" })
+        }, "Inscription refusée");
+
+        return;
+      }
 
       message.textContent = apiMessage;
       message.classList.add("layout-formbuilder__message--error");
@@ -976,6 +1008,7 @@ let pageOverlayPreviousState = null;
 let pageOverlayCurrentRequest = null;
 let pageOverlayBackLabel = "Retour au site";
 let pageOverlayLastRegisteredUsername = "";
+let pageOverlayLastAlertMessage = "";
 const SCROLL_SECTIONS = new Set([
   "accueil",
   "initiative",
@@ -1109,9 +1142,17 @@ function overlayUsernameFromRequest(request = {}) {
   return pageOverlayLastRegisteredUsername || "";
 }
 
+function overlayAlertFromRequest(request = {}) {
+  if (request && typeof request.alert === "string" && request.alert.trim()) {
+    return request.alert.trim();
+  }
+  return pageOverlayLastAlertMessage || "";
+}
+
 function applyOverlayDynamicTokens(rawHtml, request = {}) {
   let html = String(rawHtml ?? "");
   const username = overlayUsernameFromRequest(request);
+  const alert = overlayAlertFromRequest(request);
   const apostrophe = "(?:'|’|&#39;|&#x27;|&apos;|&rsquo;|&#8217;)";
   const space = "(?:\\s|&nbsp;|\\u00A0)+";
   const brandPattern = new RegExp(
@@ -1123,6 +1164,10 @@ function applyOverlayDynamicTokens(rawHtml, request = {}) {
     html = html.replace(/\[USERNAME\]/g, `<strong class="page-overlay__token-username">${esc(username)}</strong>`);
   }
 
+  if (alert) {
+    html = html.replace(/\[ALERT\]/g, `<strong class="page-overlay__token-alert">${esc(alert)}</strong>`);
+  }
+
   html = html.replace(brandPattern, (match) => {
     return `<strong class="page-overlay__token-brand">${match}</strong>`;
   });
@@ -1130,9 +1175,21 @@ function applyOverlayDynamicTokens(rawHtml, request = {}) {
   return html;
 }
 
-function pageOverlayInlineCloseHtml(label = "Retour au site") {
+function pageOverlayInlineCloseHtml(label = "Retour au site", options = {}) {
+  const attrs = [];
+  if (options.openRequest && typeof options.openRequest === "object") {
+    const openRequest = options.openRequest;
+    if (openRequest.slug) attrs.push(`data-overlay-open-slug="${esc(openRequest.slug)}"`);
+    if (openRequest.search) attrs.push(`data-overlay-open-search="${esc(openRequest.search)}"`);
+    if (openRequest.exactTitle) attrs.push(`data-overlay-open-title="${esc(openRequest.exactTitle)}"`);
+    if (openRequest.overlayMode) attrs.push(`data-overlay-open-mode="${esc(openRequest.overlayMode)}"`);
+    if (openRequest.backLabel) attrs.push(`data-overlay-open-back="${esc(openRequest.backLabel)}"`);
+    if (openRequest.logo) attrs.push(`data-overlay-open-logo="${esc(openRequest.logo)}"`);
+  }
+
+  const extraAttrs = attrs.length ? ` ${attrs.join(" ")}` : "";
   return `
-    <button class="icon-link page-overlay__retour-inline" type="button" aria-label="${esc(label)}">
+    <button class="icon-link page-overlay__retour-inline" type="button" aria-label="${esc(label)}"${extraAttrs}>
       <img class="icon-link__icon" src="./assets/images/icons/icon_Retour.svg" alt="" aria-hidden="true" />
       <span class="icon-link__label">${esc(label)}</span>
     </button>`;
@@ -1543,8 +1600,19 @@ function setPageOverlayContent(page, fallbackTitle = "Page", fallbackLogo = null
 
   if (!page) {
     const heading = overlayHeading(fallbackTitle, fallbackLogo);
+    const inlineOptions = (pageOverlayCurrentRequest || {}).inlineReturnToInscription
+      ? {
+          openRequest: {
+            exactTitle: "Inscription",
+            search: "Inscription",
+            overlayMode: "overlayTotal",
+            backLabel: "Retour au site",
+            logo: defaultOverlayLogo({ exactTitle: "Inscription" })
+          }
+        }
+      : {};
     const inlineCloseHtml = isOverlayTotalRequest(pageOverlayCurrentRequest || {})
-      ? pageOverlayInlineCloseHtml(pageOverlayBackLabel)
+      ? pageOverlayInlineCloseHtml(pageOverlayBackLabel, inlineOptions)
       : "";
     content.innerHTML = `
       ${heading}
@@ -1563,8 +1631,19 @@ function setPageOverlayContent(page, fallbackTitle = "Page", fallbackLogo = null
   const builderSection = builderHtml
     ? `<div class="section-builder-stack section-builder-stack--overlay">${builderHtml}</div>`
     : "";
+  const inlineOptions = (pageOverlayCurrentRequest || {}).inlineReturnToInscription
+    ? {
+        openRequest: {
+          exactTitle: "Inscription",
+          search: "Inscription",
+          overlayMode: "overlayTotal",
+          backLabel: "Retour au site",
+          logo: defaultOverlayLogo({ exactTitle: "Inscription" })
+        }
+      }
+    : {};
   const inlineCloseHtml = isOverlayTotalRequest(pageOverlayCurrentRequest || {})
-    ? pageOverlayInlineCloseHtml(pageOverlayBackLabel)
+    ? pageOverlayInlineCloseHtml(pageOverlayBackLabel, inlineOptions)
     : "";
   const bodyHtml = applyOverlayDynamicTokens(page.content || "", pageOverlayCurrentRequest || {});
   const hasBodyHtml = !!plainText(bodyHtml);
@@ -1730,6 +1809,22 @@ function bindPageOverlay() {
       : null;
     if (!button) return;
     event.preventDefault();
+
+    const nextRequest = {
+      slug: button.getAttribute("data-overlay-open-slug") || null,
+      search: button.getAttribute("data-overlay-open-search") || null,
+      exactTitle: button.getAttribute("data-overlay-open-title") || null,
+      overlayMode: button.getAttribute("data-overlay-open-mode") || null,
+      backLabel: button.getAttribute("data-overlay-open-back") || null,
+      logo: button.getAttribute("data-overlay-open-logo") || null
+    };
+
+    const shouldOpen = !!(nextRequest.slug || nextRequest.search || nextRequest.exactTitle);
+    if (shouldOpen) {
+      openPageOverlayWithRequest(nextRequest, nextRequest.exactTitle || nextRequest.search || "Page");
+      return;
+    }
+
     closePageOverlay();
   });
 
