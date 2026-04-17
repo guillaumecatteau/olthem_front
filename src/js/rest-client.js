@@ -25,7 +25,8 @@ export async function requestJsonAcrossRoots(pathname, options = {}) {
     body = null,
     headers = {},
     token = null,
-    failFastOnClientError = false
+    failFastOnClientError = false,
+    failFastOn404 = false
   } = options;
 
   const roots = getApiRoots();
@@ -61,7 +62,11 @@ export async function requestJsonAcrossRoots(pathname, options = {}) {
       if (!response.ok) {
         const message = payload?.message || `HTTP ${response.status}`;
 
-        if (failFastOnClientError && response.status >= 400 && response.status < 500 && response.status !== 404) {
+        const isFastFail =
+          (failFastOn404 && response.status === 404) ||
+          (failFastOnClientError && response.status >= 400 && response.status < 500 && response.status !== 404);
+
+        if (isFastFail) {
           throw new RestApiError(message, {
             status: response.status,
             payload,

@@ -5,17 +5,6 @@ const AUTH_USER_KEY = "olthem.auth.user";
 const AUTH_REMEMBER_PREFS_KEY = "olthem.auth.remember.preferences";
 const USER_ICON_PATH = "./assets/images/icons/icon_User.svg";
 const ADMIN_ICON_PATH = "./assets/images/icons/icon_Admin.svg";
-const EYE_CLOSED_ICON_PATH = "./assets/images/icons/icon_EyeClosed.svg";
-const EYE_OPEN_ICON_PATH = "./assets/images/icons/icon_EyeOpen.svg";
-
-function isValidEmail(value) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value ?? "").trim());
-}
-
-function isValidPassword(value) {
-  const raw = String(value ?? "");
-  return /^(?=.*[A-Z])(?=.*\d).{8,}$/.test(raw);
-}
 
 function normalizeUser(user) {
   if (!user || typeof user !== "object") return null;
@@ -131,11 +120,23 @@ function clearAuthSession() {
   });
 }
 
-function getStoredToken() {
+export function getStoredToken() {
   try {
     return getStorage("local")?.getItem(AUTH_TOKEN_KEY)
       || getStorage("session")?.getItem(AUTH_TOKEN_KEY)
       || null;
+  } catch {
+    return null;
+  }
+}
+
+export function getStoredUser() {
+  try {
+    const raw = getStorage("local")?.getItem(AUTH_USER_KEY)
+      || getStorage("session")?.getItem(AUTH_USER_KEY)
+      || null;
+    if (!raw) return null;
+    return JSON.parse(raw);
   } catch {
     return null;
   }
@@ -187,10 +188,12 @@ export async function registerAuthUser(payload) {
   });
 }
 
-export async function loginAuthUser({ email, password }) {
+export async function loginAuthUser({ email, password, remember = null }) {
+  const body = { email, password };
+  if (typeof remember === "boolean") body.remember = remember;
   return requestAuth("login", {
     method: "POST",
-    body: { email, password }
+    body
   });
 }
 
@@ -208,6 +211,20 @@ export async function logoutAuthUser(token) {
   });
 }
 
+export async function forgotPasswordRequest(email) {
+  return requestAuth("forgot-password", {
+    method: "POST",
+    body: { email }
+  });
+}
+
+export async function resetPasswordRequest(token, password) {
+  return requestAuth("reset-password", {
+    method: "POST",
+    body: { token, password }
+  });
+}
+
 export function initHeaderAuth() {
   const right = document.querySelector(".site-header__right");
   const trigger = document.querySelector(".header-actions__connexion-trigger");
@@ -216,19 +233,11 @@ export function initHeaderAuth() {
   const userIcon = document.getElementById("header-user-icon");
   const userLabel = document.getElementById("header-user-label");
   const logoutLink = document.getElementById("header-logout-link");
-  const form = document.getElementById("header-auth");
-  const emailInput = document.getElementById("header-auth-email");
-  const passwordInput = document.getElementById("header-auth-password");
-  const submitButton = document.getElementById("header-auth-submit");
-  const passwordToggle = document.getElementById("header-auth-password-toggle");
-  const passwordToggleIcon = document.getElementById("header-auth-password-toggle-icon");
-  const emailError = document.getElementById("header-auth-email-error");
-  const passwordError = document.getElementById("header-auth-password-error");
   const searchToggle = document.getElementById("header-search-toggle");
   const searchPanel = document.getElementById("header-search-panel");
   const searchInput = document.getElementById("header-search-input");
 
-  if (!right || !trigger || !form || !emailInput || !passwordInput || !submitButton || !passwordToggle || !passwordToggleIcon || !emailError || !passwordError || !userActions || !userIcon || !userLabel || !logoutLink || !searchToggle || !searchPanel || !searchInput) {
+  if (!right || !trigger || !userActions || !userIcon || !userLabel || !logoutLink || !searchToggle || !searchPanel || !searchInput) {
     return;
   }
 
@@ -261,6 +270,10 @@ export function initHeaderAuth() {
   }
 
   function setSearchOpen(isOpen) {
+    // Move focus out before aria-hidden to avoid accessibility warning
+    if (!isOpen && searchPanel.contains(document.activeElement)) {
+      document.activeElement.blur();
+    }
     right.classList.toggle("is-search-open", isOpen);
     searchToggle.setAttribute("aria-expanded", String(isOpen));
     searchPanel.setAttribute("aria-hidden", String(!isOpen));
@@ -276,100 +289,6 @@ export function initHeaderAuth() {
     setSearchOpen(false);
   }
 
-  function setEmailError(message) {
-    emailError.textContent = message;
-  }
-
-  function setPasswordError(message) {
-    passwordError.textContent = message;
-  }
-
-  function clearErrors() {
-    setEmailError("");
-    setPasswordError("");
-  }
-
-  function validateEmailFormat() {
-    const email = emailInput.value.trim();
-
-    if (!email) {
-      setEmailError("");
-      return false;
-    }
-
-    if (!isValidEmail(email)) {
-      setEmailError("Adresse invalide");
-      return false;
-    }
-
-    setEmailError("");
-    return true;
-  }
-
-  function validatePasswordComplexity(showMessage = false) {
-    const password = passwordInput.value;
-
-    if (!password) {
-      setPasswordError("");
-      return false;
-    }
-
-    if (!isValidPassword(password)) {
-      if (showMessage) {
-        setPasswordError("Mot de passe invalide");
-      }
-      return false;
-    }
-
-    setPasswordError("");
-    return true;
-  }
-
-  function inferLoginError(error) {
-    const payloadMessage = String(error?.payload?.message || "").toLowerCase();
-    const payloadCode = String(error?.payload?.code || "").toLowerCase();
-    const generic = String(error?.message || "").toLowerCase();
-    const text = `${payloadMessage} ${payloadCode} ${generic}`;
-
-    if (/(email|adresse|mail|unknown user|user not found|not found)/.test(text)) {
-      return "email";
-    }
-
-    return "password";
-  }
-
-  function setPasswordVisibility(isVisible) {
-    passwordInput.type = isVisible ? "text" : "password";
-    passwordToggle.setAttribute("aria-pressed", String(isVisible));
-    passwordToggle.setAttribute("aria-label", isVisible ? "Masquer le mot de passe" : "Afficher le mot de passe");
-    passwordToggleIcon.setAttribute("src", isVisible ? EYE_OPEN_ICON_PATH : EYE_CLOSED_ICON_PATH);
-  }
-
-  function resetForm() {
-    emailInput.value = "";
-    passwordInput.value = "";
-    clearErrors();
-    setPasswordVisibility(false);
-    updateSubmitState();
-  }
-
-  function updateSubmitState() {
-    const ready = isValidEmail(emailInput.value) && isValidPassword(passwordInput.value);
-    submitButton.disabled = !ready;
-    submitButton.classList.toggle("is-active", ready);
-  }
-
-  function openAuthPanel() {
-    closeSearchPanel();
-    right.classList.add("is-auth-open");
-    emailInput.focus();
-    updateSubmitState();
-  }
-
-  function closeAuthPanel() {
-    right.classList.remove("is-auth-open");
-  }
-
   function _applyGuestState() {
     right.classList.remove("is-authenticated");
     userActions.hidden = true;
@@ -378,8 +297,6 @@ export function initHeaderAuth() {
     userLabel.textContent = "Compte utilisateur";
     closeSearchPanel();
     if (triggerLabel) triggerLabel.textContent = "Connexion";
-    resetForm();
-    closeAuthPanel();
   }
 
   function setGuestState(animated = false) {
@@ -403,10 +320,6 @@ export function initHeaderAuth() {
     userIcon.setAttribute("src", user.isAdmin ? ADMIN_ICON_PATH : USER_ICON_PATH);
     userLabel.textContent = userDisplayLabel(user);
     closeSearchPanel();
-    closeAuthPanel();
-    clearErrors();
-    passwordInput.value = "";
-    updateSubmitState();
   }
 
   async function hydrateCurrentUser() {
@@ -414,6 +327,13 @@ export function initHeaderAuth() {
     if (!token) {
       setGuestState();
       return;
+    }
+
+    // Apply stored user data immediately so the UI reflects auth state
+    // without waiting for the server round-trip.
+    const cachedUser = normalizeUser(getStoredUser());
+    if (cachedUser) {
+      setAuthenticatedState(cachedUser);
     }
 
     try {
@@ -428,35 +348,29 @@ export function initHeaderAuth() {
 
       saveAuthSession({ token, user: payload?.user || user }, { email: user.email });
       setAuthenticatedState(user);
-    } catch {
-      clearAuthSession();
-      setGuestState();
+    } catch (error) {
+      // Only invalidate the session on explicit auth rejection (401 / 403).
+      // Network failures or transient server errors must not log the user out.
+      if (error?.status === 401 || error?.status === 403) {
+        clearAuthSession();
+        setGuestState();
+      }
     }
   }
 
-  trigger.addEventListener("click", (event) => {
-    event.preventDefault();
-    openAuthPanel();
-  });
-
   searchToggle.addEventListener("click", () => {
-    if (right.classList.contains("is-auth-open")) return;
     const nextState = !right.classList.contains("is-search-open");
     setSearchOpen(nextState);
   });
 
-  form.querySelectorAll("[data-page-overlay]").forEach((button) => {
-    if (!(button instanceof HTMLElement)) return;
-
-    button.addEventListener("click", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-
-      const opener = window.__openPageOverlay;
-      if (typeof opener === "function") {
-        opener(button);
-      }
-    });
+  searchInput.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    const q = searchInput.value.trim();
+    if (!q) return;
+    closeSearchPanel();
+    searchInput.value = "";
+    window.dispatchEvent(new CustomEvent("search:query", { detail: { query: q } }));
   });
 
   logoutLink.addEventListener("click", async () => {
@@ -475,11 +389,6 @@ export function initHeaderAuth() {
   });
 
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && right.classList.contains("is-auth-open")) {
-      closeAuthPanel();
-      return;
-    }
-
     if (event.key === "Escape" && right.classList.contains("is-search-open")) {
       closeSearchPanel();
     }
@@ -489,94 +398,12 @@ export function initHeaderAuth() {
     if (!(event.target instanceof Element)) return;
 
     const insideSearch = event.target.closest("#header-search") || event.target.closest("#header-search-panel");
-    const insideAuth = event.target.closest("#header-auth") || event.target.closest(".header-actions__connexion-trigger");
 
     if (!insideSearch && right.classList.contains("is-search-open")) {
       closeSearchPanel();
     }
-
-    if (!insideAuth && !event.target.closest(".site-header__right") && right.classList.contains("is-auth-open")) {
-      closeAuthPanel();
-    }
   });
 
-  emailInput.addEventListener("input", () => {
-    setEmailError("");
-    updateSubmitState();
-  });
-
-  passwordInput.addEventListener("focus", () => {
-    validateEmailFormat();
-  });
-
-  passwordInput.addEventListener("input", () => {
-    validateEmailFormat();
-    setPasswordError("");
-    updateSubmitState();
-  });
-
-  passwordInput.addEventListener("blur", () => {
-    validatePasswordComplexity(true);
-    updateSubmitState();
-  });
-
-  passwordToggle.addEventListener("click", () => {
-    const next = passwordInput.type === "password";
-    setPasswordVisibility(next);
-  });
-
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    clearErrors();
-
-    const email = emailInput.value.trim();
-    const password = passwordInput.value;
-
-    let hasError = false;
-
-    if (!isValidEmail(email)) {
-      setEmailError("Adresse invalide");
-      hasError = true;
-    }
-
-    if (!isValidPassword(password)) {
-      setPasswordError("Mot de passe invalide");
-      hasError = true;
-    }
-
-    if (hasError) {
-      updateSubmitState();
-      return;
-    }
-
-    submitButton.disabled = true;
-
-    try {
-      const payload = await loginAuthUser({ email, password });
-      const user = normalizeUser(payload?.user);
-
-      if (!payload?.token || !user) {
-        throw new Error("Réponse de connexion invalide");
-      }
-
-      saveAuthSession(payload, { email });
-      setAuthenticatedState(user);
-    } catch (error) {
-      const type = inferLoginError(error);
-
-      if (type === "email") {
-        setEmailError("Adresse incorrecte");
-        setPasswordError("");
-      } else {
-        setPasswordError("Mot de passe incorrect");
-      }
-
-      submitButton.disabled = false;
-      updateSubmitState();
-    }
-  });
-
-  setPasswordVisibility(false);
   setGuestState();
   hydrateCurrentUser().catch(() => {});
 

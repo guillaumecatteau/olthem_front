@@ -1,0 +1,273 @@
+﻿{
+    "id":  285,
+    "date":  "2026-04-13T12:38:12",
+    "date_gmt":  "2026-04-13T12:38:12",
+    "guid":  {
+                 "rendered":  "http://localhost:10010/?page_id=285"
+             },
+    "modified":  "2026-04-13T22:38:25",
+    "modified_gmt":  "2026-04-13T22:38:25",
+    "slug":  "creation-datelier",
+    "status":  "publish",
+    "type":  "page",
+    "link":  "http://localhost:10010/creation-datelier/",
+    "title":  {
+                  "rendered":  "Création d\u0026#8217;atelier"
+              },
+    "content":  {
+                    "rendered":  "",
+                    "protected":  false
+                },
+    "excerpt":  {
+                    "rendered":  "",
+                    "protected":  false
+                },
+    "author":  1,
+    "featured_media":  0,
+    "parent":  0,
+    "menu_order":  0,
+    "comment_status":  "closed",
+    "ping_status":  "closed",
+    "template":  "",
+    "meta":  {
+                 "footnotes":  ""
+             },
+    "class_list":  [
+                       "post-285",
+                       "page",
+                       "type-page",
+                       "status-publish",
+                       "hentry"
+                   ],
+    "featured_image_url":  null,
+    "builder":  [
+                    {
+                        "acf_fc_layout":  "title",
+                        "title":  "Organiser un atelier",
+                        "subtitle":  "Remplissez les informations ci-dessous pour organiser un atelier médias au Mundaneum ou dans vos locaux.",
+                        "logo":  true,
+                        "title_logo":  "icon_micro_2"
+                    },
+                    {
+                        "acf_fc_layout":  "formbuilder",
+                        "formconstructor":  [
+                                                {
+                                                    "acf_fc_layout":  "form_settings",
+                                                    "form_type":  "Double",
+                                                    "form_button_label":  "Valider",
+                                                    "form_process":  "Processus enclenché",
+                                                    "linked_table":  "olthem_ateliers",
+                                                    "form_check":  [
+                                                                       {
+                                                                           "check":  [
+
+                                                                                     ],
+                                                                           "linked_colomun":  "displayEvent",
+                                                                           "check_label":  "Autoriser l’affichage de l’évènement sur le site"
+                                                                       },
+                                                                       {
+                                                                           "check":  [
+
+                                                                                     ],
+                                                                           "linked_colomun":  "displayContact",
+                                                                           "check_label":  "Autoriser l’accès au contact depuis le site"
+                                                                       }
+                                                                   ]
+                                                },
+                                                {
+                                                    "acf_fc_layout":  "form_group",
+                                                    "form_group":  [
+                                                                       {
+                                                                           "acf_fc_layout":  "group_title",
+                                                                           "title":  "Où voulez-vous que se déroule l’atelier ?"
+                                                                       },
+                                                                       {
+                                                                           "acf_fc_layout":  "champ_large",
+                                                                           "taille":  "Grand",
+                                                                           "label":  "Nom d’établissement",
+                                                                           "champ_type":  "Text",
+                                                                           "champ_title":  "",
+                                                                           "linked_column":  "etablissement"
+                                                                       },
+                                                                       {
+                                                                           "acf_fc_layout":  "champ_large",
+                                                                           "taille":  "Grand",
+                                                                           "label":  "Adresse",
+                                                                           "champ_type":  "Text",
+                                                                           "champ_title":  "",
+                                                                           "linked_column":  "adresse"
+                                                                       },
+                                                                       {
+                                                                           "acf_fc_layout":  "champ_large",
+                                                                           "taille":  "Petit",
+                                                                           "label":  "Localité",
+                                                                           "champ_type":  "Text",
+                                                                           "champ_title":  "",
+                                                                           "linked_column":  "localite"
+                                                                       },
+                                                                       {
+                                                                           "acf_fc_layout":  "champ_large",
+                                                                           "taille":  "Petit",
+                                                                           "label":  "Code postal",
+                                                                           "champ_type":  "Code postal",
+                                                                           "champ_title":  "",
+                                                                           "linked_column":  "code_postal"
+                                                                       },
+                                                                       {
+                                                                           "acf_fc_layout":  "check_field",
+                                                                           "check":  [
+
+                                                                                     ],
+                                                                           "label":  "Organiser au Mundaneum",
+                                                                           "linked_colomn":  "mundaneum"
+                                                                       }
+                                                                   ]
+                                                },
+                                                {
+                                                    "acf_fc_layout":  "form_group",
+                                                    "form_group":  [
+                                                                       {
+                                                                           "acf_fc_layout":  "group_title",
+                                                                           "title":  "Choisissez une période de préférence"
+                                                                       },
+                                                                       {
+                                                                           "acf_fc_layout":  "date_selector",
+                                                                           "taille":  "Petit",
+                                                                           "label":  "Date de début",
+                                                                           "title":  "",
+                                                                           "linked_column":  "start_date"
+                                                                       },
+                                                                       {
+                                                                           "acf_fc_layout":  "date_selector",
+                                                                           "taille":  "Petit",
+                                                                           "label":  "Date de fin",
+                                                                           "title":  "",
+                                                                           "linked_column":  "end_date"
+                                                                       }
+                                                                   ]
+                                                },
+                                                {
+                                                    "acf_fc_layout":  "form_group",
+                                                    "form_group":  [
+                                                                       {
+                                                                           "acf_fc_layout":  "group_title",
+                                                                           "title":  "Qui sera la personne de contact ?"
+                                                                       },
+                                                                       {
+                                                                           "acf_fc_layout":  "champ_large",
+                                                                           "taille":  "Petit",
+                                                                           "label":  "Nom",
+                                                                           "champ_type":  "Text",
+                                                                           "champ_title":  "",
+                                                                           "linked_column":  "nom"
+                                                                       },
+                                                                       {
+                                                                           "acf_fc_layout":  "champ_large",
+                                                                           "taille":  "Petit",
+                                                                           "label":  "Prénom",
+                                                                           "champ_type":  "Text",
+                                                                           "champ_title":  "",
+                                                                           "linked_column":  "prenom"
+                                                                       },
+                                                                       {
+                                                                           "acf_fc_layout":  "champ_large",
+                                                                           "taille":  "Grand",
+                                                                           "label":  "Adresse mail",
+                                                                           "champ_type":  "Mail",
+                                                                           "champ_title":  "",
+                                                                           "linked_column":  "email"
+                                                                       },
+                                                                       {
+                                                                           "acf_fc_layout":  "champ_large",
+                                                                           "taille":  "Petit",
+                                                                           "label":  "Téléphone",
+                                                                           "champ_type":  "Téléphone",
+                                                                           "champ_title":  "",
+                                                                           "linked_column":  "telephone"
+                                                                       }
+                                                                   ]
+                                                },
+                                                {
+                                                    "acf_fc_layout":  "form_group",
+                                                    "form_group":  [
+                                                                       {
+                                                                           "acf_fc_layout":  "number_selector",
+                                                                           "taille":  "Petit",
+                                                                           "label":  "Nombre",
+                                                                           "title":  "Nombre de participants",
+                                                                           "linked_column":  "nb_participants"
+                                                                       },
+                                                                       {
+                                                                           "acf_fc_layout":  "category_selector",
+                                                                           "taille":  "Petit",
+                                                                           "label":  "Choix",
+                                                                           "title":  "Thématique de l\u0027atelier",
+                                                                           "linked_column":  "thematique_id"
+                                                                       }
+                                                                   ]
+                                                }
+                                            ]
+                    }
+                ],
+    "acf":  [
+
+            ],
+    "_links":  {
+                   "self":  [
+                                {
+                                    "href":  "http://localhost:10010/wp-json/wp/v2/pages/285",
+                                    "targetHints":  {
+                                                        "allow":  [
+                                                                      "GET"
+                                                                  ]
+                                                    }
+                                }
+                            ],
+                   "collection":  [
+                                      {
+                                          "href":  "http://localhost:10010/wp-json/wp/v2/pages"
+                                      }
+                                  ],
+                   "about":  [
+                                 {
+                                     "href":  "http://localhost:10010/wp-json/wp/v2/types/page"
+                                 }
+                             ],
+                   "author":  [
+                                  {
+                                      "embeddable":  true,
+                                      "href":  "http://localhost:10010/wp-json/wp/v2/users/1"
+                                  }
+                              ],
+                   "replies":  [
+                                   {
+                                       "embeddable":  true,
+                                       "href":  "http://localhost:10010/wp-json/wp/v2/comments?post=285"
+                                   }
+                               ],
+                   "version-history":  [
+                                           {
+                                               "count":  7,
+                                               "href":  "http://localhost:10010/wp-json/wp/v2/pages/285/revisions"
+                                           }
+                                       ],
+                   "predecessor-version":  [
+                                               {
+                                                   "id":  292,
+                                                   "href":  "http://localhost:10010/wp-json/wp/v2/pages/285/revisions/292"
+                                               }
+                                           ],
+                   "wp:attachment":  [
+                                         {
+                                             "href":  "http://localhost:10010/wp-json/wp/v2/media?parent=285"
+                                         }
+                                     ],
+                   "curies":  [
+                                  {
+                                      "name":  "wp",
+                                      "href":  "https://api.w.org/{rel}",
+                                      "templated":  true
+                                  }
+                              ]
+               }
+}

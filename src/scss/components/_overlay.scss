@@ -111,6 +111,20 @@
     margin-bottom: 72px;
   }
 
+  &__section-logo-wrap {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 14px;
+    line-height: 0;
+  }
+
+  &__section-title-logo {
+    height: 92px;
+    width: auto;
+    filter: brightness(0) invert(1);
+  }
+
   &__title-wrap {
     display: flex;
     align-items: center;
@@ -308,8 +322,22 @@
       justify-content: flex-start;
     }
 
+    .section-builder-stack--overlay .page-overlay__body--simpletext ~ .layout-formbuilder {
+      margin-top: 32px;
+    }
+
     .section-builder-title--overlay {
       margin-bottom: 48px;
+
+      .section-builder-title__subtitle {
+        margin: 4px 0 0;
+        font-size: 18px;
+        font-weight: $font-weight-regular;
+        color: $grey-light;
+        text-align: center;
+
+        strong { font-weight: $font-weight-regular; color: $grey-light; }
+      }
     }
   }
 
@@ -377,8 +405,13 @@
 
       p,
       li {
+        color: $grey-light;
         font-weight: $font-weight-light;
       }
+    }
+
+    &--simpletext + &--simpletext {
+      margin-top: 32px;
     }
   }
 
@@ -393,6 +426,14 @@
   &__token-brand {
     font-weight: $font-weight-bold;
     text-transform: uppercase;
+  }
+
+  &__token-value {
+    font-weight: $font-weight-bold;
+  }
+
+  &__line-value {
+    color: $white;
   }
 
   .section-builder-stack--overlay > .page-overlay__retour-inline,
@@ -424,6 +465,426 @@
 
   &--fullscreen &__retour-inline {
     display: inline-flex;
+  }
+}
+
+// ─── Search overlay ───────────────────────────────────────────────────────────
+
+.overlay-search {
+  width: 100%;
+
+  &__form {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 48px;
+    border-bottom: 1px solid $grey;
+    padding-bottom: 12px;
+    transition: border-color 0.2s ease;
+
+    &:focus-within {
+      border-color: $white;
+    }
+  }
+
+  &__input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: $white;
+    font-family: $font-family;
+    font-size: 20px;
+    font-weight: $font-weight-light;
+    padding: 4px 0;
+
+    &::placeholder {
+      color: $grey-light;
+    }
+
+    &::-webkit-search-cancel-button {
+      display: none;
+    }
+  }
+
+  &__submit {
+    appearance: none;
+    border: none;
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
+    flex-shrink: 0;
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
+
+    &:hover {
+      opacity: 1;
+    }
+
+    img {
+      height: 18px;
+      width: auto;
+      display: block;
+      filter: brightness(0) invert(1);
+    }
+  }
+
+  &__count {
+    margin: 0 0 24px;
+    font-size: 13px;
+    font-weight: $font-weight-regular;
+    color: $grey-light;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  &__results {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 48px;
+  }
+
+  &__item {
+    border-bottom: 1px solid $grey-dark;
+
+    &:first-child {
+      border-top: 1px solid $grey-dark;
+    }
+  }
+
+  &__link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 8px;
+    margin: 0 -8px;
+    text-decoration: none;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.2s ease;
+
+    &:hover {
+      background: rgba($white, 0.07);
+
+      .overlay-search__item-title {
+        color: $white;
+      }
+    }
+  }
+
+  &__item-title {
+    flex: 1;
+    font-size: 16px;
+    font-weight: $font-weight-regular;
+    color: $white;
+    line-height: 1.4;
+  }
+
+  &__item-type {
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: $font-weight-bold;
+    color: $grey-light;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  &__empty {
+    margin: 0 0 48px;
+    font-size: 16px;
+    font-weight: $font-weight-light;
+    color: $grey-light;
+  }
+
+  &__pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 48px;
+    flex-wrap: wrap;
+  }
+
+  &__page-btn {
+    appearance: none;
+    border: 1px solid $grey;
+    background: transparent;
+    color: $grey-light;
+    font-family: $font-family;
+    font-size: 14px;
+    font-weight: $font-weight-regular;
+    min-width: 36px;
+    height: 36px;
+    padding: 0 8px;
+    cursor: pointer;
+    transition: border-color 0.2s ease, color 0.2s ease;
+
+    &:hover {
+      border-color: $white;
+      color: $white;
+    }
+
+    &[aria-current="page"] {
+      border-color: $white;
+      color: $white;
+      font-weight: $font-weight-bold;
+    }
+  }
+
+  // ─── FormBuilder intégré (cas spécial page Recherche) ──────────────────
+  // Le form est disposé en ligne : champ à gauche, bouton rond à droite.
+  .layout-formbuilder {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+    margin: 0 auto 48px;
+    padding-right: 0;
+
+    .layout-formbuilder__group {
+      flex: 1;
+      min-width: 0;
+    }
+
+    // Masquer le message d'erreur pour corriger la hauteur du champ
+    // (sans lui, __field = 42px = même hauteur que le bouton → alignement parfait)
+    .layout-formbuilder__error {
+      display: none;
+    }
+
+    .layout-formbuilder__actions {
+      flex-shrink: 0;
+      margin: 0;
+    }
+
+    .layout-formbuilder__message {
+      display: none;
+    }
+  }
+
+  // Bouton circulaire : fond gris par défaut, blanc au hover
+  .layout-formbuilder__submit.buttonRound {
+    padding: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: $grey;
+    border-color: $grey;
+    color: $dark;
+
+    &:hover {
+      background: $white;
+      border-color: $white;
+      opacity: 1;
+    }
+
+    &:disabled {
+      opacity: 0.35;
+      cursor: default;
+    }
+
+    img {
+      height: 18px;
+      width: 18px;
+      display: block;
+      filter: none;
+    }
+  }
+}
+
+// ─── Compte utilisateur ────────────────────────────────────────────────────
+
+// Boutons sauvegarder + annuler sur une ligne
+.layout-formbuilder__actions.compte-edit-actions {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+// Mode lecture : liste label / valeur
+.compte-readonly {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+
+  &__list {
+    margin: 0 0 28px;
+    padding: 0;
+  }
+
+  &__row {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    padding: 11px 0;
+    border-bottom: 1px solid rgba($white, 0.1);
+
+    &:first-child { border-top: 1px solid rgba($white, 0.1); }
+  }
+
+  &__label {
+    flex: 0 0 auto;
+    min-width: 196px;
+    margin: 0;
+    font-size: 14px;
+    font-weight: $font-weight-light;
+    color: $grey-light;
+  }
+
+  &__value {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    font-size: 14px;
+    font-weight: $font-weight-regular;
+    color: $white;
+  }
+
+  &__actions {
+    margin-top: 28px;
+    text-align: center;
+  }
+}
+
+.compte-reset-password-link {
+  margin-top: 20px;
+  margin-bottom: 0;
+  font-size: 13px;
+  text-align: center;
+
+  a {
+    color: $grey-light;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    transition: color 0.2s ease;
+
+    &:hover { color: $white; }
+  }
+}
+
+.compte-ateliers {
+  width: 100%;
+  max-width: 600px;
+  margin: 40px auto 0;
+
+  &__title {
+    font-size: 20px;
+    font-weight: $font-weight-bold;
+    color: $grey-light;
+    margin: 0 0 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  &__loading,
+  &__empty,
+  &__error {
+    font-size: 14px;
+    color: $grey-light;
+    margin: 0;
+  }
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  &__item {
+    padding: 16px 20px;
+    border: 1px solid rgba($white, 0.15);
+    border-radius: 8px;
+    background: rgba($white, 0.04);
+
+    &--termine {
+      opacity: 0.55;
+    }
+  }
+
+  &__item-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    gap: 12px;
+  }
+
+  &__thematique {
+    font-size: 15px;
+    font-weight: $font-weight-bold;
+    color: $white;
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__status {
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: $font-weight-bold;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 3px 10px;
+    border-radius: 20px;
+
+    &--attente  { background: rgba($white, 0.15); color: $white; }
+    &--confirme { background: rgba(#4caf50, 0.25); color: #7ed47e; }
+    &--termine  { background: rgba($white, 0.08); color: $grey; }
+  }
+
+  &__item-dates {
+    font-size: 13px;
+    color: $grey-light;
+    margin-bottom: 4px;
+
+    &--confirmed {
+      font-weight: $font-weight-bold;
+      color: #7ed47e;
+    }
+  }
+
+  &__item-lieu {
+    font-size: 13px;
+    color: $grey-light;
+  }
+
+  &__item-note {
+    margin: 10px 0 0;
+    font-size: 12px;
+    color: $grey;
+    font-style: italic;
+  }
+
+  &__item-actions {
+    margin-top: 14px;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  &__edit-btn {
+    height: 36px;
+    padding: 0 24px;
+    font-size: 13px;
+    border: 1px solid rgba($white, 0.25);
+    border-radius: 100px;
+    background: transparent;
+    color: rgba($white, 0.7);
+    font-family: $font-family;
+    font-weight: $font-weight-regular;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+
+    &:hover {
+      border-color: $white;
+      color: $white;
+    }
   }
 }
 
@@ -555,6 +1016,19 @@ body.is-main-overlay-open .site-header {
   box-sizing: border-box;
   margin-bottom: 48px;
   color: $white;
+  font-weight: $font-weight-light;
+
+  :is(p, li, blockquote) {
+    font-weight: $font-weight-light;
+  }
+
+  :is(strong, b) {
+    font-weight: $font-weight-bold;
+  }
+
+  :is(em, i) {
+    font-style: italic;
+  }
 
   // Rythme vertical du contenu WYSIWYG (paragraphes, listes, etc.)
   > * + * {
@@ -690,6 +1164,28 @@ body.is-main-overlay-open .site-header {
     &:disabled {
       opacity: 0.7;
       cursor: wait;
+    }
+  }
+}
+
+.thm-overlay .layout-button-overlay {
+  width: 100%;
+  max-width: $container-max-width;
+  padding: 0 22px;
+  box-sizing: border-box;
+  margin-bottom: 48px;
+  display: flex;
+  justify-content: center;
+
+  .buttonRound {
+    background: var(--thm-color);
+    border-color: transparent;
+    color: $dark;
+
+    &:hover {
+      background: $white;
+      color: var(--thm-color);
+      border-color: var(--thm-color);
     }
   }
 }

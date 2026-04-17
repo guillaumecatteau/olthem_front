@@ -45,3 +45,27 @@
     border-color: var(--thm-color);
   }
 }
+
+// Variante fantôme (bord + texte discret, fond transparent)
+.buttonRound--ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  padding: 0 48px;
+  border: 2px solid rgba($white, 0.35);
+  border-radius: 100px;
+  background: transparent;
+  color: rgba($white, 0.55);
+  font-family: $font-family;
+  font-size: 20px;
+  font-weight: $font-weight-regular;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
+
+  &:hover {
+    border-color: $white;
+    color: $white;
+  }
+}

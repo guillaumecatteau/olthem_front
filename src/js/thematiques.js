@@ -75,10 +75,16 @@ function _parseSubSections(builder) {
     const header  = layouts.find(l => _isLayout(l, 'subsectiontitle'));
     const content = layouts.filter(l => !_isLayout(l, 'subsectiontitle'));
     const imageSolo = _extractImageSoloConfig(header) ?? _extractImageSoloConfig(row);
+    const showTitle = _boolLike(_pickField(header, ['displaytitle', 'displaytile', 'displayTitle', 'displayTile']));
+    const showSubtitle = _boolLike(_pickField(header, ['displaysubtitle', 'displaySubtitle']));
+    const showLogo = _boolLike(_pickField(header, ['logo', 'Logo']));
+    const logoRaw = _pickField(header, ['title logo', 'title_logo', 'titleLogo', 'TitleLogo', 'titlelogo', 'Title Logo']);
     return {
       title:       header?.title    ?? '',
       subtitle:    header?.subtitle ?? '',
-      showSubtitle: !!(header?.displaysubtitle && header?.subtitle),
+      showTitle,
+      showSubtitle,
+      titleLogo: showLogo ? _titleLogoUrl(logoRaw) : null,
       imageSolo,
       layouts:     content,
     };
@@ -112,6 +118,10 @@ function _num(raw, fallback = 0) {
 
 function _bool(raw) {
   return raw === true || raw === 1 || raw === '1' || raw === 'true';
+}
+
+function _boolLike(raw) {
+  return raw === true || raw === 1 || raw === '1' || String(raw ?? '').toLowerCase() === 'true';
 }
 
 function _normKey(raw) {
@@ -173,6 +183,15 @@ function _fileUrl(raw) {
   return null;
 }
 
+function _linkHref(raw) {
+  if (!raw) return null;
+  if (typeof raw === 'string') return raw;
+  if (typeof raw === 'object') {
+    return raw.url ?? raw.link ?? raw.permalink ?? raw.href ?? raw.guid?.rendered ?? null;
+  }
+  return null;
+}
+
 function _fileName(raw, fallbackUrl) {
   if (raw && typeof raw === 'object') {
     if (raw.filename) return String(raw.filename);
@@ -190,6 +209,125 @@ function _fileName(raw, fallbackUrl) {
   }
 
   return 'document.pdf';
+}
+
+function _slugify(value) {
+  return String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function _pageSlugFromHref(rawHref) {
+  if (!rawHref) return null;
+
+  try {
+    const url = new URL(String(rawHref), window.location.origin);
+    const segments = url.pathname.split('/').filter(Boolean);
+    if (!segments.length) return null;
+    const last = segments[segments.length - 1];
+    const slug = _slugify(last);
+    return slug || null;
+  } catch {
+    return null;
+  }
+}
+
+function _titleLogoUrl(raw) {
+  if (raw && typeof raw === 'object') {
+    const objectUrl = _imageUrl(raw);
+    if (objectUrl) return objectUrl;
+  }
+
+  const value = String(raw ?? '').trim();
+  if (!value) return null;
+
+  if (/^(https?:)?\/\//i.test(value) || value.startsWith('./') || value.startsWith('../') || value.startsWith('/')) {
+    return value;
+  }
+
+  const normalized = value.replace(/^\/+/, '');
+  const hasExtension = /\.[a-z0-9]+$/i.test(normalized);
+  const fileName = hasExtension ? normalized : `${normalized}.svg`;
+
+  if (/^(icon_|logo_)/i.test(normalized)) {
+    return `./assets/images/icons/${fileName}`;
+  }
+
+  return `./assets/images/themes/${fileName}`;
+}
+
+function _buildPageOverlayDescriptor(layout, options = {}) {
+  const pageField = _pickField(layout, [
+    'page',
+    'Page',
+    'page_link',
+    'pageLink',
+    'PageLink',
+    'link',
+    'Link',
+    'button_link',
+    'buttonLink',
+    'ButtonLink',
+    'linked_page',
+    'linkedPage',
+    'LinkedPage',
+    'overlay_page',
+    'overlayPage',
+    'OverlayPage',
+    'page_target',
+    'pageTarget',
+    'PageTarget',
+    'button_overlay_page',
+    'buttonOverlayPage',
+    'ButtonOverlayPage',
+    'target_page',
+    'targetPage',
+    'TargetPage'
+  ]);
+
+  const objectCandidate = Object.values(layout || {}).find((value) => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+    return value.id != null
+      || value.ID != null
+      || value.url
+      || value.link
+      || value.permalink
+      || value.post_title
+      || value.title
+      || value.name;
+  });
+
+  const target = pageField || objectCandidate || layout;
+
+  const rawTitle = _pickField(target, ['title', 'Title', 'post_title', 'postTitle', 'name', 'Name', 'label', 'Label']);
+  const rawHref = _linkHref(target) || _pickField(layout, ['url', 'URL', 'href', 'Href']);
+  const rawSearch = _pickField(layout, ['search', 'Search', 'page_search', 'pageSearch', 'overlay_search', 'overlaySearch']);
+  const rawId = _pickField(target, ['id', 'ID', 'page_id', 'pageId', 'object_id', 'objectId'])
+    ?? _pickField(layout, ['page_id', 'pageId', 'id', 'ID']);
+  const id = Number(rawId);
+  const title = String(rawTitle ?? '').trim();
+  const slug = _pageSlugFromHref(rawHref);
+  const search = String(rawSearch ?? '').trim();
+  const backLabel = String(_pickField(layout, ['back_label', 'backLabel', 'back', 'Back']) ?? '').trim() || 'Retour au site';
+
+  const parts = [];
+  if (Number.isFinite(id) && id > 0) parts.push(`id:${id}`);
+  if (!parts.length && slug) parts.push(`slug:${slug}`);
+  if (!parts.length && title) parts.push(`title:${title}`);
+  if (!parts.length && search) parts.push(`search:${search}`);
+  parts.push(`back:${backLabel}`);
+
+  if (options.forceOverlayTotal) {
+    parts.push('overlay:overlayTotal');
+  }
+
+  return {
+    descriptor: parts.join('|'),
+    isValid: parts.some((part) => part.startsWith('id:') || part.startsWith('slug:') || part.startsWith('title:')),
+  };
 }
 
 function _cardDescriptifHtml(raw) {
@@ -603,6 +741,25 @@ function _renderLayout(layout) {
     case 'image_gallerie': {
       return _renderLayout({ ...layout, acf_fc_layout: 'imagegallerie' });
     }
+    case 'buttonoverlay':
+    case 'ButtonOverlay': {
+      const label = _pickField(layout, ['button_label', 'buttonLabel', 'label', 'Label', 'title', 'Title']) || 'Ouvrir';
+      const request = _buildPageOverlayDescriptor(layout, { forceOverlayTotal: true });
+      const fallbackSearch = _pickField(layout, ['search', 'Search', 'page_search', 'pageSearch']) || label;
+      const descriptor = request.isValid
+        ? request.descriptor
+        : `search:${fallbackSearch}|back:Retour au site|overlay:overlayTotal`;
+
+      return `
+        <div class="layout-button-overlay">
+          <button
+            class="buttonRound layout-button-overlay__action"
+            type="button"
+            data-page-overlay="${esc(descriptor)}"
+            aria-label="${esc(label)}"
+          >${esc(label)}</button>
+        </div>`;
+    }
     default:
       return '';
   }
@@ -700,11 +857,18 @@ function _renderSubsectionContent(container, subSection, color) {
     ? `<p class="thm-overlay__section-subtitle">${esc(subSection.subtitle)}</p>`
     : '';
 
+  const logoHtml = subSection.titleLogo
+    ? `<div class="thm-overlay__section-logo-wrap"><img class="thm-overlay__section-title-logo" src="${esc(subSection.titleLogo)}" alt="" loading="lazy" aria-hidden="true" /></div>`
+    : '';
+
+  const titleText = subSection.showTitle === false ? '' : esc(subSection.title);
+
   const titleBlock = `
     <div class="thm-overlay__section-title-block">
+      ${logoHtml}
       <div class="thm-overlay__title-wrap">
         ${arrowSpan('right')}
-        <h2 class="thm-overlay__section-title">${esc(subSection.title)}</h2>
+        <h2 class="thm-overlay__section-title">${titleText}</h2>
         ${arrowSpan('left')}
       </div>
       ${subtitleHtml}
@@ -827,6 +991,16 @@ function openOverlay(thm) {
     detail: { section: 'thematiques', animate: false }
   }));
 
+  // Mettre à jour l'URL avec le slug personnalisé de la thématique.
+  // scroll:goto a fait un pushState vers #thematiques — on remplace par #thematique/{slug}.
+  if (thm.slug) {
+    history.replaceState(
+      { ...(history.state ?? {}), thmOverlay: { id: thm.id, slug: thm.slug } },
+      '',
+      `${window.location.pathname}${window.location.search}#thematique/${thm.slug}`
+    );
+  }
+
   // Couleur du sous-menu : thématique à 50% opacité (couleur sombre si définie)
   submenu.style.setProperty('--submenu-bg', _hexToRgba(_overlayColor(thm), 0.5));
 
@@ -897,14 +1071,28 @@ function openOverlay(thm) {
 function closeOverlay() {
   const submenu = document.getElementById('site-submenu');
   const overlay = document.getElementById('thm-overlay');
+  // Move focus out before aria-hidden to avoid accessibility warning
+  if (overlay?.contains(document.activeElement)) {
+    document.activeElement.blur();
+  }
   submenu?.classList.remove('is-visible');
   submenu?.setAttribute('aria-hidden', 'true');
   overlay?.classList.remove('is-visible');
   overlay?.setAttribute('aria-hidden', 'true');
   // Retirer --no-submenu après la fin du fade (0.35s) pour éviter le saut de __inner
   setTimeout(() => overlay?.classList.remove('thm-overlay--no-submenu'), 350);
+  // Restaurer l'URL : si on était sur un slug thématique personnalisé, revenir à #thematiques
+  if (window.location.hash.startsWith('#thematique/')) {
+    history.replaceState(
+      { ...(history.state ?? {}), thmOverlay: null },
+      '',
+      `${window.location.pathname}${window.location.search}#thematiques`
+    );
+  }
   window.dispatchEvent(new CustomEvent('secondary-scroll:refresh'));
 }
+
+window.addEventListener('thm:close', () => closeOverlay());
 // ─── Facade vidéo : charge l'iframe au clic ─────────────────────────────────────────
 
 document.addEventListener('click', e => {
@@ -974,6 +1162,15 @@ document.addEventListener('click', e => {
   const card = btn.closest('.thm-card');
   if (!card || !card.dataset.id) return;
   const id = parseInt(card.dataset.id, 10);
+  const thm = _thematiquesStore.find(t => t.id === id);
+  if (thm) openOverlay(thm);
+});
+
+// ─── Ouverture par ID depuis un event externe (ex: overlay recherche) ─────────
+
+window.addEventListener('thm:open-by-id', (e) => {
+  const id = parseInt(e.detail?.id ?? 0, 10);
+  if (!id) return;
   const thm = _thematiquesStore.find(t => t.id === id);
   if (thm) openOverlay(thm);
 });

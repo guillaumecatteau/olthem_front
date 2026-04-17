@@ -256,15 +256,18 @@ window.addEventListener('touchend', (e) => {
 }, { passive: true });
 
 window.addEventListener('keydown', (e) => {
+  const activeTag = document.activeElement?.tagName?.toLowerCase();
+  const isTyping = activeTag === 'input' || activeTag === 'textarea' || document.activeElement?.isContentEditable;
+
   if (isMainOverlayLockActive()) {
-    if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'PageDown' || e.key === 'PageUp' || e.key === 'Home' || e.key === 'End' || e.key === ' ') {
+    if (!isTyping && (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'PageDown' || e.key === 'PageUp' || e.key === 'Home' || e.key === 'End' || e.key === ' ')) {
       e.preventDefault();
     }
     return;
   }
 
   if (isOverlayOpen()) {
-    if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'PageDown' || e.key === 'PageUp' || e.key === 'Home' || e.key === 'End' || e.key === ' ') {
+    if (!isTyping && (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'PageDown' || e.key === 'PageUp' || e.key === 'Home' || e.key === 'End' || e.key === ' ')) {
       e.preventDefault();
     }
     return;
