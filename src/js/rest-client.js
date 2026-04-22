@@ -1,5 +1,9 @@
 import { config } from "./config.js";
 
+function delay(ms) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
 function getApiRoots() {
   const roots = Array.isArray(config.apiRoots) && config.apiRoots.length
     ? config.apiRoots
@@ -40,52 +44,74 @@ export async function requestJsonAcrossRoots(pathname, options = {}) {
       url.searchParams.set(key, String(value));
     });
 
-    try {
-      const response = await fetch(url, {
-        method,
-        headers: {
-          Accept: "application/json",
-          ...(body ? { "Content-Type": "application/json" } : {}),
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          ...headers
-        },
-        body: body ? JSON.stringify(body) : undefined
-      });
+    const maxAttempts = 2;
 
-      let payload = null;
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
       try {
-        payload = await response.json();
-      } catch {
-        payload = null;
-      }
+        const response = await fetch(url, {
+          method,
+          headers: {
+            Accept: "application/json",
+            ...(body ? { "Content-Type": "application/json" } : {}),
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            ...headers
+          },
+          body: body ? JSON.stringify(body) : undefined
+        });
 
-      if (!response.ok) {
-        const message = payload?.message || `HTTP ${response.status}`;
-
-        const isFastFail =
-          (failFastOn404 && response.status === 404) ||
-          (failFastOnClientError && response.status >= 400 && response.status < 500 && response.status !== 404);
-
-        if (isFastFail) {
-          throw new RestApiError(message, {
-            status: response.status,
-            payload,
-            url: url.toString()
-          });
+        let payload = null;
+        try {
+          const text = await response.text();
+          const cleanText = text.replace(/^\uFEFF+/, "");
+          payload = cleanText ? JSON.parse(cleanText) : null;
+        } catch {
+          payload = null;
         }
 
-        failures.push(`${url.origin} -> ${message}`);
-        continue;
-      }
+        if (!response.ok) {
+          const message = payload?.message || `HTTP ${response.status}`;
+          const isTransientServerError = response.status === 502 || response.status === 503 || response.status === 504;
 
-      return payload;
-    } catch (error) {
-      if (error instanceof RestApiError) {
-        throw error;
-      }
+          const isFastFail =
+            (failFastOn404 && response.status === 404) ||
+            (failFastOnClientError && response.status >= 400 && response.status < 500 && response.status !== 404);
 
-      const reason = error instanceof Error ? error.message : "Network error";
-      failures.push(`${url.origin} -> ${reason}`);
+          if (isFastFail) {
+            throw new RestApiError(message, {
+              status: response.status,
+              payload,
+              url: url.toString()
+            });
+          }
+
+          if (isTransientServerError && attempt < maxAttempts) {
+            await delay(250);
+            continue;
+          }
+
+          failures.push(`${url.origin} -> ${message}`);
+          break;
+        }
+
+        if (payload === null || payload === undefined) {
+          failures.push(`${url.origin} -> empty response body`);
+          break;
+        }
+
+        return payload;
+      } catch (error) {
+        if (error instanceof RestApiError) {
+          throw error;
+        }
+
+        const reason = error instanceof Error ? error.message : "Network error";
+        const isLastAttempt = attempt === maxAttempts;
+        if (!isLastAttempt) {
+          await delay(250);
+          continue;
+        }
+        failures.push(`${url.origin} -> ${reason}`);
+      }
     }
   }
 

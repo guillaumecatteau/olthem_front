@@ -317,6 +317,14 @@
     max-width: $container-max-width;
     margin: 0 auto;
 
+    &--hydrating {
+      visibility: hidden;
+    }
+
+    &--admin-tool {
+      max-width: $large-container-max-width;
+    }
+
     .section-builder-stack--overlay {
       min-height: auto;
       justify-content: flex-start;
@@ -436,6 +444,13 @@
     color: $white;
   }
 
+  &__content--admin-tool > .page-overlay__retour-inline {
+    flex: 0 0 auto;
+    align-self: center;
+    padding: 20px 0;
+    margin: 0;
+  }
+
   .section-builder-stack--overlay > .page-overlay__retour-inline,
   &__content > .page-overlay__retour-inline {
     margin-top: 48px;
@@ -457,6 +472,20 @@
     align-items: center;
     justify-content: flex-start;
     min-height: auto;
+  }
+
+  &--fullscreen &__content--admin-tool {
+    width: 100%;
+    height: calc(100vh - 144px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  &--fullscreen &__inner:has(.page-overlay__content--admin-tool) {
+    justify-content: flex-start;
+    overflow-y: hidden;
+    padding-bottom: 0;
   }
 
   &--fullscreen &__retour {
@@ -606,31 +635,8 @@
     flex-wrap: wrap;
   }
 
-  &__page-btn {
-    appearance: none;
-    border: 1px solid $grey;
-    background: transparent;
-    color: $grey-light;
-    font-family: $font-family;
-    font-size: 14px;
-    font-weight: $font-weight-regular;
-    min-width: 36px;
-    height: 36px;
-    padding: 0 8px;
-    cursor: pointer;
-    transition: border-color 0.2s ease, color 0.2s ease;
-
-    &:hover {
-      border-color: $white;
-      color: $white;
-    }
-
-    &[aria-current="page"] {
-      border-color: $white;
-      color: $white;
-      font-weight: $font-weight-bold;
-    }
-  }
+  // &__page-btn: Use .buttonRoundNav class directly in HTML instead
+  // This avoids Sass @use scoping limitations
 
   // ─── FormBuilder intégré (cas spécial page Recherche) ──────────────────
   // Le form est disposé en ligne : champ à gauche, bouton rond à droite.
@@ -825,7 +831,12 @@
   }
 
   &__status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
+    min-width: 88px;
+    white-space: nowrap;
     font-size: 11px;
     font-weight: $font-weight-bold;
     text-transform: uppercase;
@@ -833,9 +844,9 @@
     padding: 3px 10px;
     border-radius: 20px;
 
-    &--attente  { background: rgba($white, 0.15); color: $white; }
+    &--attente  { background: rgba(#ff9800, 0.2);  color: #ffb74d; }
     &--confirme { background: rgba(#4caf50, 0.25); color: #7ed47e; }
-    &--termine  { background: rgba($white, 0.08); color: $grey; }
+    &--termine  { background: rgba($white, 0.08);  color: $grey-light; }
   }
 
   &__item-dates {

@@ -17,6 +17,8 @@ export async function fetchThematiques() {
     }
   });
 
+  if (!Array.isArray(items)) return [];
+
   return items.map(item => ({
     id:                  item.id,
     slug:                item.slug               || "",
@@ -63,6 +65,8 @@ export async function fetchSections() {
       order: "asc"
     }
   });
+
+  if (!Array.isArray(items)) return [];
 
   return items.map((item) => ({
     id: item.id,
@@ -173,20 +177,21 @@ export async function fetchPage(options = {}) {
 }
 
 export async function fetchOptions() {
+  const fallback = {
+    facebook_url: "https://www.facebook.com/Mundaneum.officiel/",
+    X_url: "https://x.com/mundaneumasbl?lang=fr",
+    instagram_url: "https://www.instagram.com/mundaneumasbl/?hl=fr"
+  };
   try {
     const data = await requestJsonAcrossRoots("/wp/v2/options");
+    if (!data || typeof data !== "object") return fallback;
     return {
-      facebook_url: data.facebook_url || "https://www.facebook.com/Mundaneum.officiel/",
-      X_url: data.X_url || "https://x.com/mundaneumasbl?lang=fr",
-      instagram_url: data.instagram_url || "https://www.instagram.com/mundaneumasbl/?hl=fr"
+      facebook_url: data.facebook_url || fallback.facebook_url,
+      X_url: data.X_url || fallback.X_url,
+      instagram_url: data.instagram_url || fallback.instagram_url
     };
-  } catch (error) {
-    console.warn("Impossible de charger les informations gÃ©nÃ©rales", error);
-    return {
-      facebook_url: "https://www.facebook.com/Mundaneum.officiel/",
-      X_url: "https://x.com/mundaneumasbl?lang=fr",
-      instagram_url: "https://www.instagram.com/mundaneumasbl/?hl=fr"
-    };
+  } catch {
+    return fallback;
   }
 }
 
@@ -282,6 +287,63 @@ export async function updateMyAtelier(id, values, token) {
     body: { values },
     token,
     failFastOnClientError: true
+  });
+}
+
+function adminRequest(pathname, options = {}) {
+  const token = options.token || getStoredToken();
+  return requestJsonAcrossRoots(`/olthem/v1/admin/${pathname}`, {
+    ...options,
+    token,
+    failFastOnClientError: true
+  });
+}
+
+export async function fetchAdminOverview(token) {
+  return adminRequest("overview", { token });
+}
+
+export async function fetchAdminUsers(params = {}, token) {
+  return adminRequest("users", {
+    params,
+    token
+  });
+}
+
+export async function updateAdminUser(id, values, token) {
+  return adminRequest(`users/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    body: values,
+    token
+  });
+}
+
+export async function deleteAdminUser(id, token) {
+  return adminRequest(`users/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    token
+  });
+}
+
+export async function fetchAdminAteliers(params = {}, token) {
+  return adminRequest("ateliers", {
+    params,
+    token
+  });
+}
+
+export async function updateAdminAtelier(id, values, token) {
+  return adminRequest(`ateliers/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    body: { values },
+    token
+  });
+}
+
+export async function deleteAdminAtelier(id, token) {
+  return adminRequest(`ateliers/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    token
   });
 }
 

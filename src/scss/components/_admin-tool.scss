@@ -1,0 +1,1158 @@
+@use "../base/variables" as *;
+
+@keyframes admin-entry-appear {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.admin-tool {
+  --admin-entry-id-col: 56px;
+  --admin-entry-date-col: minmax(145px, 0.9fr);
+  --admin-entry-user-col: minmax(170px, 1.2fr);
+  --admin-entry-mail-col: minmax(230px, 1.4fr);
+  --admin-entry-grid: var(--admin-entry-id-col) var(--admin-entry-date-col) var(--admin-entry-user-col) var(--admin-entry-mail-col);
+
+  width: min(100%, 1200px);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+
+  &__tabs {
+    display: flex;
+    align-items: flex-end;
+    width: 100%;
+    margin-bottom: 0;
+  }
+
+  &__tabs-nav {
+    display: flex;
+    gap: 0;
+    flex: 0 0 auto;
+  }
+
+  &__tabs-line {
+    flex: 1 1 auto;
+    min-width: 0;
+    border-bottom: 1px solid rgba($white, 0.2);
+  }
+
+  &__tab {
+    border: 1px solid rgba($white, 0.2);
+    border-bottom: none;
+    background: transparent;
+    color: rgba($white, 0.75);
+    border-radius: 0;
+    padding: 12px 20px;
+    font-family: $font-family;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    position: relative;
+    margin-right: -1px;
+
+    &:first-child {
+      border-top-left-radius: 10px;
+    }
+
+    &:last-child {
+      border-top-right-radius: 10px;
+      border-right: 1px solid rgba($white, 0.2);
+    }
+
+    &.is-active {
+      border-color: $white;
+      color: $white;
+      background: rgba($white, 0.03);
+      position: relative;
+      z-index: 1;
+    }
+  }
+
+  &__panel {
+    display: none;
+    padding-top: 24px;
+    min-height: 0;
+    overflow: hidden;
+
+    &.is-active {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+    }
+  }
+
+  &__loading,
+  &__error,
+  &__empty,
+  &__info {
+    margin: 0;
+    color: $grey-light;
+    font-size: 14px;
+  }
+
+  &__overview-counters {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 10px;
+
+    &--3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  &__counter {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    min-width: 0;
+    padding: 14px 16px;
+    border: 1px solid rgba($white, 0.15);
+    border-radius: 10px;
+    background: rgba($white, 0.04);
+
+    h3 {
+      margin: 0;
+      color: $grey-light;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: $font-weight-regular;
+      white-space: nowrap;
+    }
+
+    p {
+      margin: 0;
+      color: $white;
+      font-size: 22px;
+      font-weight: $font-weight-bold;
+      line-height: 1;
+    }
+  }
+
+  &__overview-columns {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-height: 0;
+    flex: 1 1 auto;
+  }
+
+  &__latest-section {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    flex: 1 1 auto;
+
+    &:first-child {
+      flex: 0 0 auto;
+    }
+
+    &:last-child {
+      flex: 1 1 auto;
+    }
+
+    h3 {
+      margin: 0 0 12px;
+      color: $grey-light;
+      font-size: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: $font-weight-regular;
+    }
+  }
+
+  &__latest-head {
+    display: grid;
+    grid-template-columns: 72px minmax(0, 1.2fr) minmax(0, 1.6fr) minmax(0, 0.9fr);
+    gap: 10px;
+    margin-bottom: 8px;
+    padding: 0 12px;
+    padding-right: calc(12px + var(--secondary-rail-width, 6px) + 8px);
+
+    span {
+      color: $grey;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      white-space: nowrap;
+    }
+  }
+
+  &__latest-entries {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    padding-right: calc(var(--secondary-rail-width, 6px) + 8px);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  &__scroll-wrap {
+    position: relative;
+    min-height: 0;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+
+    .secondary-scrollbar {
+      right: 4px;
+    }
+  }
+
+  &__latest-scroll {
+    min-height: 0;
+    flex: 1 1 auto;
+    overflow-y: auto;
+  }
+
+  &__latest-item {
+    border: 1px solid rgba($white, 0.2);
+    border-radius: 10px;
+    padding: 10px 12px;
+    background: rgba($white, 0.03);
+    display: grid;
+    grid-template-columns: 72px minmax(0, 1.2fr) minmax(0, 1.6fr) minmax(0, 0.9fr);
+    gap: 10px;
+    font-size: 12px;
+    color: $grey-light;
+    width: 100%;
+    align-items: center;
+    animation: admin-entry-appear 0.22s ease both;
+
+    span,
+    strong {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    strong {
+      color: $white;
+      font-weight: $font-weight-regular;
+    }
+  }
+
+  &__mini-list-wrap {
+    border: 1px solid rgba($white, 0.2);
+    border-radius: 10px;
+    padding: 14px;
+    background: rgba($white, 0.04);
+
+    h3 {
+      margin: 0 0 12px;
+      color: $white;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+  }
+
+  &__mini-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  &__mini-item {
+    display: grid;
+    grid-template-columns: 60px minmax(140px, 1fr) minmax(180px, 1fr) minmax(180px, 1fr);
+    gap: 8px;
+    font-size: 12px;
+    color: $grey-light;
+
+    strong {
+      color: $white;
+      font-weight: $font-weight-regular;
+    }
+  }
+
+  &__mini-empty {
+    color: $grey-light;
+    font-size: 13px;
+  }
+
+  &__filters-wrap {
+    border: 1px solid rgba($white, 0.2);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 16px;
+    background: rgba($white, 0.03);
+  }
+
+  &__filters {
+    width: min(100%, 1200px);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  &__filters-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  &__filters-row &__filter:not(.admin-tool__filter--id):not(.admin-tool__filter--email) {
+    flex: 1 1 0;
+  }
+
+  &__filter--email {
+    flex: 1 1 0;
+  }
+
+  &__filter--id {
+    flex: 0 0 auto !important;
+    width: calc(6ch + 26px) !important;
+  }
+
+  &__filter {
+    width: 100%;
+    height: 42px;
+    border: 1px solid rgba($white, 0.2);
+    border-radius: 10px;
+    background: rgba($dark, 0.35);
+    color: $white;
+    padding: 0 12px;
+    font-family: $font-family;
+    font-size: 13px;
+
+    &::placeholder {
+      color: $grey-light;
+    }
+
+    &--select {
+      color: $grey-light;
+      appearance: none;
+      padding-right: 40px;
+
+      &.admin-tool__filter--has-value {
+        color: $white;
+      }
+    }
+
+    &--date {
+      color: transparent;
+      color-scheme: dark;
+      padding-right: 40px;
+
+      &::-webkit-datetime-edit-text,
+      &::-webkit-datetime-edit-month-field,
+      &::-webkit-datetime-edit-day-field,
+      &::-webkit-datetime-edit-year-field {
+        color: transparent;
+      }
+
+      &::-webkit-calendar-picker-indicator {
+        position: absolute;
+        inset: 0;
+        width: auto;
+        height: auto;
+        opacity: 0;
+        cursor: pointer;
+      }
+
+      &.admin-tool__filter--has-value {
+        color: $white;
+
+        &::-webkit-datetime-edit-text,
+        &::-webkit-datetime-edit-month-field,
+        &::-webkit-datetime-edit-day-field,
+        &::-webkit-datetime-edit-year-field {
+          color: $white;
+        }
+      }
+    }
+  }
+
+  &__filter-date-wrap,
+  &__filter-select-wrap,
+  &__select-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+  }
+
+  &__filters--users &__filter-date-wrap,
+  &__filters--users &__filter-select-wrap {
+    flex: 0 0 220px;
+    width: 220px;
+
+    .admin-tool__filter--select,
+    .admin-tool__filter--date {
+      width: 100%;
+    }
+  }
+
+  &__filters--ateliers &__filter-select-wrap {
+    flex: 1 1 0;
+    min-width: 0;
+
+    .admin-tool__filter--select {
+      width: 100%;
+    }
+  }
+
+  &__entries-head--ateliers {
+    grid-template-columns: var(--admin-entry-id-col) minmax(145px, 0.9fr) minmax(170px, 1.2fr) minmax(230px, 1.4fr) 88px;
+  }
+
+  &__filter-date-wrap &__filter {
+    width: 100%;
+  }
+
+  &__filter-date-placeholder {
+    position: absolute;
+    left: 12px;
+    right: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: $grey-light;
+    font-family: $font-family;
+    font-size: 13px;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
+  &__filter--date.admin-tool__filter--has-value + &__filter-date-placeholder {
+    display: none;
+  }
+
+  &__field-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 14px;
+    height: 14px;
+    pointer-events: none;
+    flex-shrink: 0;
+    transition: transform 220ms ease, border-color 200ms ease;
+  }
+
+  &__field-icon--calendar {
+    width: 18px;
+    height: 18px;
+    background-color: $grey-light;
+    -webkit-mask: center / contain no-repeat url("../images/icons/icon_Calendar.svg");
+    mask: center / contain no-repeat url("../images/icons/icon_Calendar.svg");
+  }
+
+  &__field-icon--arrow {
+    width: 8px;
+    height: 8px;
+    margin-top: -2px;
+    border-right: 1.5px solid $grey-light;
+    border-bottom: 1.5px solid $grey-light;
+    transform: translateY(-50%) rotate(45deg);
+  }
+
+  &__filters-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
+  }
+
+&__list-head {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 10px;
+    flex: 0 0 auto;
+  }
+
+  &__panel-main {
+    min-height: 0;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+
+    .secondary-scrollbar {
+      right: 4px;
+    }
+  }
+
+  &__entries-scroll {
+    min-height: 0;
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  &__panel-footer {
+    flex: 0 0 auto;
+  }
+
+  &__sort-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: $grey-light;
+    font-size: 13px;
+
+    select {
+      width: auto;
+      min-width: 0;
+      height: 40px;
+      border: 1px solid rgba($white, 0.2);
+      border-radius: 10px;
+      background: rgba($dark, 0.35);
+      color: $white;
+      font-family: $font-family;
+      font-size: 13px;
+      padding: 0 40px 0 10px;
+      appearance: none;
+    }
+  }
+
+  &__sort-wrap &__select-wrap {
+    width: fit-content;
+  }
+
+  &__filter--select option,
+  &__sort-wrap select option {
+    color: $dark;
+  }
+
+  &__entries {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    padding-right: calc(var(--secondary-rail-width, 6px) + 8px);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  &__entries-head {
+    display: grid;
+    grid-template-columns: var(--admin-entry-grid);
+    gap: 10px;
+    padding: 0 12px;
+    padding-right: calc(12px + var(--secondary-rail-width, 6px) + 8px + 16px + 12px);
+    margin-bottom: 8px;
+    align-items: center;
+
+    span {
+      min-width: 0;
+      color: $grey;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      user-select: none;
+
+      &[data-sort-col] {
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+
+        &::after {
+          content: "";
+          display: inline-block;
+          flex-shrink: 0;
+          width: 6px;
+          height: 6px;
+          border-right: 1.5px solid currentColor;
+          border-bottom: 1.5px solid currentColor;
+          opacity: 0.3;
+          transform: rotate(45deg);
+          transition: opacity 0.15s, transform 0.15s;
+        }
+
+        &:hover { color: $grey-light; }
+
+        &.is-sort-active {
+          &::after {
+            opacity: 1;
+          }
+
+          &.is-sort-asc::after {
+            transform: translateY(2px) rotate(-135deg);
+          }
+        }
+      }
+    }
+  }
+
+  &__entry {
+    border: 1px solid rgba($white, 0.2);
+    border-radius: 10px;
+    background: rgba($white, 0.03);
+    overflow: hidden;
+    animation: admin-entry-appear 0.22s ease both;
+  }
+
+  &__entry-head {
+    padding: 10px 12px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 16px;
+    align-items: center;
+    gap: 12px;
+  }
+
+  &__entry-main {
+    display: grid;
+    grid-template-columns: var(--admin-entry-grid);
+    gap: 10px;
+    align-items: center;
+    color: $grey-light;
+    font-size: 13px;
+    min-width: 0;
+
+    > * {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    strong {
+      display: block;
+      color: $white;
+      font-weight: $font-weight-regular;
+    }
+  }
+
+  &__entry.is-expanded &__entry-id {
+    color: $white;
+  }
+
+  &__entry.is-expanded &__entry-main > :nth-child(2) {
+    color: $white;
+  }
+
+  &__entry-id {
+    color: $grey;
+  }
+
+  &__toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    border: none;
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
+  }
+
+  &__toggle-arrow {
+    position: static;
+    background: none;
+
+    .admin-tool__toggle-btn[aria-expanded="true"] & {
+      transform: rotate(-135deg);
+    }
+  }
+
+  &__toggle-btn[aria-expanded="false"] &__toggle-arrow {
+    transform: rotate(45deg);
+  }
+
+  &__entry-body {
+    padding: 12px 24px;
+  }
+
+  &__entry-details {
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: rgba($white, 0.03);
+
+    div {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    dt {
+      color: $grey-light;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    dd {
+      margin: 0;
+      color: $white;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+  }
+
+  &__entry-actions {
+    margin-top: 6px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  &__entry-edit {
+    padding-top: 4px;
+  }
+
+  &__edit-row {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 10px;
+
+    &--3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    &--4 {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    &--5 {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+
+    &--mundaneum {
+      grid-template-columns: auto;
+      justify-content: center;
+      margin-top: 4px;
+      margin-bottom: 16px;
+    }
+
+    &--address {
+      &.is-disabled {
+        opacity: 0.45;
+        pointer-events: none;
+      }
+    }
+  }
+
+  &__edit-section-title {
+    margin: 0 0 10px;
+    padding-top: 16px;
+    font-size: 13px;
+    font-weight: $font-weight-regular;
+    color: $grey-light;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  &__edit-row--email-checks {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  &__edit-row--email-checks &__edit-field {
+    grid-column: 1 / 3;
+  }
+
+  &__edit-row--email-checks &__edit-checks {
+    grid-column: 3;
+    align-self: center;
+  }
+
+  &__edit-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  &__edit-field.is-invalid &__edit-input-wrap input {
+    border-color: #f26b6b;
+  }
+
+  &__edit-label {
+    color: $grey;
+    font-size: 11px;
+    font-weight: $font-weight-regular;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+  }
+
+  &__edit-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+
+    input[type="text"],
+    input[type="email"] {
+      width: 100%;
+      height: 40px;
+      border: 1px solid rgba($white, 0.2);
+      border-radius: 10px;
+      background: rgba($dark, 0.35);
+      color: $white;
+      padding: 0 12px;
+      font-family: $font-family;
+      font-size: 13px;
+    }
+
+    &--date {
+      position: relative;
+
+      input[type="date"] {
+        width: 100%;
+        height: 40px;
+        border: 1px solid rgba($white, 0.2);
+        border-radius: 10px;
+        background: rgba($dark, 0.35);
+        color: transparent;
+        color-scheme: dark;
+        padding: 0 40px 0 12px;
+        font-family: $font-family;
+        font-size: 13px;
+        cursor: pointer;
+
+        &::-webkit-datetime-edit-text,
+        &::-webkit-datetime-edit-month-field,
+        &::-webkit-datetime-edit-day-field,
+        &::-webkit-datetime-edit-year-field {
+          color: transparent;
+        }
+
+        &::-webkit-calendar-picker-indicator {
+          position: absolute;
+          inset: 0;
+          width: auto;
+          height: auto;
+          opacity: 0;
+          cursor: pointer;
+        }
+
+        &.has-value {
+          color: $white;
+
+          &::-webkit-datetime-edit-text,
+          &::-webkit-datetime-edit-month-field,
+          &::-webkit-datetime-edit-day-field,
+          &::-webkit-datetime-edit-year-field {
+            color: $white;
+          }
+        }
+      }
+    }
+
+    &--select {
+      position: relative;
+
+      select {
+        width: 100%;
+        height: 40px;
+        border: 1px solid rgba($white, 0.2);
+        border-radius: 10px;
+        background: rgba($dark, 0.35);
+        color: $grey-light;
+        padding: 0 40px 0 12px;
+        font-family: $font-family;
+        font-size: 13px;
+        appearance: none;
+        cursor: pointer;
+
+        &:not([value=""]):not([value="0"]) {
+          color: $white;
+        }
+
+        option {
+          color: $dark;
+        }
+      }
+    }
+
+    &--number {
+      position: relative;
+
+      input {
+        width: 100%;
+        height: 40px;
+        border: 1px solid rgba($white, 0.2);
+        border-radius: 10px;
+        background: rgba($dark, 0.35);
+        color: $white;
+        padding: 0 44px 0 12px;
+        font-family: $font-family;
+        font-size: 13px;
+        cursor: default;
+        text-align: left;
+
+        &::placeholder {
+          color: $grey-light;
+        }
+      }
+    }
+  }
+
+  &__edit-date-placeholder {
+    position: absolute;
+    left: 12px;
+    right: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: $grey-light;
+    font-size: 13px;
+    pointer-events: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    .has-value ~ & {
+      display: none;
+    }
+  }
+
+  &__number-arrows {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 36px;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid rgba($white, 0.15);
+    border-radius: 0 10px 10px 0;
+    overflow: hidden;
+  }
+
+  &__number-arrow {
+    flex: 1;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+
+    &::after {
+      content: "";
+      display: block;
+      width: 6px;
+      height: 6px;
+      border-right: 1.5px solid $grey-light;
+      border-bottom: 1.5px solid $grey-light;
+    }
+
+    &--up::after {
+      transform: rotate(-135deg) translateY(2px);
+    }
+
+    &--down::after {
+      transform: rotate(45deg) translateY(-2px);
+    }
+
+    &:hover::after {
+      border-color: $white;
+    }
+
+    &:first-child {
+      border-bottom: 1px solid rgba($white, 0.15);
+    }
+  }
+
+  &__edit-field-error {
+    min-height: 16px;
+    line-height: 16px;
+    color: #f26b6b;
+    font-size: 11px;
+    display: block;
+  }
+
+  &__edit-checks {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: row;
+    gap: 32px;
+    padding: 0 16px;
+    align-self: center;
+  }
+
+  &__check-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: $grey-light;
+    font-size: 13px;
+    cursor: pointer;
+
+    input[type="checkbox"] {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      margin: 0;
+      border: none;
+      border-radius: 2px;
+      background: transparent;
+      box-shadow: inset 0 0 0 2px $grey-light;
+      flex-shrink: 0;
+      position: relative;
+      cursor: pointer;
+
+      &::after {
+        content: "";
+        position: absolute;
+        left: -2px;
+        top: -2px;
+        width: 20px;
+        height: 20px;
+        background-color: $white;
+        -webkit-mask: center / contain no-repeat url("../images/icons/icon_check.svg");
+        mask: center / contain no-repeat url("../images/icons/icon_check.svg");
+        opacity: 0;
+      }
+
+      &:checked::after {
+        opacity: 1;
+      }
+    }
+  }
+
+  &__entry-edit-msg {
+    margin: 0;
+    color: #ff9f9f;
+    font-size: 12px;
+    min-height: 18px;
+  }
+
+  &__pager {
+    margin-top: 14px;
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  &__panel[data-admin-panel="users"] {
+    --admin-entry-grid: var(--admin-entry-id-col) minmax(160px, 1.2fr) minmax(200px, 1.4fr) minmax(140px, 0.9fr) 120px;
+  }
+
+  &__panel[data-admin-panel="ateliers"] {
+    --admin-entry-grid: var(--admin-entry-id-col) minmax(145px, 0.9fr) minmax(170px, 1.2fr) minmax(230px, 1.4fr) 88px;
+  }
+
+  &__latest-section--ateliers {
+    .admin-tool__latest-head,
+    .admin-tool__latest-item {
+      grid-template-columns: 72px minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 0.9fr) 88px;
+    }
+  }
+}
+
+@media (max-width: 1024px) {
+  .admin-tool {
+    &__overview-counters,
+    &__overview-columns {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    &__overview-counters--3 {
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+
+    &__filters-row {
+      flex-wrap: wrap;
+    }
+
+    &__entry-main {
+      grid-template-columns: 52px minmax(120px, 1fr) minmax(160px, 1fr);
+
+      span:last-child {
+        display: none;
+      }
+    }
+
+    &__panel[data-admin-panel="ateliers"] &__entry-main {
+      grid-template-columns: 52px minmax(120px, 1fr) minmax(160px, 1fr) auto;
+
+      > span:nth-child(4) {
+        display: none;
+      }
+
+      > span:last-child {
+        display: inline-flex;
+      }
+    }
+
+    &__latest-section--ateliers {
+      .admin-tool__latest-head,
+      .admin-tool__latest-item {
+        grid-template-columns: 72px minmax(0, 1fr) minmax(0, 1.4fr) auto;
+
+        > :nth-child(4) {
+          display: none;
+        }
+      }
+    }
+
+    &__entry-details {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+}
+
+@media (max-width: 720px) {
+  .admin-tool {
+    &__overview-counters,
+    &__overview-columns,
+    &__filters,
+    &__entry-details,
+    &__entry-edit {
+      grid-template-columns: 1fr;
+    }
+
+    &__latest-head,
+    &__latest-item,
+    &__mini-item,
+    &__entry-main {
+      grid-template-columns: 1fr;
+    }
+
+    &__entry-head {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    &__entry-details div {
+      grid-template-columns: 1fr;
+    }
+
+    &__entry-actions {
+      justify-content: stretch;
+
+      .buttonRound,
+      .buttonRound--ghost {
+        flex: 1;
+      }
+    }
+
+    &__counter {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 2px;
+    }
+  }
+}

@@ -252,6 +252,10 @@ function _titleLogoUrl(raw) {
   const hasExtension = /\.[a-z0-9]+$/i.test(normalized);
   const fileName = hasExtension ? normalized : `${normalized}.svg`;
 
+  if (/^icon_name(\.svg)?$/i.test(fileName)) {
+    return null;
+  }
+
   if (/^(icon_|logo_)/i.test(normalized)) {
     return `./assets/images/icons/${fileName}`;
   }

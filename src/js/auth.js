@@ -255,7 +255,7 @@ export function initHeaderAuth() {
     button.className = "icon-link";
     button.id = "header-admin-link";
     button.type = "button";
-    button.setAttribute("data-page-overlay", "title:AdminTool|search:admintool|back:Retour au site");
+    button.setAttribute("data-page-overlay", "title:AdminTool|search:admintool|back:Retour au site|overlay:overlayTotal");
     button.setAttribute("aria-label", "Ouvrir l'outil d'administration");
     button.innerHTML = `
       <img

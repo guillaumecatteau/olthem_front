@@ -1,8 +1,9 @@
 @use "../base/variables" as *;
 
-// ─── Bouton arrondi ───────────────────────────────────────────────────────────
-// Réutilisable partout. Sur les cards thématiques, le contexte parent
-// (.thm-card--episode) active automatiquement la variante couleur de thème.
+// ─── Boutons arrondis – Système unifié ─────────────────────────────────────────
+// buttonRound est la base. Les variantes n'écrasent que ce qui diffère.
+
+// ─── buttonRound (Principal CTA) ───────────────────────────────────────────────
 
 .buttonRound {
   display: inline-flex;
@@ -25,47 +26,120 @@
     color         0.25s ease,
     border-color  0.25s ease;
 
-  // Associé à une card (episode OU neutre) : fond = couleur de la thématique
   .thm-card & {
     background:   var(--thm-color);
     border-color: $white;
   }
 
-  // Hover neutre (hors card) : bg blanc, border + texte dark
   &:hover {
     background:   $white;
     color:        $dark;
     border-color: $dark;
   }
 
-  // Hover dans une card : bg blanc, border + texte = couleur thématique
   .thm-card &:hover {
     background:   $white;
     color:        var(--thm-color);
     border-color: var(--thm-color);
   }
-}
 
-// Variante fantôme (bord + texte discret, fond transparent)
-.buttonRound--ghost {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 48px;
-  padding: 0 48px;
-  border: 2px solid rgba($white, 0.35);
-  border-radius: 100px;
-  background: transparent;
-  color: rgba($white, 0.55);
-  font-family: $font-family;
-  font-size: 20px;
-  font-weight: $font-weight-regular;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: border-color 0.2s ease, color 0.2s ease;
-
-  &:hover {
-    border-color: $white;
-    color: $white;
+  &:disabled {
+    cursor: default;
+    pointer-events: none;
   }
 }
+
+// ─── buttonRound--ghost ────────────────────────────────────────────────────────
+
+.buttonRound--ghost {
+  @extend .buttonRound;
+  border-color: rgba($white, 0.35);
+  background: transparent;
+  color: rgba($white, 0.55);
+}
+
+// ─── buttonRoundNav ────────────────────────────────────────────────────────────
+
+.buttonRoundNav {
+  @extend .buttonRound;
+  border-color: $grey-light;
+  color: $grey-light;
+}
+
+// ─── buttonRoundAct ────────────────────────────────────────────────────────────
+
+.buttonRoundAct {
+  @extend .buttonRound;
+  appearance: none;
+  -webkit-appearance: none;
+  border-color: $grey-light;
+  background: $grey-light;
+  color: $dark;
+
+  &:disabled {
+    opacity: 0.35;
+  }
+}
+
+// ─── buttonNav ───────────────────────────────────────────────────────────────────
+
+.buttonNav {
+  @extend .buttonRound;
+  border-radius: 10px;
+  padding: 6px;
+  min-width: 28px;
+  height: auto;
+  font-size: 11px;
+  border-color: $grey-light;
+  color: $grey-light;
+
+  &:hover {
+    border-color: $grey-light;
+    background: $grey-light;
+    color: $dark;
+  }
+
+  &[aria-current="page"] {
+    border-color: $white;
+    background: $white;
+    color: $dark;
+    font-weight: $font-weight-bold;
+  }
+}
+
+// ─── iconLink (Lien minimal avec icône et label) ───────────────────────────────
+// Icône + texte cliquable sans bordure ni background distinct
+// Utilisation : retour, liens dans la navigation
+
+.icon-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: $grey-light;
+  font-family: $font-family;
+  font-size: 13px;
+  font-weight: $font-weight-regular;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: $white;
+  }
+
+  &__icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+
+  &__label {
+    white-space: nowrap;
+  }
+}
+

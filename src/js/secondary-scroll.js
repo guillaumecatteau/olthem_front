@@ -9,6 +9,8 @@ const SCROLLER_SELECTORS = [
   '.js-section-subsections-scroll',
   '#thm-overlay-inner',
   '#page-overlay .page-overlay__inner',
+  '.admin-tool__latest-scroll',
+  '.admin-tool__entries-scroll',
 ];
 
 const stateByScroller = new Map();
@@ -137,7 +139,7 @@ function ensureDecor(scroller) {
     return stateByScroller.get(scroller);
   }
 
-  const scope = scroller.closest('.full-section, .thm-overlay, .page-overlay') || scroller.parentElement;
+  const scope = scroller.closest('.admin-tool__scroll-wrap, .admin-tool__panel-main, .full-section, .thm-overlay, .page-overlay') || scroller.parentElement;
   if (!scope) return null;
 
   scope.classList.add('has-secondary-scroll-layer');

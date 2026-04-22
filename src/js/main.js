@@ -1,6 +1,7 @@
-﻿import { fetchPage, fetchSections, fetchOptions, fetchThematiques, searchLocalContent, updateUserProfile, fetchMyAteliers, updateMyAtelier, checkUsernameAvailable } from "./api.js";
+﻿import { fetchPage, fetchSections, fetchOptions, fetchThematiques, searchLocalContent, updateUserProfile, fetchMyAteliers, updateMyAtelier, updateAdminAtelier, checkUsernameAvailable } from "./api.js";
 import { initHeaderAuth, loginAuthUser, persistAuthSession, registerAuthUser, rememberAuthPreference, getStoredToken, getStoredUser, forgotPasswordRequest, resetPasswordRequest } from "./auth.js";
 import { submitFormBuilderEntry } from "./forms-api.js";
+import { bindAdminToolOverlay, isAdminToolRequest } from "./admin-tool.js?v=20260422-06";
 
 // Prefetch thematiques and sections immediately so the data is ready before the user interacts
 const thematiquesPromise = fetchThematiques().catch(() => []);
@@ -204,6 +205,10 @@ function titleLogoUrl(raw) {
   const normalized = value.replace(/^\/+/, "");
   const hasExtension = /\.[a-z0-9]+$/i.test(normalized);
   const fileName = hasExtension ? normalized : `${normalized}.svg`;
+
+  if (/^icon_name(\.svg)?$/i.test(fileName)) {
+    return null;
+  }
 
   if (/^(icon_|logo_)/i.test(normalized)) {
     return `./assets/images/icons/${fileName}`;
@@ -544,11 +549,12 @@ function renderFormBuilderLayout(layout) {
       </div>`;
   })();
 
-  const isIconLabel = /^icon_[A-Za-z0-9_]+$/.test(buttonLabel.trim());
+  const normalizedButtonLabel = buttonLabel.trim();
+  const isIconLabel = /^icon_[A-Za-z0-9_]+$/.test(normalizedButtonLabel) && !/^icon_name$/i.test(normalizedButtonLabel);
   const buttonInner = isIconLabel
-    ? `<img src="./assets/images/icons/${esc(buttonLabel.trim())}.svg" alt="" aria-hidden="true" />`
+    ? `<img src="./assets/images/icons/${esc(normalizedButtonLabel)}.svg" alt="" aria-hidden="true" />`
     : esc(buttonLabel);
-  const buttonAriaAttr = isIconLabel ? ` aria-label="${esc(buttonLabel.trim())}"` : "";
+  const buttonAriaAttr = isIconLabel ? ` aria-label="${esc(normalizedButtonLabel)}"` : "";
 
   return `
     <form class="layout-formbuilder ${isDouble ? "layout-formbuilder--double" : "layout-formbuilder--simple"}" data-form-type="${esc(formType)}" data-form-process="${esc(formProcess)}" data-linked-table="${esc(linkedTable)}" autocomplete="off" novalidate>
@@ -1057,6 +1063,16 @@ function updateFormBuilderSubmitState(form) {
     return;
   }
 
+  // Atelier edit mode: save button state is managed by change detection only
+  if (form.dataset.atelierEditMode === "1") {
+    return;
+  }
+
+  // Admin atelier edit mode: save button state is managed by change detection only
+  if (form.dataset.adminAtelierEditMode === "1") {
+    return;
+  }
+
   const payload = collectFormBuilderPayload(form, { mutateUi: false });
   const proc = payload.process.toLowerCase();
   const isTableless = proc === "connexion"
@@ -1429,6 +1445,8 @@ function bindFormBuilderSubmissions() {
     const isResetPassword = String(payload.process ?? "").toLowerCase().replace(/[\s''\u2019]/g, "").includes("réinitialisation") ||
       String(payload.process ?? "").toLowerCase().includes("réinitialisation");
     const isMiseAJourCompte = String(payload.process ?? "").toLowerCase().replace(/[-\s]/g, "") === "miseajourcompte";
+    const atelierEditId = form.dataset.atelierEditId ? Number(form.dataset.atelierEditId) : null;
+    const isAdminAtelierEditMode = form.dataset.adminAtelierEditMode === "1";
 
     try {
       if (isForgotPassword) {
@@ -1548,11 +1566,27 @@ function bindFormBuilderSubmissions() {
         const userId = currentUser?.id ? Number(currentUser.id) : null;
         if (userId) payload.values.user_id = userId;
 
-        const atelierEditId = form.dataset.atelierEditId ? Number(form.dataset.atelierEditId) : null;
         if (atelierEditId) {
           const editToken = getStoredToken();
           if (!editToken) throw new Error("Vous n'êtes pas connecté.");
-          await updateMyAtelier(atelierEditId, payload.values, editToken);
+          if (isAdminAtelierEditMode) {
+            await updateAdminAtelier(atelierEditId, payload.values, editToken);
+          } else {
+            await updateMyAtelier(atelierEditId, payload.values, editToken);
+          }
+          clearFormBuilderDraft(form);
+          if (isAdminAtelierEditMode) {
+            openPageOverlayWithRequest(
+              parsePageOverlayDescriptor("title:AdminTool|search:admintool|back:Retour au site|overlay:overlayTotal"),
+              "Admin Tool"
+            );
+          } else {
+            openPageOverlayWithRequest(
+              parsePageOverlayDescriptor("title:Compte utilisateur|search:compte utilisateur|back:Retour au site|overlay:overlayTotal"),
+              "Compte utilisateur"
+            );
+          }
+          return;
         } else {
           await submitFormBuilderEntry(payload);
         }
@@ -1615,8 +1649,14 @@ function bindFormBuilderSubmissions() {
         ? error.payload.message
         : (error instanceof Error ? error.message : "Erreur lors de l'envoi.");
 
-      if (isAtelier) {
+      if (isAtelier && !atelierEditId) {
         openErrorOverlay();
+        return;
+      }
+
+      if (atelierEditId) {
+        message.textContent = apiMessage || "Erreur lors de la modification.";
+        message.classList.add("layout-formbuilder__message--error");
         return;
       }
 
@@ -2431,9 +2471,13 @@ async function hydrateMainSections() {
   bindFormBuilderSubmissions();
 }
 
-function setPageOverlayContent(page, fallbackTitle = "", fallbackLogo = null) {
+async function setPageOverlayContent(page, fallbackTitle = "", fallbackLogo = null, { preloadedAteliers = null } = {}) {
   const content = document.getElementById("page-overlay-content");
   if (!content) return;
+
+  const isAdminOverlay = isAdminToolRequest(page, pageOverlayCurrentRequest || {});
+  content.classList.toggle("page-overlay__content--admin-tool", isAdminOverlay);
+  content.classList.add("page-overlay__content--hydrating");
 
   const overlayHeading = (title, logo = null, subtitleHtml = "") => {
     const safeTitle = plainText(title || "");
@@ -2498,7 +2542,9 @@ function setPageOverlayContent(page, fallbackTitle = "", fallbackLogo = null) {
             logo: defaultOverlayLogo({ exactTitle: "Inscription" })
           }
         }
-      : {};
+      : (pageOverlayCurrentRequest || {}).inlineReturnToCompte
+        ? { openRequest: { search: "compte utilisateur", overlayMode: "overlayTotal", backLabel: "Retour au site" } }
+        : {};
     const inlineCloseHtml = isOverlayTotalRequest(pageOverlayCurrentRequest || {})
       ? pageOverlayInlineCloseHtml(pageOverlayBackLabel, inlineOptions)
       : "";
@@ -2507,6 +2553,7 @@ function setPageOverlayContent(page, fallbackTitle = "", fallbackLogo = null) {
       <p>Le contenu de la page n'a pas pu être chargé.</p>
       ${inlineCloseHtml}`;
     applyPageOverlayMode(pageOverlayCurrentRequest || {});
+    content.classList.remove("page-overlay__content--hydrating");
     return;
   }
 
@@ -2536,7 +2583,9 @@ function setPageOverlayContent(page, fallbackTitle = "", fallbackLogo = null) {
           logo: defaultOverlayLogo({ exactTitle: "Inscription" })
         }
       }
-    : {};
+    : (pageOverlayCurrentRequest || {}).inlineReturnToCompte
+      ? { openRequest: { search: "compte utilisateur", overlayMode: "overlayTotal", backLabel: "Retour au site" } }
+      : {};
   const inlineCloseHtml = isOverlayTotalRequest(pageOverlayCurrentRequest || {})
     ? pageOverlayInlineCloseHtml(pageOverlayBackLabel, inlineOptions)
     : "";
@@ -2581,13 +2630,21 @@ function setPageOverlayContent(page, fallbackTitle = "", fallbackLogo = null) {
   bindFormBuilderSubmissions();
 
   if (page.slug === "compte-utilisateur") {
-    bindCompteUtilisateurOverlay(content);
+    bindCompteUtilisateurOverlay(content, preloadedAteliers);
   }
 
-  if (page.slug === "creation-datelier" && atelierEditContext) {
+  if (isAdminToolRequest(page, pageOverlayCurrentRequest || {})) {
+    await bindAdminToolOverlay(content, page, {
+      request: pageOverlayCurrentRequest || {}
+    });
+  }
+
+  if ((page.slug === "creation-datelier" || page.slug === "modification-atelier") && atelierEditContext) {
     prefillAtelierEditForm(content, atelierEditContext);
     atelierEditContext = null;
   }
+
+  content.classList.remove("page-overlay__content--hydrating");
 }
 
 function prefillAtelierEditForm(content, ctx) {
@@ -2629,7 +2686,7 @@ function prefillAtelierEditForm(content, ctx) {
   };
 
   // Fill all editable fields (mundaneum last so toggle() runs after address fields exist)
-  const cols = ["nom", "prenom", "email", "telephone", "start_date", "end_date", "nb_participants", "thematique_id", "displayEvent", "displayContact"];
+  const cols = ["nom", "prenom", "email", "telephone", "start_date", "end_date", "valid_date", "nb_participants", "thematique_id", "displayEvent", "displayContact"];
   cols.forEach((col) => { if (col in ctx) fill(col, ctx[col]); });
   // Address fields (may be overridden by mundaneum toggle)
   ["etablissement", "adresse", "localite", "code_postal"].forEach((col) => { if (col in ctx) fill(col, ctx[col]); });
@@ -2638,13 +2695,48 @@ function prefillAtelierEditForm(content, ctx) {
 
   // Mark form in edit mode so the submit handler knows to call updateMyAtelier
   form.dataset.atelierEditId = String(ctx.id);
+  form.dataset.atelierEditMode = "1";
+  form.dataset.adminAtelierEditMode = ctx.adminMode ? "1" : "0";
 
   // Update page title to reflect edit mode
   const titleEl = content.querySelector(".section-builder-title__title, h2.section-builder-title__title");
   if (titleEl) titleEl.textContent = "Modifier l\u2019atelier";
+
+  // Disable submit until a field is actually changed
+  const editSubmitBtn = form.querySelector(".layout-formbuilder__submit");
+  if (editSubmitBtn) {
+    editSubmitBtn.disabled = true;
+    const editSnapshot = {};
+    form.querySelectorAll("[data-linked-column]").forEach((holder) => {
+      const col = String(holder.getAttribute("data-linked-column") || "").trim();
+      if (!col) return;
+      if (holder.classList.contains("layout-formbuilder__checks")) {
+        const cb = holder.querySelector("input[type='checkbox']");
+        editSnapshot[col] = cb ? cb.checked : false;
+      } else {
+        const inp = holder.querySelector("input, select, textarea");
+        if (inp) editSnapshot[col] = inp.value;
+      }
+    });
+    const checkEditChanges = () => {
+      const changed = [...form.querySelectorAll("[data-linked-column]")].some((holder) => {
+        const col = String(holder.getAttribute("data-linked-column") || "").trim();
+        if (!col) return false;
+        if (holder.classList.contains("layout-formbuilder__checks")) {
+          const cb = holder.querySelector("input[type='checkbox']");
+          return (cb ? cb.checked : false) !== !!(editSnapshot[col]);
+        }
+        const inp = holder.querySelector("input, select, textarea");
+        return inp ? inp.value !== (editSnapshot[col] ?? "") : false;
+      });
+      editSubmitBtn.disabled = !changed;
+    };
+    form.addEventListener("input", checkEditChanges);
+    form.addEventListener("change", checkEditChanges);
+  }
 }
 
-function bindCompteUtilisateurOverlay(content) {
+function bindCompteUtilisateurOverlay(content, preloadedAteliers = null) {
   const form = content.querySelector(".layout-formbuilder");
   if (!form) return;
 
@@ -2816,10 +2908,9 @@ function bindCompteUtilisateurOverlay(content) {
   if (token) {
     const ateliersSection = document.createElement("section");
     ateliersSection.className = "compte-ateliers";
-    ateliersSection.innerHTML = `<h3 class="compte-ateliers__title">Mes ateliers</h3><p class="compte-ateliers__loading">Chargement\u2026</p>`;
     (formWrapper || form).insertAdjacentElement("afterend", ateliersSection);
 
-    fetchMyAteliers(token).then((ateliers) => {
+    const renderAteliers = (ateliers) => {
       if (!Array.isArray(ateliers) || ateliers.length === 0) {
         ateliersSection.innerHTML = `<h3 class="compte-ateliers__title">Mes ateliers</h3><p class="compte-ateliers__empty">Aucun atelier enregistré.</p>`;
         return;
@@ -2845,7 +2936,6 @@ function bindCompteUtilisateurOverlay(content) {
         if (isConfirme) {
           datesHtml = `<div class="compte-ateliers__item-dates compte-ateliers__item-dates--confirmed"><span>Le ${esc(formatDate(a.valid_date))}</span></div>`;
         } else {
-          // En attente ou Terminé : show requested period
           datesHtml = `<div class="compte-ateliers__item-dates"><span>${esc(formatDate(a.start_date))}</span>${a.end_date ? `<span> – ${esc(formatDate(a.end_date))}</span>` : ""}</div>`;
         }
 
@@ -2872,16 +2962,24 @@ function bindCompteUtilisateurOverlay(content) {
         if (!target) return;
         atelierEditContext = target;
         openPageOverlayWithRequest({
-          slug: "creation-datelier",
-          search: "création d'atelier",
-          backLabel: "Retour à mes ateliers",
+          slug: "modification-atelier",
+          search: "modification atelier",
+          backLabel: "Compte utilisateur",
           overlayMode: "overlayTotal",
-          logo: defaultOverlayLogo({ exactTitle: "Création d'atelier" }),
+          logo: defaultOverlayLogo({ exactTitle: "Modification atelier" }),
+          inlineReturnToCompte: true,
         }, "Modifier l'atelier");
       });
-    }).catch(() => {
-      ateliersSection.innerHTML = `<h3 class="compte-ateliers__title">Mes ateliers</h3><p class="compte-ateliers__error">Impossible de charger les ateliers.</p>`;
-    });
+    };
+
+    if (preloadedAteliers !== null) {
+      renderAteliers(preloadedAteliers);
+    } else {
+      ateliersSection.innerHTML = `<h3 class="compte-ateliers__title">Mes ateliers</h3><p class="compte-ateliers__loading">Chargement\u2026</p>`;
+      fetchMyAteliers(token).then(renderAteliers).catch(() => {
+        ateliersSection.innerHTML = `<h3 class="compte-ateliers__title">Mes ateliers</h3><p class="compte-ateliers__error">Impossible de charger les ateliers.</p>`;
+      });
+    }
   }
 
   // Move "Retour au site" out of formWrapper (which is hidden in read mode)
@@ -2896,6 +2994,8 @@ function bindCompteUtilisateurOverlay(content) {
 function setPageOverlayLoading(fallbackTitle = "", fallbackLogo = null) {
   const content = document.getElementById("page-overlay-content");
   if (!content) return;
+
+  content.classList.remove("page-overlay__content--hydrating");
 
   const logoHtml = fallbackLogo
     ? `<div class="section-builder-title section-builder-title--overlay"><div class="section-builder-title__logo-wrap"><img class="section-builder-title__title-logo" src="${esc(fallbackLogo)}" alt="" loading="lazy" aria-hidden="true" /></div></div>`
@@ -3074,7 +3174,7 @@ function setSearchOverlayContent(query, results, total, totalPages, page) {
     const buttons = [];
     for (let p = 1; p <= totalPages; p++) {
       buttons.push(
-        `<button class="overlay-search__page-btn" type="button" data-search-page="${p}"${p === page ? ' aria-current="page"' : ""}>${p}</button>`
+        `<button class="buttonRoundNav" type="button" data-search-page="${p}"${p === page ? ' aria-current="page"' : ""}>${p}</button>`
       );
     }
     paginationHtml = `<nav class="overlay-search__pagination" aria-label="Pages de r\u00e9sultats">${buttons.join("")}</nav>`;
@@ -3120,22 +3220,45 @@ function openPageOverlayWithRequest(request, fallbackTitle = "Page") {
   const closeLabel = document.getElementById("page-overlay-close-label");
   if (!overlay || !request) return;
 
-  // Auth gate: "Création d'atelier" requires authentication
+  // Auth gate: atelier creation/edition pages require authentication
   const reqSlug = slugify(request.slug || "");
   const reqTitle = slugify(request.exactTitle || "");
   const reqSearch = slugify(request.search || "");
-  const isCreationAtelier = [reqSlug, reqTitle, reqSearch].some(
-    (s) => s === "creation-datelier" || s === "creation-d-atelier"
+  const isAtelierProtectedPage = [reqSlug, reqTitle, reqSearch].some(
+    (s) => s === "creation-datelier"
+      || s === "creation-d-atelier"
+      || s === "modification-atelier"
   );
-  if (isCreationAtelier && !getStoredToken()) {
+  if (isAtelierProtectedPage && !getStoredToken()) {
     openPageOverlayWithRequest(
       {
         ...parsePageOverlayDescriptor("slug:connexion|back:Retour au site|overlay:overlayTotal"),
-        redirectAfterLogin: parsePageOverlayDescriptor("slug:creation-datelier|back:Retour au site|overlay:overlayTotal")
+        redirectAfterLogin: request
       },
       "Connexion"
     );
     return;
+  }
+
+  if (isAdminToolRequest(null, request)) {
+    const token = getStoredToken();
+    const currentUser = getStoredUser();
+
+    if (!token) {
+      openPageOverlayWithRequest(
+        {
+          ...parsePageOverlayDescriptor("slug:connexion|back:Retour au site|overlay:overlayTotal"),
+          redirectAfterLogin: parsePageOverlayDescriptor("title:AdminTool|search:admintool|back:Retour au site|overlay:overlayTotal")
+        },
+        "Connexion"
+      );
+      return;
+    }
+
+    if (!currentUser?.isAdmin) {
+      openErrorOverlay();
+      return;
+    }
   }
 
   pageOverlayCurrentRequest = request;
@@ -3157,9 +3280,21 @@ function openPageOverlayWithRequest(request, fallbackTitle = "Page") {
   syncPageOverlayUrl(request);
   window.dispatchEvent(new CustomEvent("secondary-scroll:refresh"));
 
-  getOverlayPage(request)
-    .then((page) => setPageOverlayContent(page, "", request.logo))
-    .catch(() => openErrorOverlay());
+  const isCompteRequest = slugify(request.search || "") === "compte-utilisateur"
+    || slugify(request.exactTitle || "") === "compte-utilisateur";
+
+  if (isCompteRequest && getStoredToken()) {
+    Promise.all([
+      getOverlayPage(request),
+      fetchMyAteliers(getStoredToken()).catch(() => [])
+    ])
+      .then(([page, ateliers]) => setPageOverlayContent(page, "", request.logo, { preloadedAteliers: ateliers }))
+      .catch(() => openErrorOverlay());
+  } else {
+    getOverlayPage(request)
+      .then((page) => setPageOverlayContent(page, "", request.logo))
+      .catch(() => openErrorOverlay());
+  }
 }
 
 function openPageOverlay(trigger) {
@@ -3335,7 +3470,7 @@ function bindSearchOverlay() {
     if (!(e.target instanceof Element)) return;
 
     // Pagination
-    const btn = e.target.closest(".overlay-search__page-btn");
+    const btn = e.target.closest(".buttonRoundNav");
     if (btn) {
       const p = parseInt(btn.dataset.searchPage || "1", 10);
       if (!isNaN(p)) openSearchOverlay(searchOverlayCurrentQuery, p);
