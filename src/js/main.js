@@ -2,28 +2,11 @@
 import { initHeaderAuth, loginAuthUser, persistAuthSession, registerAuthUser, rememberAuthPreference, getStoredToken, getStoredUser, forgotPasswordRequest, resetPasswordRequest } from "./auth.js";
 import { submitFormBuilderEntry } from "./forms-api.js";
 import { bindAdminToolOverlay, isAdminToolRequest } from "./admin-tool.js?v=20260422-06";
+import { esc, plainText, normKey, slugify } from "./utils.js";
 
 // Prefetch thematiques and sections immediately so the data is ready before the user interacts
 const thematiquesPromise = fetchThematiques().catch(() => []);
 const sectionsPromise    = fetchSections().catch(() => []);
-
-function esc(str) {
-  return String(str ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/\"/g, "&quot;");
-}
-
-function plainText(html) {
-  const template = document.createElement("template");
-  template.innerHTML = String(html ?? "");
-  return template.content.textContent?.trim() || "";
-}
-
-function normKey(raw) {
-  return String(raw ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
-}
 
 function formSettingKeyFromChoice(choice, index) {
   const rawValue = String(choice?.value ?? "").trim();
@@ -1840,15 +1823,6 @@ function pageOverlayCacheKey(options) {
     search: options.search ?? null,
     exactTitle: options.exactTitle ?? null
   });
-}
-
-function slugify(value) {
-  return plainText(value)
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
 }
 
 function sectionSlugFromWpUrl(rawHref) {

@@ -10,43 +10,7 @@ import {
 } from "./api.js";
 import { getStoredToken, getStoredUser } from "./auth.js";
 import { showConfirm } from "./popup.js";
-
-function esc(str) {
-  return String(str ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/\"/g, "&quot;");
-}
-
-function slugify(value) {
-  return String(value ?? "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
-function formatDateTime(value) {
-  if (!value) return "-";
-  const date = new Date(String(value).replace(" ", "T"));
-  if (Number.isNaN(date.getTime())) return String(value);
-  return date.toLocaleString("fr-BE", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit"
-  });
-}
-
-function formatDate(value) {
-  if (!value) return "-";
-  const date = new Date(String(value).replace(" ", "T"));
-  if (Number.isNaN(date.getTime())) return String(value);
-  return date.toLocaleDateString("fr-BE");
-}
+import { esc, slugify, formatDateTime, formatDate } from "./utils.js";
 
 function boolLabel(value) {
   return Number(value) ? "Oui" : "Non";

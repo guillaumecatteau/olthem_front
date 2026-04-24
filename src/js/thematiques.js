@@ -1,4 +1,5 @@
 import { fetchThematiques } from './api.js';
+import { esc, normKey as _normKey } from './utils.js';
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
@@ -25,14 +26,6 @@ function _mountThematicLayersInSection() {
 }
 
 // ─── Utilitaires ──────────────────────────────────────────────────────────────
-
-function esc(str) {
-  return String(str ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
 
 function arrowSpan(dir) {
   return `<span class="thm-arrow thm-arrow--${dir}" aria-hidden="true"></span>`;
@@ -122,10 +115,6 @@ function _bool(raw) {
 
 function _boolLike(raw) {
   return raw === true || raw === 1 || raw === '1' || String(raw ?? '').toLowerCase() === 'true';
-}
-
-function _normKey(raw) {
-  return String(raw ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
 function _pickField(obj, names) {

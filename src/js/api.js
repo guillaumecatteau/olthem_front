@@ -1,12 +1,7 @@
 ﻿import { config } from "./config.js";
 import { RestApiError, requestJsonAcrossRoots } from "./rest-client.js";
 import { getStoredToken } from "./auth.js";
-
-function stripHtml(html) {
-  const template = document.createElement("template");
-  template.innerHTML = html;
-  return template.content.textContent?.trim() || "";
-}
+import { stripHtml } from "./utils.js";
 
 export async function fetchThematiques() {
   const items = await requestJsonAcrossRoots("/wp/v2/thematiques", {
