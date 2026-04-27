@@ -175,18 +175,43 @@ export async function fetchOptions() {
   const fallback = {
     facebook_url: "https://www.facebook.com/Mundaneum.officiel/",
     X_url: "https://x.com/mundaneumasbl?lang=fr",
-    instagram_url: "https://www.instagram.com/mundaneumasbl/?hl=fr"
+    instagram_url: "https://www.instagram.com/mundaneumasbl/?hl=fr",
+    mapbox_token: ""
   };
   try {
     const data = await requestJsonAcrossRoots("/wp/v2/options");
     if (!data || typeof data !== "object") return fallback;
     return {
-      facebook_url: data.facebook_url || fallback.facebook_url,
-      X_url: data.X_url || fallback.X_url,
-      instagram_url: data.instagram_url || fallback.instagram_url
+      facebook_url:  data.facebook_url  || fallback.facebook_url,
+      X_url:         data.X_url         || fallback.X_url,
+      instagram_url: data.instagram_url || fallback.instagram_url,
+      mapbox_token:  data.mapbox_token  || ""
     };
   } catch {
     return fallback;
+  }
+}
+
+export async function fetchUpcomingAteliers() {
+  try {
+    const items = await requestJsonAcrossRoots("/olthem/v1/ateliers/upcoming");
+    if (!Array.isArray(items)) return [];
+    return items.map(item => ({
+      id:               item.id,
+      mundaneum:        !!item.mundaneum,
+      etablissement:    item.etablissement    || "",
+      localite:         item.localite         || "",
+      code_postal:      item.code_postal      || "",
+      valid_date:       item.valid_date        || null,
+      share_contact:    !!item.share_contact,
+      contact_email:    item.contact_email     || null,
+      latitude:         item.latitude  != null ? parseFloat(item.latitude)  : null,
+      longitude:        item.longitude != null ? parseFloat(item.longitude) : null,
+      thematique_id:    item.thematique_id    || null,
+      thematique_titre: item.thematique_titre || ""
+    }));
+  } catch {
+    return [];
   }
 }
 

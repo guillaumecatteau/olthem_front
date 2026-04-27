@@ -11,6 +11,7 @@ const SCROLLER_SELECTORS = [
   '#page-overlay .page-overlay__inner',
   '.admin-tool__latest-scroll',
   '.admin-tool__entries-scroll',
+  '.ateliers-list-col',
 ];
 
 const stateByScroller = new Map();
@@ -139,7 +140,7 @@ function ensureDecor(scroller) {
     return stateByScroller.get(scroller);
   }
 
-  const scope = scroller.closest('.admin-tool__scroll-wrap, .admin-tool__panel-main, .full-section, .thm-overlay, .page-overlay') || scroller.parentElement;
+  const scope = scroller.closest('.admin-tool__scroll-wrap, .admin-tool__panel-main, .full-section, .thm-overlay, .page-overlay, .ateliers-list-wrap') || scroller.parentElement;
   if (!scope) return null;
 
   scope.classList.add('has-secondary-scroll-layer');
@@ -228,7 +229,10 @@ function pointerInsideScrollerRect(scroller, clientX, clientY) {
   return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
 }
 
-function getPreferredScroller() {
+function getPreferredScroller(event) {
+  const clientX = event?.clientX;
+  const clientY = event?.clientY;
+
   const pageOverlay = document.getElementById('page-overlay');
   if (pageOverlay?.classList.contains('is-visible')) {
     return pageOverlay.querySelector('.page-overlay__inner');
@@ -237,7 +241,12 @@ function getPreferredScroller() {
   const thmOverlay = document.getElementById('thm-overlay');
   if (thmOverlay?.classList.contains('is-visible')) {
     const inner = document.getElementById('thm-overlay-inner');
-    if (inner) return inner;
+    // Only claim priority if the pointer is actually inside the overlay rect.
+    if (inner && clientX != null && clientY != null) {
+      if (pointerInsideScrollerRect(inner, clientX, clientY)) return inner;
+    } else if (inner && clientX == null) {
+      return inner;
+    }
   }
 
   const candidates = Array.from(document.querySelectorAll('.js-section-subsections-scroll'));
@@ -265,7 +274,7 @@ function getPreferredScroller() {
 }
 
 function shouldRouteWheelToSecondaryScroll(event) {
-  const preferred = getPreferredScroller();
+  const preferred = getPreferredScroller(event);
   if (!preferred) return false;
   if (!pointerInsideLargeContainer(event.clientX)) return false;
   if (!pointerInsideScrollerRect(preferred, event.clientX, event.clientY)) return false;
@@ -277,7 +286,7 @@ function shouldRouteWheelToSecondaryScroll(event) {
 window.__shouldRouteWheelToSecondaryScroll = shouldRouteWheelToSecondaryScroll;
 
 function isWheelInsideSubsectionContentZone(event) {
-  const preferred = getPreferredScroller();
+  const preferred = getPreferredScroller(event);
   if (!preferred) return false;
   if (!isSubsectionScroller(preferred)) return false;
   if (!pointerInsideLargeContainer(event.clientX)) return false;
@@ -288,7 +297,7 @@ function isWheelInsideSubsectionContentZone(event) {
 window.__isWheelInsideSubsectionContentZone = isWheelInsideSubsectionContentZone;
 
 function routeWheelToSecondaryScroll(event) {
-  const preferred = getPreferredScroller();
+  const preferred = getPreferredScroller(event);
   if (!preferred) {
     clearSubsectionEdgeGuard();
     return false;

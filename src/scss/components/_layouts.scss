@@ -1,0 +1,560 @@
+﻿@use "../base/variables" as *;
+
+
+// â”€â”€â”€ Layouts de subSection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+// â”€â”€â”€ videosolo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+.layout-video {
+  width: 100%;
+  max-width: $container-max-width;
+  padding: 0 22px;
+  box-sizing: border-box;
+  margin-bottom: 48px;
+
+  &__wrapper {
+    position: relative;
+    width: 100%;
+    padding-top: 56.25%; // ratio 16:9
+    border-radius: 16px;
+    overflow: hidden;
+
+    iframe {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+  }
+
+  // â”€â”€â”€ Facade thumbnail haute rÃ©solution â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+  &__facade {
+    position: absolute;
+    inset: 0;
+    cursor: pointer;
+
+    &:hover .layout-video__play::before {
+      transform: translate(-50%, -50%) scale(1.08);
+    }
+  }
+
+  &__thumb {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  // Bouton play : cercle semi-transparent + triangle CSS
+  &__play {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+
+    // Cercle + triangle via ::before
+    &::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: rgba($dark, 0.75);
+      // Triangle centrÃ© via clip-path
+      -webkit-mask-image: none;
+      transition: transform 0.2s ease;
+    }
+
+    // Triangle play via ::after
+    &::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: calc(50% + 4px); // lÃ©gÃ¨rement dÃ©calÃ© Ã  droite (optique)
+      transform: translate(-50%, -50%);
+      width: 0;
+      height: 0;
+      border-style: solid;
+      border-width: 13px 0 13px 22px;
+      border-color: transparent transparent transparent $white;
+      pointer-events: none;
+    }
+  }
+
+  &__title,
+  &__text {
+    margin: 12px 0 0;
+  }
+
+  &__heading {
+    width: 100%;
+    max-width: $container-max-width;
+    margin: 0 0 24px;
+    font-size: 20px;
+    font-weight: 600;
+    color: $grey-light;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    line-height: 1.15;
+  }
+}
+
+// â”€â”€â”€ textbloc â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+.layout-text {
+  width: 100%;
+  max-width: $container-max-width;
+  padding: 0 22px;
+  box-sizing: border-box;
+  margin-bottom: 48px;
+  color: $white;
+  font-weight: $font-weight-light;
+
+  :is(p, li, blockquote) {
+    font-weight: $font-weight-light;
+  }
+
+  :is(strong, b) {
+    font-weight: $font-weight-bold;
+  }
+
+  :is(em, i) {
+    font-style: italic;
+  }
+
+  // Rythme vertical du contenu WYSIWYG (paragraphes, listes, etc.)
+  > * + * {
+    margin-top: 16px;
+  }
+
+  :is(p, ul, ol, blockquote, h1, h2, h3, h4, h5, h6, figure, table, pre)
+  + :is(p, ul, ol, blockquote, h1, h2, h3, h4, h5, h6, figure, table, pre) {
+    margin-top: 16px;
+  }
+
+  p + p {
+    margin-top: 16px;
+  }
+
+  ul,
+  ol {
+    padding-left: 64px;
+  }
+
+  // Espace renforcÃ© autour des groupes de puces
+  p + ul,
+  p + ol,
+  ul + p,
+  ol + p,
+  ul + ul,
+  ol + ol,
+  ul + ol,
+  ol + ul {
+    margin-top: 32px;
+  }
+
+  li + li {
+    margin-top: 16px;
+  }
+
+  a,
+  a:visited {
+    color: var(--thm-color);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  a:hover,
+  a:focus-visible {
+    color: $white;
+  }
+
+  // Textbloc suivi dâ€™un autre textbloc : espace rÃ©duit Ã  32px
+  &--compact {
+    margin-bottom: 32px;
+  }
+
+  &--perso,
+  &--perso p {
+    font-size: 20px;
+    font-weight: 600; // semibold
+    font-style: $font-style-italic;
+    color: var(--thm-color);
+  }
+
+  &--no-spacing {
+    > * + * { margin-top: 0; }
+    p + p { margin-top: 0; }
+    p + ul, p + ol, ul + p, ol + p,
+    ul + ul, ol + ol, ul + ol, ol + ul { margin-top: 0; }
+    li + li { margin-top: 0; }
+  }
+}
+
+// â”€â”€â”€ paragraphetitle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+.layout-paragraph-title {
+  width: 100%;
+  max-width: $container-max-width;
+  padding: 0 22px;
+  box-sizing: border-box;
+  margin-top: 72px;
+  margin-bottom: 24px;
+  font-size: 32px;
+  font-weight: $font-weight-bold;
+  color: var(--thm-color);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+
+  &--video {
+    font-size: 18px;
+    color: $grey-light;
+    text-align: center;
+  }
+}
+
+// â”€â”€â”€ audiofile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+.layout-audio {
+  width: 100%;
+  max-width: $container-max-width;
+  padding: 0 22px;
+  box-sizing: border-box;
+  margin-bottom: 48px;
+
+  &__title {
+    margin: 0 0 10px;
+    font-size: $font-size-body;
+    font-weight: $font-weight-bold;
+    color: $white;
+  }
+
+  &__player {
+    width: 100%;
+    display: block;
+    accent-color: var(--thm-color); // colorise les contrÃ´les dans les navigateurs compatibles
+    border-radius: 8px;
+  }
+}
+
+// â”€â”€â”€ buttonpdf â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+.layout-pdf-button {
+  width: 100%;
+  max-width: $container-max-width;
+  padding: 0 22px;
+  box-sizing: border-box;
+  margin-bottom: 48px;
+  display: flex;
+  justify-content: center;
+
+  .buttonRound {
+    background: var(--thm-color);
+    border-color: transparent;
+    color: $dark;
+
+    &:hover {
+      background: $white;
+      color: var(--thm-color);
+      border-color: var(--thm-color);
+    }
+
+    &:disabled {
+      opacity: 0.7;
+      cursor: wait;
+    }
+  }
+}
+
+.thm-overlay .layout-button-overlay {
+  width: 100%;
+  max-width: $container-max-width;
+  padding: 0 22px;
+  box-sizing: border-box;
+  margin-bottom: 48px;
+  display: flex;
+  justify-content: center;
+
+  .buttonRound {
+    background: var(--thm-color);
+    border-color: transparent;
+    color: $dark;
+
+    &:hover {
+      background: $white;
+      color: var(--thm-color);
+      border-color: var(--thm-color);
+    }
+  }
+}
+
+// â”€â”€â”€ imagesolo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+.layout-image-solo {
+  width: 100%;
+  max-width: $container-max-width;
+  padding: 0 22px;
+  box-sizing: border-box;
+  margin-bottom: 48px;
+
+  &__wrapper {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: 16px;
+  }
+
+  &__img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    object-position: clamp(0%, var(--img-x-pos, 50%), 100%) clamp(0%, var(--img-y-pos, 50%), 100%);
+    transform: scale(var(--img-scale, 1));
+    transform-origin: clamp(0%, var(--img-x-pos, 50%), 100%) clamp(0%, var(--img-y-pos, 50%), 100%);
+  }
+}
+
+// â”€â”€â”€ iframe (ex: Calameo) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+.layout-iframe {
+  width: 100%;
+  max-width: $container-max-width;
+  padding: 0 22px;
+  box-sizing: border-box;
+  margin-bottom: 48px;
+
+  // Wrapper responsive : ratio Calameo portrait â‰ˆ 4:3 â†’ padding-top 75%
+  // max(60%, 324px) rÃ©plique exactement le code embed officiel Calameo
+  &__wrapper {
+    position: relative;
+    width: 100%;
+    padding-top: max(60%, 324px);
+    height: 0;
+
+    iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+      overflow: hidden;
+      display: block;
+      border-radius: 8px;
+    }
+  }
+
+  &__attr {
+    font-size: 12px;
+    color: $grey-light;
+    text-align: center;
+
+    a {
+      color: var(--thm-color);
+      text-decoration: underline;
+      transition: color 0.2s ease;
+      &:hover { color: $white; }
+    }
+
+    &--top  { margin: 0 0 8px; }
+    &--bottom { margin: 8px 0 0; }
+  }
+}
+
+// â”€â”€â”€ imagegallerie (caroussel et canvas) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+.layout-image-gallerie {
+  width: 100%;
+  max-width: $container-max-width;
+  padding: 0 22px;
+  box-sizing: border-box;
+  margin-bottom: 48px;
+}
+
+// â”€â”€â”€ Mode caroussel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+.layout-image-gallerie--carousel {
+  .img-gallerie-carousel {
+    position: relative;
+    width: 100%;
+    margin-bottom: 20px;
+
+    &__viewport {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      overflow: hidden;
+      border-radius: 16px;
+    }
+
+    &__track {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      width: 100%;
+      height: 100%;
+    }
+
+    &__slide {
+      position: relative;
+      flex: 0 0 100%;
+      width: 100%;
+      height: 100%;
+    }
+
+    &__img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+  }
+
+  // â”€â”€â”€ Boutons de navigation : centre du bouton sur le bord de l'image â”€â”€â”€
+
+  .img-gallerie-carousel__btn {
+    position: absolute;
+    top: 50%;
+    z-index: 20;
+    background: rgba($white, 0.85);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    border: none;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: $grey;
+    transition: background 0.2s ease, transform 0.2s ease;
+
+    &--prev {
+      left: 0;
+      transform: translate(-50%, -50%);
+    }
+
+    &--next {
+      right: 0;
+      transform: translate(50%, -50%);
+    }
+
+    &:hover {
+      background: $white;
+    }
+
+    &--prev:hover {
+      transform: translate(-50%, -50%) scale(1.08);
+    }
+
+    &--next:hover {
+      transform: translate(50%, -50%) scale(1.08);
+    }
+
+    .thm-arrow { height: 18px; }
+  }
+}
+
+// â”€â”€â”€ Dots du caroussel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+.img-gallerie-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  width: 100%;
+
+  &__dot {
+    height: 10px;
+    width: 10px;
+    border-radius: 50%;
+    background: $grey-light;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition:
+      width        0.3s ease,
+      border-radius 0.3s ease,
+      background    0.3s ease;
+
+    &.is-active {
+      width: 30px;
+      border-radius: 5px;
+      background: $white;
+    }
+
+    &:hover:not(.is-active) {
+      background: $grey;
+    }
+  }
+}
+
+// â”€â”€â”€ Mode canvas (grid) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+.layout-image-gallerie--canvas {
+  .img-gallerie-canvas {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    width: 100%;
+
+    &--balanced {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+
+      @media (max-width: 920px) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    &__item {
+      position: relative;
+      aspect-ratio: 1;
+      overflow: hidden;
+      border-radius: 16px;
+
+      img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      // PremiÃ¨re image affichÃ©e plus grande
+      &--featured {
+        grid-column: span 2;
+        grid-row: span 2;
+        aspect-ratio: auto;
+
+        @media (max-width: 640px) {
+          grid-column: span 1;
+          grid-row: span 1;
+          aspect-ratio: 1;
+        }
+      }
+    }
+  }
+}

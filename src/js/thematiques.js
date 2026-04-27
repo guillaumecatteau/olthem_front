@@ -614,6 +614,88 @@ class ImgGallerieCarousel {
   }
 }
 
+// ─── videocaroussel ─────────────────────────────────────────────────────────
+
+function _extractVideoCarousselConfig(source) {
+  if (!source || typeof source !== 'object') return null;
+
+  const videos = _pickField(source, ['videos_links', 'videos', 'Videos']);
+  if (!Array.isArray(videos) || videos.length === 0) return null;
+
+  const items = videos.map(item => {
+    const link = _pickField(item, ['video_link', 'videolink', 'VideoLink', 'url', 'URL']);
+    const ytId = _youtubeId(link);
+    const title = _pickField(item, ['videotitle', 'video_title', 'VideoTitle', 'title', 'Title']);
+    return ytId ? { ytId, title } : null;
+  }).filter(Boolean);
+
+  if (items.length === 0) return null;
+
+  const carousselTitle = _pickField(source, ['carroussel_title', 'caroussel_title', 'carousel_title']);
+
+  return { items, carousselTitle };
+}
+
+function _renderVideoCaroussel(config) {
+  if (!config?.items || config.items.length === 0) return '';
+
+  const trackId      = `vid-carousel-track-${Math.random().toString(36).substr(2, 9)}`;
+  const dotsId       = `vid-carousel-dots-${Math.random().toString(36).substr(2, 9)}`;
+  const controllerId = `vid-carousel-${Math.random().toString(36).substr(2, 9)}`;
+
+  const slidesHtml = config.items
+    .map(({ ytId, title }, idx) => `
+      <div class="img-gallerie-carousel__slide" data-idx="${idx}">
+        <div class="layout-video__facade" data-yt-id="${esc(ytId)}">
+          <img
+            class="layout-video__thumb"
+            data-yt-id="${esc(ytId)}"
+            src="https://img.youtube.com/vi/${esc(ytId)}/sddefault.jpg"
+            alt="${title ? esc(title) : `Vidéo ${idx + 1}`}"
+            loading="lazy"
+          />
+          <button class="layout-video__play" type="button" aria-label="Lire ${title ? esc(title) : `la vidéo ${idx + 1}`}"></button>
+        </div>
+      </div>`)
+    .join('');
+
+  const dotsHtml = config.items
+    .map((_, idx) => `<button class="img-gallerie-dots__dot" aria-label="Vidéo ${idx + 1}"></button>`)
+    .join('');
+
+  const titleHtml = config.carousselTitle
+    ? `<p class="layout-paragraph-title layout-paragraph-title--video">${esc(config.carousselTitle)}</p>`
+    : '';
+
+  const html = `
+    ${titleHtml}
+    <div class="layout-image-gallerie layout-image-gallerie--carousel" id="${controllerId}">
+      <div class="img-gallerie-carousel">
+        <button class="img-gallerie-carousel__btn img-gallerie-carousel__btn--prev" type="button" aria-label="Vidéo précédente">${arrowSpan('left')}</button>
+        <div class="img-gallerie-carousel__viewport">
+          <div class="img-gallerie-carousel__track" id="${trackId}">
+            ${slidesHtml}
+          </div>
+        </div>
+        <button class="img-gallerie-carousel__btn img-gallerie-carousel__btn--next" type="button" aria-label="Vidéo suivante">${arrowSpan('right')}</button>
+      </div>
+      <div class="img-gallerie-dots" id="${dotsId}">
+        ${dotsHtml}
+      </div>
+    </div>`;
+
+  setTimeout(() => {
+    const track = document.getElementById(trackId);
+    const dotsContainer = document.getElementById(dotsId);
+    const controller = document.getElementById(controllerId);
+    if (track && dotsContainer && controller) {
+      new ImgGallerieCarousel(track, dotsContainer, controller, config.items.length);
+    }
+  }, 0);
+
+  return html;
+}
+
 function _renderLayout(layout) {
   switch (layout.acf_fc_layout) {
     case 'title':
@@ -733,6 +815,11 @@ function _renderLayout(layout) {
     }
     case 'image_gallerie': {
       return _renderLayout({ ...layout, acf_fc_layout: 'imagegallerie' });
+    }
+    case 'videocaroussel':
+    case 'VideoCaroussel':
+    case 'video_caroussel': {
+      return _renderVideoCaroussel(_extractVideoCarousselConfig(layout));
     }
     case 'buttonoverlay':
     case 'ButtonOverlay': {

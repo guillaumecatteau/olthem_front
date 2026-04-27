@@ -1,0 +1,568 @@
+@use "../base/variables" as *;
+
+// ─── Ateliers map block ───────────────────────────────────────────────────────
+// Vertical layout: map on top, list below — fits in narrow double-section panel
+
+.ateliers-map-block {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+  width: 100%;
+  height: 100%;
+}
+
+// ─── List column ─────────────────────────────────────────────────────────────
+// .ateliers-list-wrap  → non-scrolling scope anchor for secondary-scrollbar rail
+// .ateliers-list-col   → actual scroller (overflow-y: auto)
+
+.ateliers-list-wrap {
+  flex: 1 1 0;
+  min-height: 0;
+  position: relative;   // scope anchor for the secondary-scrollbar rail
+  overflow: hidden;
+
+  // Override the default full-section rail positioning to stay inside the wrap
+  .secondary-scrollbar {
+    right: 0;
+    top: 0;
+    bottom: 0;
+  }
+}
+
+.ateliers-list-col {
+  height: 100%;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+.ateliers-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 1rem 0 0; // right padding avoids overlap with the secondary-scrollbar thumb
+  display: flex;
+  flex-direction: column;
+}
+
+// ─── Atelier item ─────────────────────────────────────────────────────────────
+
+.atelier-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 0.25rem;
+  border-bottom: 1px solid rgba($grey, 0.2);
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:first-child {
+    border-top: 1px solid rgba($grey, 0.2);
+  }
+
+  &:hover {
+    background: rgba($white, 0.04);
+  }
+
+  &--highlighted {
+    background: rgba($white, 0.07);
+    border-left: 2px solid $grey-light;
+    padding-left: calc(0.25rem - 2px);
+  }
+}
+
+// ─── Date badge ───────────────────────────────────────────────────────────────
+
+.atelier-date-badge {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  padding: 0.3rem 0.45rem;
+  // Transparent — no background on dark section
+  color: $white;
+  text-align: center;
+  line-height: 1;
+
+  &__day {
+    font-size: 1.6rem;
+    font-weight: $font-weight-black;
+    line-height: 1;
+    color: $grey-light;
+  }
+
+  &__month,
+  &__year {
+    font-size: 0.6rem;
+    font-weight: $font-weight-regular;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: $grey-light;
+    line-height: 1.2;
+  }
+
+  &__month {
+    margin-top: 0.15rem;
+    font-weight: $font-weight-bold;
+  }
+
+  &--small {
+    min-width: 36px;
+    padding: 0.2rem 0.3rem;
+
+    .atelier-date-badge__day   { font-size: 1.1rem; }
+    .atelier-date-badge__month,
+    .atelier-date-badge__year  { font-size: 0.55rem; }
+  }
+}
+
+// ─── Atelier info ─────────────────────────────────────────────────────────────
+
+.atelier-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+
+  &__thematique {
+    font-size: 0.85rem;
+    font-weight: $font-weight-bold;
+    color: $white;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__etablissement {
+    font-size: 0.75rem;
+    font-weight: $font-weight-regular;
+    color: $grey-light;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__localite {
+    font-size: 0.7rem;
+    font-weight: $font-weight-light;
+    color: $grey-light;
+    opacity: 0.75;
+  }
+}
+
+// ─── Action icons (same pattern as .icon-link) ───────────────────────────────
+
+.atelier-icons {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: row;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.atelier-icon-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  filter: brightness(0) invert(1) opacity(0.5);
+  transition: filter 0.2s ease;
+
+  &:hover {
+    filter: brightness(0) invert(1) opacity(1);
+  }
+
+  &--active {
+    filter: brightness(0) invert(1) opacity(1);
+  }
+}
+.atelier-icon-img {
+  height: 16px;
+  width: auto;
+  display: block;
+}
+// ─── “Voir le trajet” button (on mini-map, top-left) ──────────────────────────
+
+.ateliers-trajet-btn {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  padding: 0.35rem 0.8rem;
+  background: $white;
+  border: none;
+  border-radius: 4px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  color: $dark;
+  font-family: $font-family;
+  font-size: 0.75rem;
+  font-weight: $font-weight-bold;
+  cursor: pointer;
+  white-space: nowrap;
+  animation: ateliers-trajet-in 0.2s ease forwards;
+
+  &:hover { background: #f0f0f0; }
+  &[hidden] { display: none; }
+}
+
+@keyframes ateliers-trajet-in {
+  from { opacity: 0; transform: translateX(-4px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+// ─── Map column ─────────────────────────────────────────────────────────────
+
+.ateliers-map-col {
+  position: relative;
+  flex-shrink: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  width: 100%;
+
+  &--unavailable {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    background: rgba($grey, 0.06);
+    border: 1px solid rgba($grey, 0.12);
+    border-radius: 8px;
+    color: $grey-light;
+    font-size: 0.85rem;
+    padding: 1rem;
+    text-align: center;
+  }
+}
+
+// Mapbox GL JS requires an explicit pixel height on its container.
+.ateliers-mapbox-container {
+  width: 100%;
+  height: 300px;
+}
+
+// ─── Map markers ─────────────────────────────────────────────────────────────
+
+.atelier-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: $dark;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+
+  &:hover:not(.atelier-marker--active) {
+    transform: scale(1.15);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+  }
+
+  &--active {
+    transform: scale(1.35);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.7);
+    z-index: 5;
+  }
+
+  &__icon {
+    filter: brightness(0) invert(1);
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+    display: block;
+
+    &--mundaneum {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  &--mundaneum {
+    width: 40px;
+    height: 40px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+  }
+}
+
+// ─── Mapbox popup overrides ───────────────────────────────────────────────────
+
+.mapboxgl-popup.atelier-mapbox-popup {
+  .mapboxgl-popup-content {
+    background: $white;
+    padding: 0;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+    min-width: 160px;
+    max-width: 240px;
+  }
+
+  .mapboxgl-popup-tip {
+    border-top-color: $white;
+  }
+}
+
+.atelier-popup {
+  display: flex;
+  flex-direction: column;
+
+  &--mundaneum {
+    padding: 0.65rem 0.9rem;
+
+    .atelier-popup__name {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: $font-weight-bold;
+      color: $dark;
+    }
+
+    .atelier-popup__address {
+      display: block;
+      font-size: 0.72rem;
+      color: $grey;
+      margin-top: 0.1rem;
+    }
+  }
+}
+
+.atelier-popup-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.5rem 0.65rem;
+
+  & + & {
+    border-top: 1px solid rgba($grey, 0.12);
+  }
+
+  &__info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+
+    strong {
+      font-size: 0.78rem;
+      font-weight: $font-weight-bold;
+      color: $dark;
+      line-height: 1.2;
+    }
+
+    span {
+      font-size: 0.72rem;
+      color: $grey;
+    }
+  }
+}
+
+// ─── Empty state ──────────────────────────────────────────────────────────────
+
+.ateliers-empty-state[hidden] { display: none; }
+
+.ateliers-empty-state {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem 0.25rem;
+
+  &__msg {
+    font-size: 0.85rem;
+    color: $grey-light;
+    margin: 0;
+  }
+}
+
+.ateliers-mundaneum-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem;
+  background: rgba($white, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba($white, 0.1);
+
+  &__icon {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    flex-shrink: 0;
+    filter: brightness(0) invert(1) opacity(0.5);
+  }
+
+  &__name {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: $font-weight-bold;
+    color: $white;
+  }
+
+  &__address {
+    display: block;
+    font-size: 0.75rem;
+    color: $grey-light;
+    margin-top: 0.1rem;
+  }
+}
+
+// ─── Route overlay ──────────────────────────────────────────────────────────
+
+.route-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1001;
+  display: flex;
+  background: $dark;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+
+  &--visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  &__panel {
+    width: 300px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    background: $grey-dark;
+    overflow: hidden;
+  }
+
+  &__header {
+    padding: 1.25rem 1.25rem 0.85rem;
+    border-bottom: 1px solid rgba($grey, 0.3);
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  &__dest {
+    font-size: 0.95rem;
+    font-weight: $font-weight-bold;
+    color: $white;
+    line-height: 1.3;
+  }
+
+  &__map-col {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    position: relative;
+  }
+
+  &__map-container {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  &__close {
+    position: absolute;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2;
+    color: $dark;
+    white-space: nowrap;
+
+    .icon-link__icon { filter: brightness(0); }
+
+    &:hover {
+      color: $grey-light;
+      .icon-link__icon { filter: brightness(0) invert(0.6); }
+    }
+  }
+}
+
+// ─── Profile selector ──────────────────────────────────────────────────────────
+
+.route-profiles {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.route-profile-btn {
+  flex: 1;
+  padding: 0.3rem 0.4rem;
+  border: 1px solid rgba($grey, 0.5);
+  border-radius: 4px;
+  background: none;
+  color: $grey-light;
+  font-family: $font-family;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+
+  &--active,
+  &:hover {
+    background: rgba($white, 0.08);
+    color: $white;
+    border-color: rgba($white, 0.25);
+  }
+}
+
+// ─── Route summary ──────────────────────────────────────────────────────────
+
+.route-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+
+  &__duration { font-weight: $font-weight-bold; color: $white; }
+  &__sep      { color: $grey; }
+  &__distance { color: $grey-light; }
+}
+
+// ─── Steps list ─────────────────────────────────────────────────────────────
+
+.route-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  flex: 1;
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+.route-step {
+  display: grid;
+  grid-template-columns: 20px 1fr auto;
+  align-items: start;
+  gap: 0.5rem;
+  padding: 0.6rem 1.25rem;
+  border-bottom: 1px solid rgba($grey, 0.15);
+
+  &__num {
+    font-size: 0.62rem;
+    font-weight: $font-weight-bold;
+    color: $grey-light;
+    padding-top: 0.12rem;
+    text-align: right;
+  }
+
+  &__instruction {
+    font-size: 0.78rem;
+    color: $white;
+    line-height: 1.4;
+  }
+
+  &__dist {
+    font-size: 0.68rem;
+    color: $grey-light;
+    white-space: nowrap;
+    padding-top: 0.12rem;
+  }
+}
