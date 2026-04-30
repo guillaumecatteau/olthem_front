@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../../../Users/Guillaume/Local Sites/olthem"
+		}
+	],
+	"settings": {
+		"liveServer.settings.multiRootWorkspaceName": "olthem_front",
+		"liveServer.settings.port": 5501
+	}
+}
