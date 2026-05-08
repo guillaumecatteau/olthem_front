@@ -642,7 +642,7 @@
   }
 }
 
-@media (max-width: 768px) {
+@include below($bp-md) {
   .layout-formbuilder {
     max-width: 100%;
 

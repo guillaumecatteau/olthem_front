@@ -263,7 +263,7 @@
   }
 }
 
-@media (max-width: 1024px) {
+@include below($bp-lg) {
   .header-actions {
     &__top-row,
     &__auth-group,
@@ -278,5 +278,297 @@
 
   .site-search {
     max-width: 180px;
+  }
+}
+
+// ─── Mobile header (logo centré, à l'intérieur de #accueil) ─────────────────
+
+// Masqué sur desktop
+.mobile-header {
+  display: none;
+}
+
+// Sur mobile : .site-header est masqué, .mobile-header est dans #accueil
+// → le logo scrolle naturellement avec le contenu de la section Accueil
+@include below($bp-xl) {
+  .site-header {
+    display: none;  // remplacé par .mobile-header à l'intérieur de #accueil
+  }
+
+  .mobile-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px 22px;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    overflow: hidden;    // empêche le logo SVG de déborder de quelques subpixels
+
+    .site-logo {
+      width: max-content;       // le bloc se cale sur la largeur du tagline
+      align-items: center;
+
+      &__img {
+        width: 258px;
+        height: auto;
+      }
+
+      &__tagline {
+        font-size: 11px;
+      }
+    }
+  }
+}
+
+// ─── Burger button (sticky bas-droit, mobile uniquement) ─────────────────────
+.burger-btn {
+  display: none; // masqué sur desktop
+}
+
+@include below($bp-xl) {
+  .burger-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed; // viewport-relative — jamais dépendant de la hauteur de body
+    bottom: 0;
+    right: 0;
+    z-index: 1100;
+    padding: 8px;
+    background: $dark;
+    border: none;
+    border-top:  1px solid $grey-light;
+    border-left: 1px solid $grey-light;
+    border-right: none;
+    border-bottom: none;
+    border-radius: 16px 0 0 0;
+    cursor: pointer;
+    transition: background 0.2s ease;
+
+    &:hover {
+      // seulement sur vrais dispositifs hover (pas tactile — évite le stuck-state iOS)
+      @media (hover: hover) {
+        background: $grey-dark;
+      }
+    }
+
+    &[aria-expanded="true"] {
+      background: $grey-dark;
+    }
+  }
+
+  .burger-btn__icon {
+    display: block;
+    height: 32px;
+    width: auto;
+    filter: brightness(0) saturate(100%) invert(52%) sepia(9%) saturate(310%) hue-rotate(202deg) brightness(91%) contrast(88%); // $grey-light
+  }
+}
+
+// ─── Bouton retour overlay (sticky bas-gauche, mobile uniquement) ─────────────
+.overlay-retour-btn {
+  display: none; // masqué sur desktop
+}
+
+@include below($bp-xl) {
+  .overlay-retour-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    z-index: 1100;
+    min-width: 63px; // même largeur que .burger-btn
+    padding: 8px;
+    background: $grey-light;
+    border: none;
+    border-top:   1px solid $grey-light;
+    border-right: 1px solid $grey-light;
+    border-left:  none;
+    border-bottom: none;
+    border-radius: 0 16px 0 0;
+    cursor: pointer;
+    // Caché par défaut — glisse depuis le bas
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+
+    &.is-visible {
+      transform: translateY(0);
+    }
+
+    &--thm {
+      background: var(--retour-bg, #{$grey-light});
+    }
+  }
+
+  .overlay-retour-btn__icon {
+    display: block;
+    height: 32px;
+    width: auto;
+    filter: brightness(0); // icône dark
+  }
+}
+
+// ─── Burger menu — plein écran ────────────────────────────────────────────────
+.burger-menu {
+  display: none; // masqué sur desktop
+}
+
+@include below($bp-xl) {
+  .burger-menu {
+    display: flex;
+    flex-direction: column;
+    position: fixed; // viewport-relative, même raison que burger-btn
+    inset: 0;
+    z-index: 1050;
+    background: $dark;
+    overflow: hidden;
+    touch-action: none;
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+
+    &.is-open {
+      transform: translateY(0);
+    }
+  }
+
+  // ── Bloc auth : recherche + connexion centres horizontalement ─────────────────
+  .burger-menu__auth {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+    padding: clamp(16px, 4.5vw, 32px);
+    flex-shrink: 0;
+  }
+
+  // Champ de recherche (pleine largeur, sous le bloc auth, espace toujours reserve)
+  .burger-menu__search-wrap {
+    height: clamp(48px, 8vw, 60px);
+    display: flex;
+    align-items: center;
+    padding: 0 clamp(16px, 4.5vw, 32px);
+    flex-shrink: 0;
+
+    .site-search__input {
+      // Harmonise avec admin tool
+      height: 40px;
+      border: 1px solid rgba($white, 0.2);
+      border-radius: 10px;
+      background: $grey-dark;
+      font-size: 13px;
+      padding: 0 12px;
+      width: 100%;
+      box-sizing: border-box;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    &.is-open .site-search__input {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+
+  // ── Nav centrale ──────────────────────────────────────────────────────────
+  .burger-menu__nav {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    
+  }
+
+  .burger-menu__item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid $grey-dark;
+  }
+
+  .burger-menu__item:last-child {
+    border-bottom: none;
+  }
+
+  .burger-menu__link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    padding: clamp(8px, 2vw, 14px) 0;
+    background: none;
+    border: none;
+    color: $grey-light;
+    font-family: $font-family;
+    font-size: clamp(18px, 5.5vw, 28px);
+    font-weight: $font-weight-medium;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.2s ease;
+
+    // Flèches SVG encadrantes (visibles uniquement en état actif)
+    .thm-arrow {
+      height: 10px;
+      width: auto;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      --arrow-color: #{$white};
+    }
+
+    &.is-active {
+      color: $white;
+
+      .thm-arrow {
+        opacity: 1;
+      }
+    }
+
+    &:hover:not(.is-active) {
+      color: $white;
+    }
+  }
+
+  // ── Social links ─────────────────────────────────────────────────────────
+  .burger-menu__social {
+    // Même hauteur que le burger btn : padding(8) + icône(32) + padding(8) = 48px
+    // + border-top 1px = 49px au total — s'aligne visuellement avec le bouton
+    min-height: 49px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 0 0 24px;
+    // Laisser de la place pour le burger btn (48px) + clearance (8px) à droite
+    padding-right: 56px;
+    flex-shrink: 0;
+  }
+
+  .burger-menu__social-label {
+    font-size: 16px;
+    font-weight: $font-weight-light;
+    color: $grey-light;
+    white-space: nowrap;
+    margin: 0;
+  }
+
+  .burger-menu__social-icons {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    img {
+      height: 24px;
+      width: auto;
+      display: block;
+      filter: brightness(0) invert(1); // blanc
+    }
   }
 }

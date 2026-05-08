@@ -3,6 +3,21 @@ $header-height:             140px;
 $container-max-width:        960px;  // contentContainer
 $large-container-max-width: 1200px;  // largeContainer
 
+// ─── Breakpoints ─────────────────────────────────────────────────────────────
+// $bp-xl est le seuil mobile ↔ desktop : scroll magnétique, header, menu burger
+$bp-sm:  480px;   // petit mobile
+$bp-md:  768px;   // tablette portrait
+$bp-lg: 1024px;   // tablette paysage
+$bp-xl: 1280px;   // pivot principal mobile ↔ desktop
+
+// ─── Mixins responsive ───────────────────────────────────────────────────────
+@mixin below($bp) {
+  @media (max-width: #{$bp - 1px}) { @content; }
+}
+@mixin above($bp) {
+  @media (min-width: #{$bp}) { @content; }
+}
+
 // ─── Couleurs ────────────────────────────────────────────────────────────────
 $dark:        #00000C;
 $grey-dark:   #20202A;
@@ -16,6 +31,7 @@ $font-family: 'Geologica', sans-serif;
 $font-weight-thin:    100;
 $font-weight-light:   300;
 $font-weight-regular: 400;
+$font-weight-medium:  500;
 $font-weight-bold:    700;
 $font-weight-black:   900;
 

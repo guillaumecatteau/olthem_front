@@ -119,3 +119,16 @@ body.is-secondary-scroll-dragging * {
   cursor: grabbing !important;
 }
 
+@include below($bp-xl) {
+  .secondary-scrollbar { display: none; }
+  // Exception : scrollbar de la liste ateliers — visible uniquement pendant le scroll
+  #ateliers .ateliers-list-wrap .secondary-scrollbar {
+    display: block;
+    opacity: 0;
+    transition: opacity 300ms ease;
+  }
+  #ateliers .ateliers-list-wrap.is-scrolling .secondary-scrollbar {
+    opacity: 1;
+  }
+}
+

@@ -19,7 +19,6 @@ const SCROLL_SECTIONS = new Set([
   "accueil",
   "initiative",
   "thematiques",
-  "ressources",
   "ateliers",
   "partenaires"
 ]);
@@ -303,18 +302,43 @@ function renderSectionLayout(layout) {
   if (key === "imagegallerie") {
     const gallery = pickField(layout, ["gallerie", "galerie", "Gallerie", "Galerie"]);
     const items = Array.isArray(gallery) ? gallery : [];
-    const shouldBalanceCanvas = items.length > 1 && (items.length % 2 === 1);
+    const urls = items.map(item => imageUrl(item)).filter(Boolean);
+    if (!urls.length) return "";
+
+    // Sur mobile, rendu en mode caroussel
+    if (window.matchMedia('(max-width: 1279px)').matches) {
+      const trackId      = `img-carousel-track-${Math.random().toString(36).substr(2, 9)}`;
+      const dotsId       = `img-carousel-dots-${Math.random().toString(36).substr(2, 9)}`;
+      const controllerId = `img-carousel-${Math.random().toString(36).substr(2, 9)}`;
+      const slidesHtml = urls
+        .map((url, idx) => `<div class="img-gallerie-carousel__slide" data-idx="${idx}"><img class="img-gallerie-carousel__img" src="${esc(url)}" alt="Image ${idx + 1}" loading="lazy" /></div>`)
+        .join('');
+      const dotsHtml = urls
+        .map((_, idx) => `<button class="img-gallerie-dots__dot" aria-label="Image ${idx + 1}"></button>`)
+        .join('');
+      setTimeout(() => window._initImgGallerieCarousel?.(trackId, dotsId, controllerId, urls.length), 0);
+      return `
+        <div class="layout-image-gallerie layout-image-gallerie--carousel" id="${controllerId}">
+          <div class="img-gallerie-carousel">
+            <div class="img-gallerie-carousel__btn-wrap img-gallerie-carousel__btn-wrap--prev">
+              <img class="img-gallerie-carousel__btn img-gallerie-carousel__btn--prev" src="./assets/images/icons/icon_NavSimple_Prev.svg" alt="Image précédente" role="button" tabindex="0" />
+            </div>
+            <div class="img-gallerie-carousel__viewport">
+              <div class="img-gallerie-carousel__track" id="${trackId}">${slidesHtml}</div>
+            </div>
+            <div class="img-gallerie-carousel__btn-wrap img-gallerie-carousel__btn-wrap--next">
+              <img class="img-gallerie-carousel__btn img-gallerie-carousel__btn--next" src="./assets/images/icons/icon_NavSimple_Next.svg" alt="Image suivante" role="button" tabindex="0" />
+            </div>
+          </div>
+          <div class="img-gallerie-dots" id="${dotsId}">${dotsHtml}</div>
+        </div>`;
+    }
+
+    const shouldBalanceCanvas = urls.length > 1 && (urls.length % 2 === 1);
     const canvasClass = shouldBalanceCanvas ? " img-gallerie-canvas--balanced" : "";
-    const imagesHtml = items
-      .map((item, idx) => {
-        const url = imageUrl(item);
-        if (!url) return "";
-        return `<div class="img-gallerie-canvas__item${idx === 0 ? " img-gallerie-canvas__item--featured" : ""}" data-idx="${idx}"><img src="${esc(url)}" alt="Image ${idx + 1}" loading="lazy" /></div>`;
-      })
+    const imagesHtml = urls
+      .map((url, idx) => `<div class="img-gallerie-canvas__item${idx === 0 ? " img-gallerie-canvas__item--featured" : ""}" data-idx="${idx}"><img src="${esc(url)}" alt="Image ${idx + 1}" loading="lazy" /></div>`)
       .join("");
-
-    if (!imagesHtml) return "";
-
     return `
       <div class="layout-image-gallerie layout-image-gallerie--canvas">
         <div class="img-gallerie-canvas${canvasClass}">${imagesHtml}</div>
@@ -397,6 +421,7 @@ function renderSectionSubsections(host, subsections, options = {}) {
     const content = host.querySelector(".section-subsections__content");
     if (content) {
       normalizeSubsectionSpacing(content);
+      fixInnerTitleWidths(content);
     }
 
     window.dispatchEvent(new CustomEvent("secondary-scroll:refresh"));
@@ -425,6 +450,7 @@ function renderSectionSubsections(host, subsections, options = {}) {
     content.innerHTML = titleHtml + current.layouts.map(renderSectionLayout).join("");
 
     normalizeSubsectionSpacing(content);
+    fixInnerTitleWidths(content);
 
     window.dispatchEvent(new CustomEvent("secondary-scroll:refresh"));
   };
@@ -439,6 +465,116 @@ function renderSectionSubsections(host, subsections, options = {}) {
   });
 
   renderSubsectionAt(0);
+}
+
+// Sur mobile, le h3 est un flex item et reçoit toute la largeur disponible
+// (container - flèches), qui dépasse la largeur de sa plus longue ligne de texte.
+// On corrige en mesurant chaque ligne via Range.getClientRects() et en fixant
+// la largeur explicitement à la ligne la plus large.
+function fixInnerTitleWidths(container) {
+  if (!window.matchMedia('(max-width: 1279px)').matches) return;
+  container.querySelectorAll('.section-builder-inner-title__text').forEach(el => {
+    el.style.width = '';
+    const currentW = el.offsetWidth;
+    if (!currentW) return;
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const rects = Array.from(range.getClientRects());
+    if (!rects.length) return;
+    const maxLineW = Math.ceil(Math.max(...rects.map(r => r.width)));
+    if (maxLineW < currentW - 1) {
+      el.style.width = maxLineW + 'px';
+    }
+  });
+}
+
+// ─── Accordéon inner-titles (mobile, section initiative) ─────────────────────
+function initInnerTitleAccordions(host) {
+  if (!window.matchMedia('(max-width: 1279px)').matches) return;
+
+  const stack = host.querySelector('.section-builder-stack')
+             || host.querySelector('.section-subsections__content');
+  if (!stack) return;
+
+  const children = [...stack.children];
+  const innerTitleIndexes = children
+    .map((el, i) => el.classList.contains('section-builder-inner-title') ? i : -1)
+    .filter(i => i !== -1);
+
+  // Le premier inner-title est maître : on ne le touche pas
+  const accordionStarts = innerTitleIndexes.slice(1);
+  if (!accordionStarts.length) return;
+
+  // On traite de la fin vers le début.
+  // nextSibling = nœud de référence pour insertBefore, mis à jour à chaque itération.
+  let nextSibling = null;
+
+  [...accordionStarts].reverse().forEach((startIdx) => {
+    // endIdx dans le tableau original (avant tout déplacement DOM)
+    const nextStart = innerTitleIndexes.find(i => i > startIdx);
+    const endIdx = nextStart !== undefined ? nextStart : children.length;
+
+    const titleEl = children[startIdx];
+    const bodyEls = children.slice(startIdx + 1, endIdx);
+
+    // Wrapper
+    const accordion = document.createElement('div');
+    accordion.className = 'inner-title-accordion';
+    accordion.setAttribute('aria-expanded', 'false');
+
+    // En-tête
+    const header = document.createElement('div');
+    header.className = 'inner-title-accordion__header';
+    header.setAttribute('role', 'button');
+    header.setAttribute('tabindex', '0');
+
+    const arrow = document.createElement('span');
+    arrow.className = 'inner-title-accordion__arrow';
+    arrow.innerHTML = '<img src="./assets/images/icons/icon_ArrowBold_Down.svg" alt="" aria-hidden="true">';
+
+    header.appendChild(titleEl);
+    // Réinitialiser la largeur fixée par fixInnerTitleWidths (incompatible avec le flex header)
+    const textEl = titleEl.querySelector('.section-builder-inner-title__text');
+    if (textEl) textEl.style.width = '';
+    header.appendChild(arrow);
+    accordion.appendChild(header);
+
+    // Corps
+    const body = document.createElement('div');
+    body.className = 'inner-title-accordion__body';
+    const bodyInner = document.createElement('div');
+    bodyInner.className = 'inner-title-accordion__body-inner';
+    bodyEls.forEach(el => bodyInner.appendChild(el));
+    body.appendChild(bodyInner);
+    accordion.appendChild(body);
+
+    // insertBefore(accordion, nextSibling) :
+    //   - 1ère itération (dernier groupe) : nextSibling = null → appendChild
+    //   - itérations suivantes : insert avant l'accordéon inséré juste avant
+    stack.insertBefore(accordion, nextSibling);
+    nextSibling = accordion;
+
+    function toggle() {
+      const open = accordion.classList.toggle('is-open');
+      accordion.setAttribute('aria-expanded', String(open));
+      if (open) {
+        const vp = document.getElementById('scroll-viewport');
+        if (vp) {
+          const target = vp.scrollTop + header.getBoundingClientRect().top - vp.getBoundingClientRect().top;
+          vp.style.scrollSnapType = 'none';
+          vp.scrollTo({ top: target, behavior: 'smooth' });
+          setTimeout(() => { vp.style.scrollSnapType = ''; }, 600);
+        }
+      }
+    }
+    header.addEventListener('click', toggle);
+    header.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+    });
+  });
+
+  // Marquer le premier accordéon (nextSibling est le premier dans le DOM après la boucle)
+  if (nextSibling) nextSibling.classList.add('is-first');
 }
 
 function bindSectionScrollLinks() {
@@ -501,11 +637,16 @@ async function hydrateMainSections() {
         doubleSection: doubleSectionConfig.enabled,
         dominantSide: doubleSectionConfig.dominant
       });
+      if (section.slug === 'initiative') initInnerTitleAccordions(host);
       return;
     }
 
     const html = flattenLayouts(section.builder).map(renderSectionLayout).join("");
-    if (html) host.innerHTML = `<div class="section-builder-stack">${html}</div>`;
+    if (html) {
+      host.innerHTML = `<div class="section-builder-stack">${html}</div>`;
+      fixInnerTitleWidths(host);
+      if (section.slug === 'initiative') initInnerTitleAccordions(host);
+    }
   });
 }
 

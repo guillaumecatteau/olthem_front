@@ -1082,6 +1082,16 @@ function openPageOverlayWithRequest(request, fallbackTitle = "Page") {
   syncPageOverlayUrl(request);
   window.dispatchEvent(new CustomEvent("secondary-scroll:refresh"));
 
+  // Bouton retour mobile
+  const retourBtn = document.getElementById("overlay-retour-btn");
+  if (retourBtn) {
+    retourBtn.classList.remove("overlay-retour-btn--thm");
+    retourBtn.style.removeProperty("--retour-bg");
+    retourBtn.setAttribute("aria-hidden", "false");
+    retourBtn.classList.add("is-visible");
+    retourBtn.addEventListener("click", () => closePageOverlay(), { once: true });
+  }
+
   const isCompteRequest = slugify(request.search || "") === "compte-utilisateur"
     || slugify(request.exactTitle || "") === "compte-utilisateur";
 
@@ -1124,6 +1134,13 @@ function closePageOverlay({ keepUrl = false } = {}) {
   overlay.setAttribute("aria-hidden", "true");
   pageOverlayCurrentRequest = null;
   if (!keepUrl) restorePageOverlayUrl();
+
+  // Masquer le bouton retour mobile
+  const retourBtn = document.getElementById("overlay-retour-btn");
+  if (retourBtn) {
+    retourBtn.classList.remove("is-visible");
+    retourBtn.setAttribute("aria-hidden", "true");
+  }
 
   const onTransitionEnd = (e) => {
     if (e.target !== overlay) return;
@@ -1228,6 +1245,9 @@ async function hydrateSocialLinks() {
 
     if (links.length > 0) {
       container.innerHTML = links.join("");
+      // Populate burger menu social icons (mobile)
+      const burgerSocial = document.getElementById("burger-social-links");
+      if (burgerSocial) burgerSocial.innerHTML = links.join("");
     }
   } catch (error) {
     console.warn("Erreur lors du chargement des liens sociaux", error);

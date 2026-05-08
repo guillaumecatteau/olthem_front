@@ -101,7 +101,7 @@
 }
 
 .section-builder-stack > .section-builder-logos + .section-builder-logos {
-  margin-top: 32px;
+  margin-top: 72px;
 }
 
 .section-builder-title {
@@ -229,6 +229,13 @@
   border-top: 1px solid $grey-dark;
   border-bottom: 1px solid $grey-dark;
 
+  @include below($bp-xl) {
+    // sur mobile 100vw peut inclure la scrollbar ou dépasser → utiliser 100%
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+  }
+
   &__inner {
     width: min(100%, 1200px);
     height: 100%;
@@ -300,7 +307,7 @@
 // â”€â”€â”€ Section debug backgrounds (temporary â€” remove when design is finalized) â”€â”€
 
 
-@media (max-width: 768px) {
+@include below($bp-md) {
   .section-builder-cta {
     height: auto;
     min-height: 140px;
@@ -325,6 +332,268 @@
 
     &__action {
       width: 100%;
+    }
+  }
+}
+
+@include below($bp-xl) {
+  .section-builder-cta {
+    display: none;
+  }
+
+  .section-builder-title__title-wrap {
+    .thm-arrow {
+      height: 12px;
+      width: auto;
+    }
+  }
+
+  .section-builder-title__title {
+    font-size: 30px;
+  }
+
+  .section-builder-title__subtitle {
+    font-size: 14px;
+  }
+
+  .section-subsections__title-wrap {
+    .thm-arrow {
+      height: 12px;
+      width: auto;
+    }
+  }
+
+  .section-subsections__title {
+    font-size: 30px;
+  }
+
+  .layout-button-overlay {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .section-builder-inner-title {
+    &__wrap {
+      // inline-flex : le conteneur se réduit à la largeur de son contenu
+      // align-items: center : les deux flèches se centrent sur la hauteur totale
+      // du bloc texte, même si celui-ci est sur 2 lignes
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+
+      .thm-arrow {
+        height: 12px;
+        flex-shrink: 0; // les flèches ne rétrécissent jamais
+      }
+    }
+
+    &__text {
+      line-height: 1.2;
+    }
+  }
+
+  // ─── innerTitle dans les subSections ──────────────────────────────────────
+  // Premier innerTitle : même style que le titre de subsection (28px + flèches 14px)
+  // Suivants : sans flèches, 24px
+  .section-subsections__content,
+  .section-subsections-double__panel {
+    > .section-builder-inner-title {
+      .section-builder-inner-title__text {
+        font-size: 30px;
+      }
+      .section-builder-inner-title__wrap .thm-arrow {
+        height: 12px;
+        width: auto;
+      }
+    }
+
+    > .section-builder-inner-title ~ .section-builder-inner-title {
+      .section-builder-inner-title__text {
+        font-size: 24px;
+      }
+      .section-builder-inner-title__wrap .thm-arrow {
+        height: 12px;
+        width: auto;
+      }
+    }
+  }
+
+  // Espacement mobile : inner-title suivant (pas le premier)
+  * + .section-builder-inner-title {
+    margin-top: 64px;
+  }
+
+  // Espacement mobile : titre de paragraphe
+  .section-subsections__content,
+  .section-subsections-double__panel,
+  #thm-overlay-inner {
+    .layout-paragraph-title {
+      margin-top: 48px;
+    }
+
+    // Directement précédé d'un inner title : espacement réduit
+    .section-builder-inner-title + .layout-paragraph-title {
+      margin-top: 24px;
+    }
+
+    .layout-text--perso p {
+      font-size: 16px;
+    }
+
+    .layout-video__heading {
+      font-size: 18px !important;
+      line-height: 1.1 !important;
+      margin-bottom: 12px !important;
+    }
+
+    .buttonRound {
+      padding: 0 32px !important;
+    }
+  }
+
+  // Subsection avec inner title : layout-paragraph-title réduit à 20px
+  .section-subsections__content,
+  .section-subsections-double__panel,
+  #thm-overlay-inner {
+    &:has(.section-builder-inner-title) {
+      .layout-paragraph-title {
+        font-size: 20px !important;
+      }
+    }
+  }
+
+  // Titre du carousel vidéo
+  .layout-paragraph-title--video {
+    font-size: 18px !important;
+    line-height: 1.2 !important;
+    margin-bottom: 12px !important;
+    margin-top: 36px !important;
+  }
+
+  // Espacement entre blocs logos sur mobile (stack direct ou dans subsections)
+  .section-builder-logos + .section-builder-logos,
+  .section-builder-title + .section-builder-logos {
+    margin-top: 24px !important;
+  }
+
+  // Logos : 75% de la taille desktop, wrap si trop d'éléments, gap 32px
+  .section-builder-logos__line {
+    flex-wrap: wrap;
+    row-gap: 8px;
+    column-gap: 32px;
+    justify-content: center;
+  }
+
+  .section-builder-logos__category {
+    font-size: 14px;
+  }
+
+  .section-builder-logos__item {
+    min-height: calc(75px * var(--logo-scale, 1));
+  }
+
+  .section-builder-logos__img {
+    height: calc(75px * var(--logo-scale, 1));
+    max-height: calc(75px * var(--logo-scale, 1));
+  }
+}
+
+// ─── Accordéon inner-titles (mobile, section initiative) ──────────────────────
+
+@include below($bp-xl) {
+  .inner-title-accordion {
+    width: 100%;
+
+    // Premier accordéon : espace au-dessus
+    &.is-first {
+      margin-top: 36px;
+    }
+
+    // En-tête cliquable : inner-title + flèche
+    &__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 32px;
+      margin-inline: -32px; // s'étend sur toute la largeur de la fenêtre
+      border-top: 1px solid $grey-dark;
+      cursor: pointer;
+      // Masquer les flèches décoratives (thm-arrow) du inner-title
+      .thm-arrow { display: none; }
+      // Annuler les marges du inner-title d'origine quand il est dans l'accordéon
+      .section-builder-inner-title {
+        margin: 0;
+        text-align: left;
+        width: auto;
+        // Taille du titre en mode accordéon
+        .section-builder-inner-title__text {
+          width: auto !important;
+          font-size: 24px;
+        }
+      }
+    }
+
+    &:last-child &__header {
+      border-bottom: none; // pas de double bordure avec le suivant
+    }
+
+    // Bordure basse sur le dernier accordéon uniquement
+    &:last-child::after {
+      content: '';
+      display: block;
+      margin-inline: -32px;
+      border-bottom: 1px solid $grey-dark;
+    }
+
+    // Flèche indicateur
+    &__arrow {
+      flex-shrink: 0;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 300ms ease;
+
+      img {
+        width: 12px;
+        height: auto;
+        filter: brightness(0) invert(0.5); // $grey-light
+        transform: rotate(90deg); // pointe vers la gauche (fermé)
+        transition: transform 300ms ease;
+      }
+    }
+
+    // Corps masqué par défaut
+    &__body {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 350ms ease;
+
+      &-inner {
+        overflow: hidden;
+        // Pas de margin-top sur le premier élément si c'est un paragraph-title
+        > .layout-paragraph-title:first-child {
+          margin-top: 0 !important;
+        }
+      }
+    }
+
+    // État ouvert
+    &.is-open {
+      .inner-title-accordion__arrow img {
+        transform: rotate(0deg); // pointe vers le bas (ouvert)
+      }
+
+      .inner-title-accordion__body {
+        grid-template-rows: 1fr;
+      }
+
+      .inner-title-accordion__body-inner {
+        padding-top: 8px;
+        padding-bottom: 32px;
+      }
     }
   }
 }

@@ -1,7 +1,7 @@
 /**
  * scroll.js — Magnetic full-page scroll with per-section URL slugs
  *
- * Sections: accueil, initiative, thematiques, ressources, ateliers, partenaires
+ * Sections: accueil, initiative, thematiques, ateliers, partenaires
  * Scroll with enough force (DELTA_THRESHOLD) to navigate between sections.
  * Insufficient force snaps back to the current section.
  * Arrow keys, Page Up/Down and touch swipe are also supported.
@@ -11,10 +11,23 @@ const SECTIONS = [
   'accueil',
   'initiative',
   'thematiques',
-  'ressources',
   'ateliers',
   'partenaires',
 ];
+
+// ─── Mobile detection ─────────────────────────────────────────────────────────
+// $bp-xl = 1280px — keep in sync with $bp-xl in _variables.scss
+const MOBILE_MQ = window.matchMedia('(max-width: 1279px)');
+function isMobileLayout() { return MOBILE_MQ.matches; }
+
+// ─── Scroll restoration ───────────────────────────────────────────────────────
+// Sur mobile : #scroll-viewport est position:absolute (top:0 de body).
+// Si le navigateur restaure window.scrollY > 0 (historique de navigation),
+// le viewport apparaît au-dessus de l'écran. On désactive la restauration
+// automatique pour que notre scrollTo(0,0) soit définitif.
+if (isMobileLayout()) {
+  history.scrollRestoration = 'manual';
+}
 
 const HEADER_HEIGHT  = 140;   // px — keep in sync with $header-height in _variables.scss
 const DELTA_THRESHOLD = 80;   // accumulated wheel delta needed to trigger section change
@@ -35,6 +48,7 @@ let snapTimer       = null;
 // Keep a native scrollbar thumb in sync with magnetic sections without
 // delegating navigation to native page scroll.
 const scrollSpacer = (() => {
+  if (isMobileLayout()) return null; // mobile : scroll natif, pas besoin du spacer
   const existing = document.getElementById('scroll-height-spacer');
   if (existing) return existing;
   const el = document.createElement('div');
@@ -45,11 +59,13 @@ const scrollSpacer = (() => {
 })();
 
 function updateNativeScrollbarRange() {
+  if (!scrollSpacer) return;
   const totalHeight = (SECTIONS.length - 1) * sectionH() + window.innerHeight;
   scrollSpacer.style.height = `${Math.max(window.innerHeight, totalHeight)}px`;
 }
 
 function syncNativeScrollbarPosition(idx) {
+  if (isMobileLayout()) return; // mobile : pas de scroll document, #scroll-viewport gère tout
   const y = Math.max(0, idx * sectionH());
   if (Math.abs(window.scrollY - y) <= 1) return;
   window.scrollTo({ top: y, behavior: 'auto' });
@@ -60,6 +76,7 @@ function sectionH() {
 }
 
 function lockNativeScrollToCurrentSection() {
+  if (isMobileLayout()) return;
   if (!isOverlayOpen()) return;
   const targetY = Math.max(0, currentIndex * sectionH());
   if (Math.abs(window.scrollY - targetY) <= 1) return;
@@ -104,18 +121,29 @@ function indexFromHash() {
 
 function goTo(idx, { pushState = true, animate = true } = {}) {
   if (idx < 0 || idx >= SECTIONS.length) return;
-  if (isAnimating && animate) return;
+  if (!isMobileLayout() && isAnimating && animate) return;
 
   currentIndex = idx;
   accumulatedDelta = 0;
   clearTimeout(snapTimer);
 
-  if (animate) {
-    isAnimating = true;
-    applyTransform(idx, `transform ${ANIM_DURATION}ms cubic-bezier(0.77, 0, 0.175, 1)`);
-    setTimeout(() => { isAnimating = false; }, ANIM_DURATION);
+  if (!isMobileLayout()) {
+    if (animate) {
+      isAnimating = true;
+      applyTransform(idx, `transform ${ANIM_DURATION}ms cubic-bezier(0.77, 0, 0.175, 1)`);
+      setTimeout(() => { isAnimating = false; }, ANIM_DURATION);
+    } else {
+      applyTransform(idx, 'none');
+    }
+    syncNativeScrollbarPosition(idx);
   } else {
-    applyTransform(idx, 'none');
+    // Mobile : scrollTo direct sur #scroll-viewport vers la section cible.
+    // scrollTo programmatique ignore scroll-snap-stop intermédiaires (spec CSS).
+    const sectionEl = document.getElementById(SECTIONS[idx]);
+    const vp = document.getElementById('scroll-viewport');
+    if (sectionEl && vp) {
+      vp.scrollTo({ top: sectionEl.offsetTop, behavior: 'smooth' });
+    }
   }
 
   updateNav(idx);
@@ -138,12 +166,8 @@ function closeOverlayIfOpen() {
   let wasOpen = false;
 
   if (overlay?.classList.contains('is-visible')) {
-    const submenu = document.getElementById('site-submenu');
-    submenu?.classList.remove('is-visible');
-    submenu?.setAttribute('aria-hidden', 'true');
     overlay.classList.remove('is-visible');
     overlay.setAttribute('aria-hidden', 'true');
-    setTimeout(() => overlay.classList.remove('thm-overlay--no-submenu'), 350);
     wasOpen = true;
   }
 
@@ -191,6 +215,8 @@ window.addEventListener('scroll:goto', (e) => {
 });
 
 window.addEventListener('wheel', (e) => {
+  // On mobile : laisser le scroll natif gérer
+  if (isMobileLayout()) return;
   if (isMainOverlayLockActive()) {
     e.preventDefault();
     accumulatedDelta = 0;
@@ -248,6 +274,8 @@ window.addEventListener('touchstart', (e) => {
 }, { passive: true });
 
 window.addEventListener('touchend', (e) => {
+  // On mobile : le scroll natif gère la navigation
+  if (isMobileLayout()) return;
   if (isAnimating || isOverlayOpen() || isMainOverlayLockActive()) return;
   const delta = touchStartY - e.changedTouches[0].clientY;
   if (Math.abs(delta) >= 50) {
@@ -288,16 +316,42 @@ window.addEventListener('popstate', (e) => {
 });
 
 window.addEventListener('resize', () => {
+  if (isMobileLayout()) {
+    // Réinitialiser le transform — le CSS prend le relais
+    track.style.transition = 'none';
+    track.style.transform  = '';
+    // Zeroing du spacer desktop : s'il a été créé (page chargée en desktop puis
+    // redimensionnée en mobile), sa hauteur gonflerait body.scrollHeight et
+    // permettrait au body de scroller de quelques pixels → décalage visible.
+    if (scrollSpacer) scrollSpacer.style.height = '0';
+    // Réinitialiser le scroll du document (même logique que dans init()).
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    return;
+  }
   updateNativeScrollbarRange();
   applyTransform(currentIndex, 'none');
   syncNativeScrollbarPosition(currentIndex);
 });
 
 window.addEventListener('scroll', () => {
+  if (isMobileLayout()) return;
   lockNativeScrollToCurrentSection();
 }, { passive: true });
 
 (function init() {
+  if (isMobileLayout()) {
+    // Sur mobile : juste mettre à jour l'état nav selon le hash
+    const idx = indexFromHash();
+    currentIndex = idx;
+    updateNav(idx);
+    updateHeaderState(idx);
+    // #scroll-viewport est position:absolute (top:0 de body). Si window.scrollY
+    // est non nul (restauration de session ou redimensionnement desktop→mobile),
+    // le viewport disparaît hors écran. behavior:'instant' bypass scroll-behavior:smooth.
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    history.replaceState({ sectionIndex: idx }, '', window.location.href);
+    return;
+  }
   updateNativeScrollbarRange();
   const idx = indexFromHash();
   applyTransform(idx, 'none');

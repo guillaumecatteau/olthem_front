@@ -4,6 +4,7 @@ import { esc, normKey as _normKey } from './utils.js';
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
 const HEADER_ORDER = { premier: 1, deuxieme: 2, troisieme: 3 };
+const _MOBILE_MQ = window.matchMedia('(max-width: 1279px)');
 
 // ─── Store global des thématiques (pour l'overlay) ───────────────────────────
 
@@ -13,13 +14,7 @@ function _mountThematicLayersInSection() {
   const section = document.getElementById('thematiques');
   if (!section) return;
 
-  const submenu = document.getElementById('site-submenu');
   const overlay = document.getElementById('thm-overlay');
-
-  if (submenu && submenu.parentElement !== section) {
-    section.appendChild(submenu);
-  }
-
   if (overlay && overlay.parentElement !== section) {
     section.appendChild(overlay);
   }
@@ -60,29 +55,6 @@ function _hexToRgba(hex, alpha) {
 //     - videosolo       : { videolink, videotitle, videotext, displayvideotitle, displayvideotext }
 //     - textbloc        : { text, persotext }
 //     - imagesolo       : { imagesolo, imagescale, xoffset, yoffset, aligntop, alignbottom }
-
-function _parseSubSections(builder) {
-  if (!Array.isArray(builder)) return [];
-  return builder.map(row => {
-    const layouts = _getSubsectionLayouts(row);
-    const header  = layouts.find(l => _isLayout(l, 'subsectiontitle'));
-    const content = layouts.filter(l => !_isLayout(l, 'subsectiontitle'));
-    const imageSolo = _extractImageSoloConfig(header) ?? _extractImageSoloConfig(row);
-    const showTitle = _boolLike(_pickField(header, ['displaytitle', 'displaytile', 'displayTitle', 'displayTile']));
-    const showSubtitle = _boolLike(_pickField(header, ['displaysubtitle', 'displaySubtitle']));
-    const showLogo = _boolLike(_pickField(header, ['logo', 'Logo']));
-    const logoRaw = _pickField(header, ['title logo', 'title_logo', 'titleLogo', 'TitleLogo', 'titlelogo', 'Title Logo']);
-    return {
-      title:       header?.title    ?? '',
-      subtitle:    header?.subtitle ?? '',
-      showTitle,
-      showSubtitle,
-      titleLogo: showLogo ? _titleLogoUrl(logoRaw) : null,
-      imageSolo,
-      layouts:     content,
-    };
-  }).filter(ss => ss.title);
-}
 
 function _youtubeId(url) {
   if (!url) return null;
@@ -458,13 +430,17 @@ function _renderImageGallerieCarousel(config) {
   const html = `
     <div class="layout-image-gallerie layout-image-gallerie--carousel" id="${controllerId}">
       <div class="img-gallerie-carousel">
-        <button class="img-gallerie-carousel__btn img-gallerie-carousel__btn--prev" type="button" aria-label="Image précédente">${arrowSpan('left')}</button>
+        <div class="img-gallerie-carousel__btn-wrap img-gallerie-carousel__btn-wrap--prev">
+          <img class="img-gallerie-carousel__btn img-gallerie-carousel__btn--prev" src="./assets/images/icons/icon_NavSimple_Prev.svg" alt="Image précédente" role="button" tabindex="0" />
+        </div>
         <div class="img-gallerie-carousel__viewport">
           <div class="img-gallerie-carousel__track" id="${trackId}">
             ${imagesHtml}
           </div>
         </div>
-        <button class="img-gallerie-carousel__btn img-gallerie-carousel__btn--next" type="button" aria-label="Image suivante">${arrowSpan('right')}</button>
+        <div class="img-gallerie-carousel__btn-wrap img-gallerie-carousel__btn-wrap--next">
+          <img class="img-gallerie-carousel__btn img-gallerie-carousel__btn--next" src="./assets/images/icons/icon_NavSimple_Next.svg" alt="Image suivante" role="button" tabindex="0" />
+        </div>
       </div>
       <div class="img-gallerie-dots" id="${dotsId}">
         ${dotsHtml}
@@ -508,7 +484,8 @@ function _renderImageGallerieCanvas(config) {
 function _renderImageGallerie(config) {
   if (!config?.images || config.images.length === 0) return '';
 
-  if (config.showCarousel) {
+  // Sur mobile, forcer le mode caroussel quel que soit le mode configuré
+  if (_MOBILE_MQ.matches || config.showCarousel) {
     return _renderImageGallerieCarousel(config);
   } else if (config.showCanvas) {
     return _renderImageGallerieCanvas(config);
@@ -614,6 +591,16 @@ class ImgGallerieCarousel {
   }
 }
 
+// Initialisation partagée avec section-builder.js (canvas → carousel mobile)
+window._initImgGallerieCarousel = function(trackId, dotsId, controllerId, total) {
+  const track      = document.getElementById(trackId);
+  const dots       = document.getElementById(dotsId);
+  const controller = document.getElementById(controllerId);
+  if (track && dots && controller) {
+    new ImgGallerieCarousel(track, dots, controller, total);
+  }
+};
+
 // ─── videocaroussel ─────────────────────────────────────────────────────────
 
 function _extractVideoCarousselConfig(source) {
@@ -671,13 +658,17 @@ function _renderVideoCaroussel(config) {
     ${titleHtml}
     <div class="layout-image-gallerie layout-image-gallerie--carousel" id="${controllerId}">
       <div class="img-gallerie-carousel">
-        <button class="img-gallerie-carousel__btn img-gallerie-carousel__btn--prev" type="button" aria-label="Vidéo précédente">${arrowSpan('left')}</button>
+        <div class="img-gallerie-carousel__btn-wrap img-gallerie-carousel__btn-wrap--prev">
+          <img class="img-gallerie-carousel__btn img-gallerie-carousel__btn--prev" src="./assets/images/icons/icon_ArrowBold_Left.svg" alt="Vidéo précédente" role="button" tabindex="0" />
+        </div>
         <div class="img-gallerie-carousel__viewport">
           <div class="img-gallerie-carousel__track" id="${trackId}">
             ${slidesHtml}
           </div>
         </div>
-        <button class="img-gallerie-carousel__btn img-gallerie-carousel__btn--next" type="button" aria-label="Vidéo suivante">${arrowSpan('right')}</button>
+        <div class="img-gallerie-carousel__btn-wrap img-gallerie-carousel__btn-wrap--next">
+          <img class="img-gallerie-carousel__btn img-gallerie-carousel__btn--next" src="./assets/images/icons/icon_ArrowBold_Right.svg" alt="Vidéo suivante" role="button" tabindex="0" />
+        </div>
       </div>
       <div class="img-gallerie-dots" id="${dotsId}">
         ${dotsHtml}
@@ -926,55 +917,7 @@ function _setupVideoThumbFallback(container) {
   });
 }
 
-function _renderSubsectionContent(container, subSection, color) {
-  if (!container) return;
-  const thmColor = esc(color || '#3F3F48');
-
-  // Propager la couleur sur le container pour que tous les enfants y aient accès
-  container.style.setProperty('--thm-color', thmColor);
-
-  const subtitleHtml = subSection.showSubtitle
-    ? `<p class="thm-overlay__section-subtitle">${esc(subSection.subtitle)}</p>`
-    : '';
-
-  const logoHtml = subSection.titleLogo
-    ? `<div class="thm-overlay__section-logo-wrap"><img class="thm-overlay__section-title-logo" src="${esc(subSection.titleLogo)}" alt="" loading="lazy" aria-hidden="true" /></div>`
-    : '';
-
-  const titleText = subSection.showTitle === false ? '' : esc(subSection.title);
-
-  const titleBlock = `
-    <div class="thm-overlay__section-title-block">
-      ${logoHtml}
-      <div class="thm-overlay__title-wrap">
-        ${arrowSpan('right')}
-        <h2 class="thm-overlay__section-title">${titleText}</h2>
-        ${arrowSpan('left')}
-      </div>
-      ${subtitleHtml}
-    </div>`;
-
-  const imageSoloBlock = _hasImageSoloLayout(subSection.layouts) ? '' : _renderImageSolo(subSection.imageSolo);
-  container.innerHTML = titleBlock + imageSoloBlock + subSection.layouts.map(_renderLayout).join('');
-  _setupVideoThumbFallback(container);
-
-  _applyWysiwygSpacing(container);
-
-  // 32px entre un textbloc et l'élément qui suit (quel qu'il soit)
-  const texts = [...container.querySelectorAll('.layout-text')];
-  texts.forEach(el => {
-    el.style.marginBottom = el.nextElementSibling ? '32px' : '';
-  });
-
-  // L'élément précédant un paragraphetitle cède sa marge : seul le margin-top du titre compte (72px)
-  container.querySelectorAll('.layout-paragraph-title').forEach(el => {
-    if (el.previousElementSibling) {
-      el.previousElementSibling.style.marginBottom = '0';
-    }
-  });
-}
-
-// ─── Header thématique pour le mode subSection unique ───────────────────────
+// ─── Header thématique pour l'overlay ────────────────────────────────────────────
 // Miroir du buildCard : épisode = [flèche] personnage [flèche] + titre en dessous,
 // neutre = [flèche] titre [flèche].
 
@@ -1057,13 +1000,10 @@ function _renderSingleSubSection(container, subSection, thm) {
 function openOverlay(thm) {
   _mountThematicLayersInSection();
 
-  const submenu       = document.getElementById('site-submenu');
   const overlay       = document.getElementById('thm-overlay');
-  const nav           = document.getElementById('site-submenu-nav');
   const inner         = document.getElementById('thm-overlay-inner');
-  const retour        = document.getElementById('site-submenu-retour');
   const overlayRetour = document.getElementById('thm-overlay-retour');
-  if (!submenu || !overlay || !nav) return;
+  if (!overlay) return;
 
   // Naviguer silencieusement vers la section thématiques (sans animation ni
   // transition sur le menu principal) quelle que soit la section d'origine.
@@ -1071,8 +1011,14 @@ function openOverlay(thm) {
     detail: { section: 'thematiques', animate: false }
   }));
 
+  // Sur mobile, scroll:goto ne déplace pas la page (scroll natif).
+  // On scrolle directement vers la section thématiques.
+  if (_MOBILE_MQ.matches) {
+    const thmSection = document.getElementById('thematiques');
+    if (thmSection) thmSection.scrollIntoView({ behavior: 'smooth' });
+  }
+
   // Mettre à jour l'URL avec le slug personnalisé de la thématique.
-  // scroll:goto a fait un pushState vers #thematiques — on remplace par #thematique/{slug}.
   if (thm.slug) {
     history.replaceState(
       { ...(history.state ?? {}), thmOverlay: { id: thm.id, slug: thm.slug } },
@@ -1081,87 +1027,54 @@ function openOverlay(thm) {
     );
   }
 
-  // Couleur du sous-menu : thématique à 50% opacité (couleur sombre si définie)
-  submenu.style.setProperty('--submenu-bg', _hexToRgba(_overlayColor(thm), 0.5));
-
   // Visuel de fond de l'overlay (image thématique floue)
   const bgImg = document.getElementById('thm-overlay-bg-image');
   if (bgImg) {
-    const imgUrl = thm.visuel?.sizes?.large ?? thm.visuel?.url ?? null;
+    const imgUrl = _MOBILE_MQ.matches
+      ? _mobileVisualSrc(thm)
+      : (thm.visuel?.sizes?.large ?? thm.visuel?.url ?? null);
     bgImg.style.backgroundImage = imgUrl ? `url('${imgUrl}')` : 'none';
   }
 
-  // ── SubSections issues du builder ACF ─────────────────────────────────
-  const subSections = _parseSubSections(thm.builder);
-  const isSingle    = subSections.length <= 1;
+  // Couleur et contenu
+  overlay.style.setProperty('--thm-color', esc(_overlayColor(thm)));
+  const ss = {
+    imageSolo: _firstImageSoloFromBuilder(thm.builder),
+    layouts:   _allLayouts(thm.builder),
+  };
+  _renderSingleSubSection(inner, ss, thm);
+  overlayRetour?.addEventListener('click', closeOverlay, { once: true });
 
-  if (isSingle) {
-    // Cas 0 ou 1 subSection : masquer le sous-menu, afficher le header thématique
-    // Dans les deux cas on utilise _allLayouts pour ramasser tout le contenu
-    // de tous les rows du builder, peu importe dans quel row se trouve le titre.
-    const ss = {
-      ...(subSections[0] ?? { title: '', subtitle: '', showSubtitle: false }),
-      imageSolo: subSections[0]?.imageSolo ?? _firstImageSoloFromBuilder(thm.builder),
-      layouts: _allLayouts(thm.builder),
-    };
-    overlay.classList.add('thm-overlay--no-submenu');
-    // --thm-color sur l'overlay entier (pas seulement inner) pour le bouton retour
-    overlay.style.setProperty('--thm-color', esc(_overlayColor(thm)));
-    _renderSingleSubSection(inner, ss, thm);
-    overlayRetour?.addEventListener('click', closeOverlay, { once: true });
-  } else {
-    overlay.classList.remove('thm-overlay--no-submenu');
-
-    // Construire les items du sous-menu
-    if (subSections.length) {
-      nav.innerHTML = subSections
-        .map((ss, i) =>
-          `<button class="site-submenu__item${i === 0 ? ' is-active' : ''}" type="button" data-ss-index="${i}">${esc(ss.title)}</button>`
-        ).join('');
-    } else {
-      // Pas de subSections définies : afficher le titre de la thématique seul
-      nav.innerHTML = `<button class="site-submenu__item is-active" type="button">${esc(thm.titre)}</button>`;
-    }
-
-    // Afficher la première subSection
-    if (subSections.length) {
-      _renderSubsectionContent(inner, subSections[0], _overlayColor(thm));
-    }
-
-    // Switch de subSection au clic dans le sous-menu
-    nav.querySelectorAll('.site-submenu__item').forEach(btn => {
-      btn.addEventListener('click', () => {
-        nav.querySelectorAll('.site-submenu__item').forEach(b => b.classList.remove('is-active'));
-        btn.classList.add('is-active');
-        const idx = parseInt(btn.dataset.ssIndex ?? '0', 10);
-        if (subSections[idx]) _renderSubsectionContent(inner, subSections[idx], _overlayColor(thm));
-      });
-    });
-
-    submenu.classList.add('is-visible');
-    submenu.setAttribute('aria-hidden', 'false');
-    retour?.addEventListener('click', closeOverlay, { once: true });
+  // Bouton retour mobile
+  const retourBtn = document.getElementById('overlay-retour-btn');
+  if (retourBtn) {
+    retourBtn.classList.add('overlay-retour-btn--thm');
+    retourBtn.style.setProperty('--retour-bg', esc(thm.couleur || '#3F3F48'));
+    retourBtn.setAttribute('aria-hidden', 'false');
+    retourBtn.classList.add('is-visible');
+    retourBtn.addEventListener('click', () => closeOverlay(), { once: true });
   }
 
   overlay.classList.add('is-visible');
   overlay.setAttribute('aria-hidden', 'false');
+
+  // Sur mobile : verrouiller le scroll global pour éviter le changement de section
+  if (_MOBILE_MQ.matches) {
+    lockMainScroll();
+    _overlayLocked = true;
+  }
+
   window.dispatchEvent(new CustomEvent('secondary-scroll:refresh'));
 }
 
 function closeOverlay() {
-  const submenu = document.getElementById('site-submenu');
   const overlay = document.getElementById('thm-overlay');
-  // Move focus out before aria-hidden to avoid accessibility warning
   if (overlay?.contains(document.activeElement)) {
     document.activeElement.blur();
   }
-  submenu?.classList.remove('is-visible');
-  submenu?.setAttribute('aria-hidden', 'true');
   overlay?.classList.remove('is-visible');
   overlay?.setAttribute('aria-hidden', 'true');
-  // Retirer --no-submenu après la fin du fade (0.35s) pour éviter le saut de __inner
-  setTimeout(() => overlay?.classList.remove('thm-overlay--no-submenu'), 350);
-  // Restaurer l'URL : si on était sur un slug thématique personnalisé, revenir à #thematiques
+  // Restaurer l'URL
   if (window.location.hash.startsWith('#thematique/')) {
     history.replaceState(
       { ...(history.state ?? {}), thmOverlay: null },
@@ -1169,6 +1082,19 @@ function closeOverlay() {
       `${window.location.pathname}${window.location.search}#thematiques`
     );
   }
+  // Masquer le bouton retour mobile
+  const retourBtn = document.getElementById('overlay-retour-btn');
+  if (retourBtn) {
+    retourBtn.classList.remove('is-visible');
+    retourBtn.setAttribute('aria-hidden', 'true');
+  }
+
+  // Déverrouiller le scroll global (mobile)
+  if (_overlayLocked) {
+    unlockMainScroll();
+    _overlayLocked = false;
+  }
+
   window.dispatchEvent(new CustomEvent('secondary-scroll:refresh'));
 }
 
@@ -1246,6 +1172,17 @@ document.addEventListener('click', e => {
   if (thm) openOverlay(thm);
 });
 
+// Bouton "voir" des cards mobile header
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.thm-card-mh__btn');
+  if (!btn) return;
+  const card = btn.closest('.thm-card');
+  if (!card || !card.dataset.id) return;
+  const id = parseInt(card.dataset.id, 10);
+  const thm = _thematiquesStore.find(t => t.id === id);
+  if (thm) openOverlay(thm);
+});
+
 // ─── Ouverture par ID depuis un event externe (ex: overlay recherche) ─────────
 
 window.addEventListener('thm:open-by-id', (e) => {
@@ -1256,6 +1193,22 @@ window.addEventListener('thm:open-by-id', (e) => {
 });
 
 // ─── Ajustement du visuel ─────────────────────────────────────────────────────
+
+// Contraint la largeur du span __title à celle de sa ligne la plus longue.
+// Range.getClientRects() expose un rect par ligne de texte rendu ;
+// le plus large = la ligne la plus longue → on l'impose comme width,
+// ce qui fait coller les flèches exactement au bord du texte.
+function _fitMcTitleWrap(article) {
+  const title = article.querySelector('.thm-card__mc-banner .thm-card__title');
+  if (!title) return;
+  title.style.width = ''; // reset avant mesure
+  const range = document.createRange();
+  range.selectNodeContents(title);
+  const rects = Array.from(range.getClientRects());
+  if (!rects.length) return;
+  const maxW = Math.ceil(Math.max(...rects.map(r => r.width)));
+  if (maxW > 0) title.style.width = maxW + 'px';
+}
 
 function applyVisualFit(img) {
   if (!img.naturalWidth || !img.naturalHeight) return;
@@ -1288,13 +1241,54 @@ function bindVisualFits(container) {
 // context : 'header' | 'carousel'
 
 function buildCard(thm, context) {
+  const isMobileCarousel = context === 'carousel' && _MOBILE_MQ.matches;
   const isEpisode = thm.episode && thm.personnage;
   const color     = esc(thm.couleur || '#3F3F48');
 
-  const visualSrc = thm.visuel?.sizes?.large ?? thm.visuel?.url ?? null;
+  const visualSrc = _MOBILE_MQ.matches
+    ? _mobileVisualSrc(thm)
+    : (thm.visuel?.sizes?.large ?? thm.visuel?.url ?? null);
   const visualEl  = visualSrc
     ? `<img src="${esc(visualSrc)}" alt="${esc(thm.titre)}" loading="lazy">`
     : '';
+
+  // ── Template mobile carousel : bloc titre unifié ──────────────────────────
+  if (isMobileCarousel) {
+    const mcEpisode = isEpisode ? `
+      <div class="thm-card__mc-episode">
+        <div class="thm-card__title-wrap thm-card__title-wrap--episode">
+          ${arrowSpan('right')}
+          <span class="thm-card__personnage">${esc(thm.personnage)}</span>
+          ${arrowSpan('left')}
+        </div>
+        <span class="thm-card__episode-info">\u00c9pisode ${esc(thm.episode_numero ?? '')}</span>
+      </div>` : '';
+
+    const mcBanner = isEpisode
+      ? `<span class="thm-card__subtitle">${esc(thm.titre)}</span>`
+      : `<div class="thm-card__title-wrap">
+          ${arrowSpan('right')}
+          <span class="thm-card__title">${esc(thm.titre)}</span>
+          ${arrowSpan('left')}
+        </div>`;
+
+    return `
+      <article
+        class="thm-card thm-card--${context} thm-card--mobile-carousel ${isEpisode ? 'thm-card--episode' : 'thm-card--neutral'}"
+        style="--thm-color: ${color}"
+        data-id="${thm.id}"
+        aria-label="${esc(thm.titre)}"
+      >
+        <div class="thm-card__visual">${visualEl}</div>
+        <div class="thm-card__mc-footer">
+          ${mcEpisode}
+          <div class="thm-card__mc-banner">${mcBanner}</div>
+          <button class="buttonRound" type="button">Voir</button>
+        </div>
+      </article>`;
+  }
+
+  // ── Template standard (desktop + header mobile) ───────────────────────────
 
   // ── Floating episode box (visible uniquement si épisode) ──
   const episodeBox = isEpisode ? `
@@ -1304,7 +1298,7 @@ function buildCard(thm, context) {
         <span class="thm-card__personnage">${esc(thm.personnage)}</span>
         ${arrowSpan('left')}
       </div>
-      <span class="thm-card__episode-info">Épisode ${esc(thm.episode_numero ?? '')}</span>
+      <span class="thm-card__episode-info">\u00c9pisode ${esc(thm.episode_numero ?? '')}</span>
     </div>` : '';
 
   // ── Bandeau bas ──
@@ -1339,13 +1333,108 @@ function buildCard(thm, context) {
       ${episodeBox}
       ${banner}
       <div class="thm-card__action">
-        <button class="buttonRound" type="button">Voir la thématique</button>
+        <button class="buttonRound" type="button">Voir la th\u00e9matique</button>
       </div>
     </article>`;
 }
 
 // ─── Cards header (section Accueil) ───────────────────────────────────────────
 // Affiche uniquement les épisodes marqués "header", triés par header_position.
+
+// ─── Template mobile header card ──────────────────────────────────────────────
+// Utilise visuel_mobile si présent, sinon visuel desktop.
+// La position du bg est calculée dynamiquement après insertion dans le DOM
+// pour centrer l'image sur la zone visible (60% de la largeur de la carte,
+// côté opposé au panneau titre).
+
+function _mobileVisualSrc(thm) {
+  // visuel_mobile prioritaire si l'objet ACF contient une url
+  const mob = thm.visuel_mobile;
+  if (mob && (mob.url || mob.sizes?.medium_large || mob.sizes?.large)) {
+    return mob.sizes?.medium_large ?? mob.sizes?.large ?? mob.url;
+  }
+  // Fallback : visuel desktop (taille medium_large suffisante sur mobile)
+  const desk = thm.visuel;
+  if (!desk) return null;
+  return desk.sizes?.medium_large ?? desk.sizes?.large ?? desk.url ?? null;
+}
+
+// Positionne l'image de fond de la carte mobile header.
+// Formule : bgX = focalX - tileW/2
+//   -> place le centre d'une tuile exactement à focalX (70% ou 30% de la carte).
+// Fonctionne quelle que soit la proportion de l'image (portrait, paysage, carré).
+function _applyMobileCardBgPosition(article) {
+  const bg = article.querySelector('.thm-card-mh__bg');
+  if (!bg) return;
+
+  const src = bg.style.backgroundImage.replace(/^url\(['"]?|['"]?\)$/g, '');
+  if (!src) return;
+
+  const doPosition = (natW, natH) => {
+    const cardH  = article.offsetHeight;
+    const cardW  = article.offsetWidth;
+    if (!natW || !natH || !cardH || !cardW) return;
+
+    const SCALE  = article._mobileHeaderScale ?? 1.0;
+    // Largeur de la tuile avec background-size: auto 110%
+    const tileW  = natW * cardH * SCALE / natH;
+    // Point focal en px : 70% pour panneau gauche (impair), 30% pour panneau droit (pair)
+    const focalX = article.matches(':nth-child(even)') ? cardW * 0.3 : cardW * 0.7;
+    // Offset pixel pour centrer une tuile exactement sur focalX
+    const bgX    = focalX - tileW / 2;
+
+    // Override backgroundSize selon le scale (toujours appliquer pour cohérence)
+    bg.style.backgroundSize  = `auto ${(SCALE * 100).toFixed(0)}%`;
+    bg.style.backgroundPosition = `${bgX.toFixed(2)}px center`;
+  };
+
+  const img = new Image();
+  img.onload = () => doPosition(img.naturalWidth, img.naturalHeight);
+  img.src = src;
+  if (img.complete && img.naturalWidth) doPosition(img.naturalWidth, img.naturalHeight);
+}
+
+function buildMobileHeaderCard(thm, index = 0) {
+  const color     = esc(thm.couleur || '#3F3F48');
+  const visualSrc = _mobileVisualSrc(thm);
+  const bgStyle   = visualSrc ? ` style="background-image: url('${esc(visualSrc)}')"` : '';
+
+  return `
+    <article
+      class="thm-card thm-card--mobile-header"
+      style="--thm-color: ${color}"
+      data-id="${thm.id}"
+      aria-label="${esc(thm.titre)}"
+    >
+      <div class="thm-card-mh__bg"${bgStyle}></div>
+      <div class="thm-card-mh__col">
+        <div class="thm-card-mh__info">
+          <div class="thm-card-mh__personnage">
+            ${arrowSpan('right')}
+            <span>${esc(thm.personnage ?? '')}</span>
+            ${arrowSpan('left')}
+          </div>
+          <span class="thm-card-mh__episode-no">Épisode ${esc(thm.episode_numero ?? '')}</span>
+          <span class="thm-card-mh__titre">${esc(thm.titre)}</span>
+        </div>
+        <div class="thm-card-mh__btn-wrap">
+          <button class="buttonRound" type="button">Voir</button>
+        </div>
+      </div>
+    </article>`;
+}
+
+function _bindMobileCardPositions(container, items) {
+  container.querySelectorAll('.thm-card--mobile-header').forEach(article => {
+    const id  = parseInt(article.dataset.id, 10);
+    const thm = items.find(t => t.id === id);
+    // Stocker le scale ACF sur le DOM (fallback 1.1 = 110%)
+    article._mobileHeaderScale = (thm?.mobile_header_scale != null && thm.mobile_header_scale > 0)
+      ? thm.mobile_header_scale
+      : 1.0;
+    requestAnimationFrame(() => requestAnimationFrame(() => _applyMobileCardBgPosition(article)));
+  });
+}
 
 function renderHeaderCards(thematiques) {
   const container = document.getElementById('accueil-header-cards');
@@ -1358,10 +1447,14 @@ function renderHeaderCards(thematiques) {
     );
 
   container.innerHTML = items.length
-    ? items.map(t => buildCard(t, 'header')).join('')
+    ? items.map((t, i) => _MOBILE_MQ.matches ? buildMobileHeaderCard(t, i) : buildCard(t, 'header')).join('')
     : '';
 
-  bindVisualFits(container);
+  if (!_MOBILE_MQ.matches) {
+    bindVisualFits(container);
+  } else {
+    _bindMobileCardPositions(container, items);
+  }
 }
 
 // ─── Carousel (section Thématiques) ──────────────────────────────────────────
@@ -1438,6 +1531,13 @@ class ThmCarousel {
     bindVisualFits(this.track);
     this._bindCardClick();
 
+    // Ajuster la largeur du titre (mobile) après chargement des fontes
+    if (_MOBILE_MQ.matches) {
+      document.fonts.ready.then(() => {
+        this._elems.forEach(({ el }) => _fitMcTitleWrap(el));
+      });
+    }
+
     // Dots
     this.dotsEl.innerHTML = this.items
       .map((_, i) => `<button class="thm-carousel-dots__dot" aria-label="Thématique ${i + 1}"></button>`)
@@ -1473,6 +1573,8 @@ class ThmCarousel {
       if (img.complete && img.naturalWidth) applyVisualFit(img);
       else img.addEventListener('load', () => applyVisualFit(img), { once: true });
     });
+
+    if (_MOBILE_MQ.matches) _fitMcTitleWrap(newEl);
   }
 
   // ── Mise à jour des transforms ──
@@ -1547,14 +1649,44 @@ class ThmCarousel {
     container.addEventListener('pointerdown', e => {
       // Ignorer les clics sur les boutons nav et les boutons de card
       if (e.target.closest('.thm-carousel__btn, .buttonRound')) return;
-      this._dragging          = true;
-      this._dragStartX       = e.clientX;
+      this._dragging          = false;
+      this._dragStartX        = e.clientX;
+      this._dragStartY        = e.clientY;
       this._pointerDownTarget = e.target;
-      container.setPointerCapture(e.pointerId);
-      container.style.cursor = 'grabbing';
+      this._pendingPointerId  = e.pointerId;
+
+      if (!_MOBILE_MQ.matches) {
+        // Desktop : capture immédiate comme avant
+        this._dragging = true;
+        container.setPointerCapture(e.pointerId);
+        container.style.cursor = 'grabbing';
+      }
+      // Mobile : on attend pointermove pour déterminer la direction
+    });
+
+    container.addEventListener('pointermove', e => {
+      // Sur mobile seulement, et seulement tant qu'on n'a pas capturé
+      if (!_MOBILE_MQ.matches || this._dragging || this._pendingPointerId == null) return;
+      if (e.pointerId !== this._pendingPointerId) return;
+
+      const dx = Math.abs(e.clientX - this._dragStartX);
+      const dy = Math.abs(e.clientY - this._dragStartY);
+      if (dx < 8 && dy < 8) return; // pas encore assez de mouvement
+
+      if (dx >= dy) {
+        // Mouvement principalement horizontal → capturer et glisser
+        this._dragging = true;
+        container.setPointerCapture(e.pointerId);
+        container.style.cursor = 'grabbing';
+      } else {
+        // Mouvement principalement vertical → laisser le scroll natif
+        this._pendingPointerId  = null;
+        this._pointerDownTarget = null;
+      }
     });
 
     container.addEventListener('pointerup', e => {
+      this._pendingPointerId = null;
       if (!this._dragging) return;
       this._dragging = false;
       container.style.cursor = '';
@@ -1579,6 +1711,7 @@ class ThmCarousel {
     });
 
     container.addEventListener('pointercancel', () => {
+      this._pendingPointerId = null;
       this._dragging = false;
       container.style.cursor = '';
     });
@@ -1626,3 +1759,29 @@ async function init() {
 }
 
 init();
+
+// ─── Recalcul layout au franchissement du breakpoint mobile/desktop ──────────
+
+// Se déclenche une seule fois au moment exact du passage 1279px ↔ 1280px.
+// Re-rend les header cards (templates différents mobile/desktop) et le carousel
+// (buildCard utilise _MOBILE_MQ.matches pour le src visuel).
+_MOBILE_MQ.addEventListener('change', () => {
+  if (_thematiquesStore.length === 0) return;
+  renderHeaderCards(_thematiquesStore);
+  renderCarousel(_thematiquesStore);
+  window.dispatchEvent(new CustomEvent('secondary-scroll:refresh'));
+});
+
+// Recalcul des positions d'images des cartes mobile header sur resize sans
+// franchissement du breakpoint (ex: rotation d'écran restant en mode mobile).
+let _mobileResizeRaf = null;
+window.addEventListener('resize', () => {
+  if (!_MOBILE_MQ.matches) return;
+  if (_mobileResizeRaf) return;
+  _mobileResizeRaf = requestAnimationFrame(() => {
+    _mobileResizeRaf = null;
+    const container = document.getElementById('accueil-header-cards');
+    if (!container) return;
+    container.querySelectorAll('.thm-card--mobile-header').forEach(_applyMobileCardBgPosition);
+  });
+}, { passive: true });

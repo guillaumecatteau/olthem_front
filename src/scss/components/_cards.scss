@@ -109,6 +109,7 @@
   &__subtitle {
     font-weight: $font-weight-bold;
     text-transform: uppercase;
+    text-align: center;
     color: var(--thm-color); // épisode : sous-titre (nom thématique) en couleur thème
   }
 
@@ -337,7 +338,7 @@
 
 // ─── Responsive ───────────────────────────────────────────────────────────────
 
-@media (max-width: 768px) {
+@include below($bp-md) {
 
   // Header cards : défilement horizontal avec snap
   .accueil-header-cards {
@@ -377,3 +378,230 @@
   }
 }
 
+// ─── Mobile header cards (< $bp-xl) ──────────────────────────────────────────
+// Template alternatif rendu par buildMobileHeaderCard() en JS.
+// Panneau titre 1/3 gauche (impair) ou droite (pair), image sur les 2/3 restants.
+
+@include below($bp-xl) {
+
+  // Override du scroll horizontal hérité du bloc @include below($bp-md)
+  .accueil-header-cards {
+    flex-direction: column;
+    flex: 1 1 0;   // gagne sur height:min(100%,75vw) de cards.scss desktop
+    height: auto;  // annule height: min(100%, 75vw)
+    min-height: 0;
+    max-height: none;
+    overflow: hidden;
+    scroll-snap-type: none;
+    -webkit-overflow-scrolling: auto;
+  }
+
+  // Spécificité (0,2,0) pour écraser .accueil-header-cards .thm-card { flex:1; height:100% }
+  // et .accueil-header-cards .thm-card { flex:none; width:100vw } du bloc @include below($bp-md)
+  .accueil-header-cards .thm-card--mobile-header {
+    flex: 1 1 0;
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    min-height: 0;
+    border-radius: 0;
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+    scroll-snap-align: none;
+    background: $dark;
+  }
+
+  .thm-card--mobile-header {
+
+    // ── Image de fond ──────────────────────────────────────────────────────
+    // background-image setté en inline style par JS (url de l'image).
+    // auto 100% : hauteur = 100% de la carte, largeur = auto (ratio naturel).
+    // repeat-x : tile horizontal pour couvrir toute la carte.
+    // background-position : setté en px par JS (_applyMobileCardBgPosition).
+    .thm-card-mh__bg {
+      position: absolute;
+      inset: 0;
+      background-size: auto 100%;
+      background-repeat: repeat-x;
+      background-position: center center; // valeur par défaut, surchargée par JS
+    }
+
+    // ── Panneau (info + bouton) ──────────────────────────────────────────
+    // 40% de la largeur, côté gauche par défaut.
+    .thm-card-mh__col {
+      position: relative;
+      z-index: 2;
+      width: 40%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    // ── Bloc info : fond blanc, textes en couleur thématique, centré ─────────
+    .thm-card-mh__info {
+      background: $white;
+      padding: 18px 12px;
+      border-bottom-right-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .thm-card-mh__personnage {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 24px;
+      font-weight: $font-weight-bold;
+      text-transform: uppercase;
+      color: var(--thm-color);
+      line-height: 1;
+
+      .thm-arrow {
+        height: 8px;
+        width: auto;
+        --arrow-color: var(--thm-color);
+      }
+    }
+
+    .thm-card-mh__episode-no {
+      font-size: 8px;
+      font-weight: $font-weight-bold;
+      text-transform: uppercase;
+      color: var(--thm-color);
+    }
+
+    .thm-card-mh__titre {
+      font-size: 13px;
+      font-weight: $font-weight-bold;
+      text-transform: uppercase;
+      color: var(--thm-color);
+      text-align: center;
+    }
+
+    // ── Zone bouton : remplit l'espace restant, bouton centré ────────────
+    .thm-card-mh__btn-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      .buttonRound {
+        width: 90%;
+        padding: 0;
+        font-size: 13px;
+        height: 34px;
+      }
+    }
+
+    // ── Cartes paires : disposition inversée ─────────────────────────────
+    &:nth-child(even) {
+      .thm-card-mh__col {
+        margin-left: auto; // panneau à droite
+      }
+
+      .thm-card-mh__info {
+        border-bottom-right-radius: 0;
+        border-bottom-left-radius: 16px;
+      }
+    }
+  }
+}
+
+// ─── Cards carrousel thématiques — mobile ($bp-xl) ────────────────────────────
+// Template simplifié : bloc __mc-footer unifié regroupe épisode, titre et bouton.
+
+@include below($bp-xl) {
+  .thm-card--mobile-carousel {
+    cursor: pointer;
+
+    // ── Bloc titre unifié : positionné en bas de la card ──────────────────────
+    .thm-card__mc-footer {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: $white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px;
+      gap: 8px;
+      z-index: 4;
+    }
+
+    // ── Bloc épisode (personnage + numéro) ────────────────────────────────────
+    .thm-card__mc-episode {
+      position: absolute;
+      // bottom: calc(100% - padding) place le BAS de mc-episode au niveau
+      // du bord supérieur du contenu du footer (top du footer + son padding).
+      // 100% = hauteur du footer (containing block) ; 12px = padding du footer.
+      bottom: calc(100% - 12px);
+      left: 50%;
+      transform: translateX(-50%);
+      width: fit-content;           // s'adapte à la largeur du contenu
+      background: $white;
+      border-radius: 16px 16px 0 0;
+      padding: 12px 24px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+
+      .thm-card__episode-info { margin-top: 0; font-weight: $font-weight-regular; }
+
+      // Nom du personnage
+      .thm-card__personnage { font-size: 24px; }
+
+      // Flèches encadrant le personnage
+      .thm-card__title-wrap--episode {
+        gap: 6px;
+        .thm-arrow {
+          height: 12px;
+          width: auto;
+        }
+      }
+    }
+
+    // ── Ligne titre (neutre : flèches + titre ; épisode : sous-titre) ──────────
+    .thm-card__mc-banner {
+      // block (pas flex) : __title-wrap est un inline-flex vrai, centré par text-align
+      display: block;
+      text-align: center;
+      padding: 0 4px;
+
+      .thm-card__title-wrap {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        max-width: 100%;
+        --arrow-color: var(--thm-color);
+        .thm-arrow {
+          height: 10px;
+          width: auto;
+        }
+      }
+
+      // __title : ne grossit pas, width imposée par JS (_fitMcTitleWrap)
+      .thm-card__title {
+        text-align: center;
+        flex: 0 1 auto;
+        min-width: 0;
+        max-width: 100%;
+      }
+
+      .thm-card__subtitle { font-size: 14px; line-height: 1; }
+    }
+
+    // ── Bouton Voir ───────────────────────────────────────────────────────────
+    .buttonRound {
+      height: 34px;
+      padding: 0;
+      width: 50%;                   // 50% de la largeur de la card
+      font-size: 13px;
+      border-color: var(--thm-color);
+    }
+  }
+}

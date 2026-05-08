@@ -1062,7 +1062,7 @@
   }
 }
 
-@media (max-width: 1024px) {
+@include below($bp-lg) {
   .admin-tool {
     &__overview-counters,
     &__overview-columns {
@@ -1114,7 +1114,7 @@
   }
 }
 
-@media (max-width: 720px) {
+@include below(720px) {
   .admin-tool {
     &__overview-counters,
     &__overview-columns,

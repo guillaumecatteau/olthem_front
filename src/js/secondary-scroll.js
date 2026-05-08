@@ -165,9 +165,10 @@ function updateDecorForScroller(scroller) {
 
   const { scope, rail, thumb } = entry;
 
+  const isMobile = window.innerWidth < 1280;
   const style = getComputedStyle(scroller);
-  const padTop = parseFloat(style.paddingTop) || 0;
-  const padBottom = parseFloat(style.paddingBottom) || 0;
+  const padTop = isMobile ? 0 : (parseFloat(style.paddingTop) || 0);
+  const padBottom = isMobile ? 0 : (parseFloat(style.paddingBottom) || 0);
 
   scroller.style.setProperty('--secondary-pad-top', `${padTop}px`);
   scroller.style.setProperty('--secondary-pad-bottom', `${padBottom}px`);

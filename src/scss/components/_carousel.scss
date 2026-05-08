@@ -85,7 +85,12 @@
     &--prev { left:  clamp(12px, 3vw, 40px); }
     &--next { right: clamp(12px, 3vw, 40px); }
 
-    .thm-arrow { height: 18px; }
+    .thm-carousel__btn-icon {
+      display: block;
+      height: 18px;
+      width: auto;
+      filter: brightness(0) invert(0.5); // grisâtre sur fond blanc (comme les img-gallerie desktop)
+    }
   }
 }
 
@@ -125,20 +130,101 @@
 
 // ─── Responsive ───────────────────────────────────────────────────────────────
 
-@media (max-width: 768px) {
+@include below($bp-xl) {
   .thm-carousel-wrapper {
-    gap: 16px;
+    // Grid : row 1 = slot titre (auto), row 2 = carousel (1fr = tout le reste)
+    display: grid;
+    grid-template-rows: auto 1fr;
+    grid-template-columns: 1fr;
+    justify-items: center;
+    align-items: start;          // overrides align-items:center hérité — items à leur hauteur naturelle
+    row-gap: 32px;               // 32px entre sous-titre et haut de la card
+    height: 100dvh;
+    box-sizing: border-box;
+    padding-top: 32px;
+    padding-bottom: 80px;        // 48px (burger) + 32px (gap card↔burger)
+    position: relative;          // pour les dots en absolu
+
+    > .thm-carousel {
+      width: 100%;
+      min-height: 0;
+      height: auto;              // annule height:380px du bloc below($bp-md)
+      align-self: stretch;       // remplit toute la 1fr row
+    }
+
+    // La card occupe toute la hauteur du track, avec 16px de marge haut/bas
+    .thm-card--carousel {
+      top: 16px;
+      bottom: 16px;
+      height: auto;              // annule height:360px du bloc @include below($bp-md)
+    }
+
+    // Dots centrés dans les 80px sous la card (80÷2 = 40px du bas)
+    > .thm-carousel-dots {
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 30;
+    }
+  }
+
+  // Sur mobile : laisser le scroll vertical natif passer au travers
+  // (horizontal géré par le JS une fois la direction déterminée)
+  .thm-carousel {
+    touch-action: pan-y;
+  }
+
+  // Boutons nav : style identique aux btn-wrap des carousels images (rectangle dark ancré au bord)
+  .thm-carousel__btn {
+    background: rgba($dark, 0.75);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    width: 32px;
+    height: 48px;
+    border-radius: 0;
+    padding: 0;
+    top: 50%;
+    transform: translateY(-50%);
+
+    &:hover {
+      background: rgba($dark, 0.9);
+      transform: translateY(-50%); // annule le scale du desktop
+    }
+
+    &--prev {
+      left: 0;
+      border-radius: 0 16px 16px 0;
+    }
+
+    &--next {
+      right: 0;
+      border-radius: 16px 0 0 16px;
+    }
+
+    // Flèche grey-light sur fond dark
+    .thm-carousel__btn-icon {
+      height: 18px;
+      width: auto;
+      filter: brightness(0) invert(0.5); // ~$grey-light
+    }
+  }
+}
+
+@include below($bp-md) {
+  .thm-carousel-wrapper {
     --slot-w: 300;
   }
 
   .thm-carousel {
-    height: 380px;
+    height: 380px; // hors-wrapper uniquement — la règle > .thm-carousel { height: auto } prime dans le wrapper
 
+    // Conserve le style déjà appliqué par below($bp-xl)
     &__btn {
-      width: 36px;
-      height: 36px;
+      width: 32px;
+      height: 48px;
 
-      .thm-arrow { height: 14px; }
+      .thm-arrow { height: 18px; }
     }
   }
 }

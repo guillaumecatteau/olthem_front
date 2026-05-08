@@ -28,6 +28,69 @@
   position: relative;
   overflow: hidden;
 }
+// --- Mobile : scroll natif via #scroll-viewport ---
+@include below($bp-xl) {
+  :root {
+    --header-height: 0px;
+  }
+
+  // ⚠️ NE PAS MODIFIER — position:absolute est intentionnel et critique.
+  // Sur mobile, #scroll-viewport doit être position:absolute (pas fixed) pour que
+  // son containing block soit body (body.clientWidth) et non le viewport
+  // (window.innerWidth). Sur Windows/Chrome, window.innerWidth inclut la largeur
+  // de la scrollbar système (≈15px), ce qui rend les éléments "fixed" plus larges
+  // que la zone visible → overflow horizontal et burger rogné à droite.
+  // Avec position:absolute sur body (overflow:hidden), body.clientWidth exclut
+  // la scrollbar → pas d'overflow. body.scrollHeight = body.clientHeight
+  // (aucun enfant en flux normal) → body non scrollable.
+  #scroll-viewport {
+    position: absolute; // containing block = body.clientWidth (sans scrollbar)
+    inset: 0;
+    width: 100%;    // override width:100vw du bloc global
+    height: 100dvh; // override calc(100vh - 0px) du bloc global
+    overflow-y: auto;
+    overflow-x: hidden;
+    scroll-snap-type: y mandatory;
+    overscroll-behavior: none; // empêche la propagation du scroll vers body/html
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+
+    &::-webkit-scrollbar { display: none; }
+  }
+
+  // Bloquer le scroll de fond quand le menu burger est ouvert
+  html.burger-open #scroll-viewport {
+    overflow-y: hidden;
+  }
+
+  #scroll-track {
+    transform: none !important;
+    transition: none !important;
+    will-change: auto;
+  }
+
+  .full-section {
+    width: 100%;
+    height: auto;
+    min-height: 100dvh;
+    overflow: hidden;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+
+  // La section accueil a une hauteur fixe pour que les cards remplissent l'espace restant
+  #accueil {
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  #accueil .accueil-header-cards {
+    flex: 1 1 0;
+    min-height: 0;
+    max-height: none;
+  }
+}
 
 .section-inner {
   width: 100%;
@@ -167,6 +230,11 @@
     grid-template-columns: 480px minmax(0, 1fr);
   }
 
+  @include below($bp-xl) {
+    grid-template-columns: 1fr;  // 1 colonne sur mobile — empeche le debordement horizontal
+    gap: 32px;
+  }
+
   &__panel {
     min-width: 0;
     display: flex;
@@ -178,7 +246,7 @@
   .section-subsections__title-block {
     padding-left: 0;
     padding-right: 0;
-    margin-bottom: 56px;
+    margin-bottom: 24px;
   }
 
   .layout-video,
@@ -203,10 +271,12 @@
   flex-direction: column;
 }
 
-#accueil .accueil-header-cards {
-  flex: 1 1 auto;
-  min-height: 0;
-  max-height: 75vw;
+@include above($bp-xl) {
+  #accueil .accueil-header-cards {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: 75vw;
+  }
 }
 #initiative  { background: $dark; }
 #thematiques { background: $dark; }
@@ -236,7 +306,19 @@
   margin-bottom: 8px;
 }
 
-#ressources  { background: #1b1b00; }
+@include below($bp-xl) {
+  // Dans le contexte grid du carousel-wrapper, le stack ne doit pas
+  // centrer verticalement ni avoir min-height:100% (qui gonflerait la row auto).
+  #thematiques .section-builder-slot .section-builder-stack {
+    min-height: auto;
+    justify-content: flex-start;
+  }
+  // Retire le margin-bottom du titre (l'espace est géré par row-gap sur le wrapper)
+  #thematiques .section-builder-slot .section-builder-title {
+    margin-bottom: 0;
+  }
+}
+
 #ateliers    { background: $dark; }
 #partenaires { background: $dark; }
 
@@ -397,7 +479,7 @@
 }
 
 
-@media (max-width: 768px) {
+@include below($bp-xl) {
   .section-subsections-double {
     grid-template-columns: 1fr;
     gap: 24px;
@@ -409,5 +491,116 @@
     .section-subsections__title-logo {
       height: 72px;
     }
+  }
+
+  .section-subsections__title {
+    font-size: 28px;
+  }
+
+  .section-subsections__title-block {
+    margin-bottom: 24px;
+  }
+
+  .section-subsections__content {
+    padding: 32px;
+  }
+
+  .section-subsections:not(.has-nav) .section-subsections__content {
+    padding-top: 32px;
+  }
+
+  // Masquer le logo dans les panels double-colonne sur mobile
+  .section-subsections-double__panel .section-subsections__title-logo-wrap {
+    display: none;
+  }
+
+  // ─── Ateliers mobile : 2 panels empilés ─────────────────────────────────────
+  // Panel gauche (texte) : hauteur naturelle du contenu
+  // Panel droit (carte)  : plein écran + snap magnétique
+  // Les scroll containers intermédiaires sont désactivés pour que le snap du
+  // panel droit soit intercepté par #scroll-viewport (et non par un ancêtre).
+
+  // #ateliers laisse .full-section gérer height: auto / min-height: 100dvh
+
+  #ateliers .section-inner {
+    overflow: visible;
+    height: auto;
+  }
+
+  #ateliers .section-subsections {
+    height: auto;
+  }
+
+  #ateliers .section-subsections__content {
+    overflow: visible;
+    height: auto;
+    padding: 0;
+  }
+
+  #ateliers .section-subsections-double {
+    gap: 0;
+  }
+
+  // 1er panel : contenu naturel
+  #ateliers .section-subsections-double__panel--left {
+    height: auto;
+    padding: 32px 22px 0 22px;
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
+
+  // 2ème panel : plein écran
+  // scroll-snap-align: end (sans scroll-snap-stop: always) = le CSS gère le snap
+  // pour les gestes utilisateur. scroll-snap-stop: normal (défaut) permet aux
+  // scrollTo() programmatiques de passer outre (navigation vers d'autres sections).
+  #ateliers .section-subsections-double__panel--right {
+    height: 100dvh;
+    overflow: hidden;
+    padding: 0;
+    box-sizing: border-box;
+    align-items: stretch;
+    justify-content: flex-start;
+    scroll-snap-align: end;
+  }
+
+  // Map block : remplit le panel
+  #ateliers .ateliers-map-block {
+    height: 100%;
+    gap: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  // Carte : pleine largeur, moitié écran
+  #ateliers .ateliers-map-col {
+    order: -1;
+    flex-shrink: 0;
+    width: 100%;
+    border-radius: 0;
+    height: 50dvh;
+  }
+
+  #ateliers .ateliers-mapbox-container {
+    height: 100%;
+  }
+
+  // Liste : espace restant, scrollable
+  #ateliers .ateliers-list-wrap {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    padding: 32px 32px 50px 22px; // padding-right 32px pour loger la scrollbar
+
+    // Scrollbar centrée dans le padding droit (32px → à 16px)
+    // top/bottom alignés sur le padding du list-wrap (32px / 50px)
+    .secondary-scrollbar {
+      right: 16px;
+      top: 32px;
+      bottom: 50px;
+    }
+  }
+
+  #ateliers .ateliers-list-col {
+    height: 100%;
   }
 }

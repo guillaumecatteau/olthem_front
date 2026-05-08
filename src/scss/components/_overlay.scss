@@ -234,6 +234,12 @@
     display: none;
   }
 
+  @include below($bp-xl) {
+    &__retour {
+      display: none; // remplacé par #overlay-retour-btn
+    }
+  }
+
   &--fullscreen &__retour-inline {
     display: inline-flex;
   }

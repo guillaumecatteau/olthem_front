@@ -26,6 +26,8 @@ export async function fetchThematiques() {
     header:              !!item.header,
     header_position:     item.header_position    ?? "premier",
     visuel:              item.visuel             ?? null,
+    visuel_mobile:       item.visuel_mobile      ?? null,
+    mobile_header_scale: item.mobile_header_scale != null ? parseFloat(item.mobile_header_scale) : null,
     couleur:             item.couleur            ?? "#3F3F48",
     couleur_sombre:      item.couleur_sombre      ?? null,
     builder:             Array.isArray(item.builder) ? item.builder : []

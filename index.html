@@ -16,7 +16,7 @@
       type="image/svg+xml"
       href="./assets/images/icons/icon_InfoHead_white.svg"
     />
-    <link rel="stylesheet" href="./assets/css/style.css?v=20260422-14" />
+    <link rel="stylesheet" href="./assets/css/main.css?v=20260507-26" />
   </head>
   <body>
     <!-- ── Top navigation bar ──────────────────────────────────────────────── -->
@@ -55,9 +55,6 @@
             href="#thematiques"
             data-section="thematiques"
             >Thématiques</a
-          >
-          <a class="site-nav__link" href="#ressources" data-section="ressources"
-            >Ressources</a
           >
           <a class="site-nav__link" href="#ateliers" data-section="ateliers"
             >Ateliers</a
@@ -174,6 +171,17 @@
           data-slug="accueil"
           aria-label="Accueil"
         >
+          <!-- Logo mobile : visible uniquement en version mobile -->
+          <div class="mobile-header">
+            <div class="site-logo">
+              <img
+                class="site-logo__img"
+                src="./assets/images/logos/logo_Olthem.svg"
+                alt="Olthem"
+              />
+              <p class="site-logo__tagline">Plongez dans l&rsquo;éducation aux médias&nbsp;!</p>
+            </div>
+          </div>
           <div class="accueil-header-cards" id="accueil-header-cards"></div>
         </section>
 
@@ -199,34 +207,17 @@
                 class="thm-carousel__btn thm-carousel__btn--prev"
                 aria-label="Thématique précédente"
               >
-                <span
-                  class="thm-arrow thm-arrow--left"
-                  style="--arrow-color: #3f3f48"
-                  aria-hidden="true"
-                ></span>
+                <img class="thm-carousel__btn-icon" src="./assets/images/icons/icon_NavSimple_Prev.svg" alt="" aria-hidden="true" />
               </button>
               <button
                 class="thm-carousel__btn thm-carousel__btn--next"
                 aria-label="Thématique suivante"
               >
-                <span
-                  class="thm-arrow thm-arrow--right"
-                  style="--arrow-color: #3f3f48"
-                  aria-hidden="true"
-                ></span>
+                <img class="thm-carousel__btn-icon" src="./assets/images/icons/icon_NavSimple_Next.svg" alt="" aria-hidden="true" />
               </button>
             </div>
             <div class="thm-carousel-dots" id="thm-carousel-dots"></div>
           </div>
-        </section>
-
-        <section
-          class="full-section"
-          id="ressources"
-          data-slug="ressources"
-          aria-label="Ressources"
-        >
-          <div class="section-inner"></div>
         </section>
 
         <section
@@ -290,28 +281,127 @@
       </div>
     </div>
 
-    <script type="module" src="./src/js/main.js?v=20260422-02"></script>
-    <script type="module" src="./src/js/scroll.js?v=20260421-02"></script>
-    <script type="module" src="./src/js/thematiques.js?v=20260421-02"></script>
-    <script type="module" src="./src/js/secondary-scroll.js?v=20260421-02"></script>
+    <script type="module" src="./src/js/main.js?v=20260507-12"></script>
+    <script type="module" src="./src/js/scroll.js?v=20260507-01"></script>
+    <script type="module" src="./src/js/thematiques.js?v=20260507-01"></script>
+    <script type="module" src="./src/js/secondary-scroll.js?v=20260506-01"></script>
+    <script type="module" src="./src/js/burger-menu.js?v=20260507-01"></script>
 
-    <!-- ── Sous-menu (glisse depuis sous le menu principal) ──────────────── -->
-    <div class="site-submenu" id="site-submenu" aria-hidden="true">
-      <nav class="site-submenu__nav" id="site-submenu-nav"></nav>
-      <button
-        class="site-submenu__retour icon-link"
-        id="site-submenu-retour"
-        type="button"
-        aria-label="Retour"
-      >
-        <img
-          class="icon-link__icon"
-          src="./assets/images/icons/icon_Retour.svg"
-          alt=""
-          aria-hidden="true"
+    <!-- ── Burger button (mobile, sticky bas-droit) ────────────────────── -->
+    <button
+      class="burger-btn"
+      id="burger-btn"
+      type="button"
+      aria-label="Ouvrir le menu"
+      aria-expanded="false"
+      aria-controls="burger-menu"
+    >
+      <img
+        class="burger-btn__icon"
+        src="./assets/images/icons/icon_Burger.svg"
+        alt=""
+        aria-hidden="true"
+      />
+    </button>
+
+    <!-- ── Bouton retour overlay (mobile, sticky bas-gauche) ────────────── -->
+    <button
+      class="overlay-retour-btn"
+      id="overlay-retour-btn"
+      type="button"
+      aria-label="Retour"
+      aria-hidden="true"
+    >
+      <img
+        class="overlay-retour-btn__icon"
+        src="./assets/images/icons/icon_Retour.svg"
+        alt=""
+        aria-hidden="true"
+      />
+    </button>
+
+    <!-- ── Burger menu plein écran (mobile) ─────────────────────────────── -->
+    <div class="burger-menu" id="burger-menu" aria-hidden="true">
+
+      <!-- Auth : recherche + connexion (centré, ordre : Recherche d'abord) -->
+      <div class="burger-menu__auth">
+        <button
+          class="icon-link burger-menu__search-trigger"
+          type="button"
+          id="burger-search-toggle"
+          aria-label="Ouvrir la recherche"
+          aria-expanded="false"
+        >
+          <img class="icon-link__icon" src="./assets/images/icons/icon_Recherche.svg" alt="" aria-hidden="true" />
+          <span class="icon-link__label">Recherche</span>
+        </button>
+        <button
+          class="icon-link"
+          type="button"
+          data-page-overlay="slug:connexion|back:Retour au site|overlay:overlayTotal"
+          aria-label="Se connecter"
+        >
+          <img class="icon-link__icon" src="./assets/images/icons/icon_Connexion.svg" alt="" aria-hidden="true" />
+          <span class="icon-link__label">Connexion</span>
+        </button>
+      </div>
+
+      <!-- Champ de recherche (pleine largeur, sous le bloc auth) -->
+      <div class="burger-menu__search-wrap" id="burger-search-wrap" aria-hidden="true">
+        <input
+          class="site-search__input"
+          id="burger-search-input"
+          type="search"
+          placeholder="Rechercher…"
+          aria-label="Rechercher dans le site"
         />
-        <span class="icon-link__label">Retour</span>
-      </button>
+      </div>
+
+      <!-- Navigation centrale -->
+      <ul class="burger-menu__nav" role="list">
+        <li class="burger-menu__item">
+          <a class="burger-menu__link is-active" href="#accueil" data-section="accueil">
+            <span class="thm-arrow thm-arrow--right" aria-hidden="true"></span>
+            <span>Accueil</span>
+            <span class="thm-arrow thm-arrow--left" aria-hidden="true"></span>
+          </a>
+        </li>
+        <li class="burger-menu__item">
+          <a class="burger-menu__link" href="#initiative" data-section="initiative">
+            <span class="thm-arrow thm-arrow--right" aria-hidden="true"></span>
+            <span>Initiative</span>
+            <span class="thm-arrow thm-arrow--left" aria-hidden="true"></span>
+          </a>
+        </li>
+        <li class="burger-menu__item">
+          <a class="burger-menu__link" href="#thematiques" data-section="thematiques">
+            <span class="thm-arrow thm-arrow--right" aria-hidden="true"></span>
+            <span>Thématiques</span>
+            <span class="thm-arrow thm-arrow--left" aria-hidden="true"></span>
+          </a>
+        </li>
+        <li class="burger-menu__item">
+          <a class="burger-menu__link" href="#ateliers" data-section="ateliers">
+            <span class="thm-arrow thm-arrow--right" aria-hidden="true"></span>
+            <span>Ateliers</span>
+            <span class="thm-arrow thm-arrow--left" aria-hidden="true"></span>
+          </a>
+        </li>
+        <li class="burger-menu__item">
+          <a class="burger-menu__link" href="#partenaires" data-section="partenaires">
+            <span class="thm-arrow thm-arrow--right" aria-hidden="true"></span>
+            <span>Partenaires</span>
+            <span class="thm-arrow thm-arrow--left" aria-hidden="true"></span>
+          </a>
+        </li>
+      </ul>
+
+      <!-- Social links -->
+      <div class="burger-menu__social">
+        <p class="burger-menu__social-label">Suivez-nous :</p>
+        <div class="burger-menu__social-icons" id="burger-social-links"></div>
+      </div>
+
     </div>
 
     <!-- ── Overlay thématique ────────────────────────────────────────────── -->

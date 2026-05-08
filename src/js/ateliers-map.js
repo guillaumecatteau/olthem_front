@@ -566,9 +566,43 @@ export async function initAteliersMap(sectionEl) {
     highlightItems(listEl, [atelier.id]);
   });
 
+  // Sur mobile : bloquer les interactions avec la map tant que le panel n'est
+  // pas positionné (bas du panel = bas du viewport).
+  // Le snap lui-même est géré par CSS (scroll-snap-align: end) pour ne pas
+  // interférer avec la navigation programmatique vers d'autres sections.
+  const panelRight = sectionEl.querySelector('.section-subsections-double__panel--right');
+  const scrollViewport = document.getElementById('scroll-viewport');
+
+  if (panelRight && scrollViewport && window.innerWidth < 1280) {
+    function isPanelSnapped() {
+      const pr = panelRight.getBoundingClientRect();
+      const vr = scrollViewport.getBoundingClientRect();
+      return Math.abs(pr.bottom - vr.bottom) < 10;
+    }
+
+    function updateMapInteractivity() {
+      mapColEl.style.pointerEvents = isPanelSnapped() ? '' : 'none';
+    }
+
+    updateMapInteractivity();
+    scrollViewport.addEventListener('scroll', updateMapInteractivity, { passive: true });
+  }
+
   // The list column uses the secondary-scroll system.
   // Notify it so it calibrates the custom scrollbar.
   window.dispatchEvent(new CustomEvent("secondary-scroll:refresh"));
+
+  // Sur mobile : afficher la scrollbar uniquement pendant le défilement de la liste.
+  if (listColEl) {
+    const listWrapEl = listColEl.closest(".ateliers-list-wrap");
+    let scrollHideTimer = null;
+    listColEl.addEventListener("scroll", () => {
+      if (!listWrapEl) return;
+      listWrapEl.classList.add("is-scrolling");
+      clearTimeout(scrollHideTimer);
+      scrollHideTimer = setTimeout(() => listWrapEl.classList.remove("is-scrolling"), 800);
+    }, { passive: true });
+  }
 
   // Intercept wheel on the list column → scroll the list, not the section.
   if (listColEl) {

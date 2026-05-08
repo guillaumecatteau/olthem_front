@@ -9,8 +9,8 @@
  *   lockMainScroll();   // open overlay
  *   unlockMainScroll(); // close overlay
  *
- * The Thématiques overlay intentionally does NOT use this — it keeps the
- * magnetic scroll active so users can navigate sections while browsing themes.
+ * The Thématiques overlay uses this on mobile only — prevents section switching
+ * while scrolling inside the overlay. Desktop keeps the magnetic scroll active.
  */
 
 let _lockCount = 0;

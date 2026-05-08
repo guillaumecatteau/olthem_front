@@ -566,3 +566,20 @@
     padding-top: 0.12rem;
   }
 }
+
+@include below($bp-xl) {
+  // Masquer la localité pour gagner de l'espace dans la liste
+  .atelier-info__localite { display: none; }
+
+  .ateliers-list {
+    padding: 0;
+  }
+
+  .atelier-item {
+    padding: 0.5rem 0.25rem;
+  }
+
+  .ateliers-map-block {
+    margin-top: 0;
+  }
+}
