@@ -204,6 +204,7 @@ export async function fetchUpcomingAteliers() {
       etablissement:    item.etablissement    || "",
       localite:         item.localite         || "",
       code_postal:      item.code_postal      || "",
+      rue:              item.adresse          || "",
       valid_date:       item.valid_date        || null,
       share_contact:    !!item.share_contact,
       contact_email:    item.contact_email     || null,

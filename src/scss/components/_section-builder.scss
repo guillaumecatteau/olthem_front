@@ -115,7 +115,7 @@
   gap: 8px;
 
   &__title-wrap {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 12px;
@@ -169,6 +169,12 @@
 
     .section-builder-title__logo-wrap {
       margin-bottom: 16px;
+    }
+
+    @include below($bp-xl) {
+      .section-builder-title__logo-wrap {
+        display: none;
+      }
     }
 
     .section-builder-title__title-wrap + .section-builder-title__subtitle {

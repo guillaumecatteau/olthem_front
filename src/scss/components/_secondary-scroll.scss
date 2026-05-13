@@ -121,14 +121,39 @@ body.is-secondary-scroll-dragging * {
 
 @include below($bp-xl) {
   .secondary-scrollbar { display: none; }
-  // Exception : scrollbar de la liste ateliers — visible uniquement pendant le scroll
+  // Exception : scrollbar de la liste ateliers — toujours visible
   #ateliers .ateliers-list-wrap .secondary-scrollbar {
     display: block;
-    opacity: 0;
-    transition: opacity 300ms ease;
+    opacity: 1;
   }
   #ateliers .ateliers-list-wrap.is-scrolling .secondary-scrollbar {
     opacity: 1;
+  }
+
+  // Exception : scrollbar de la liste résultats de recherche
+  .overlay-search__scroll-wrap .secondary-scrollbar {
+    display: block;
+    opacity: 0 !important;
+    transition: opacity 300ms ease;
+    right: 6px;
+    top: 0;
+    bottom: 16px;
+  }
+  .overlay-search__scroll-wrap.is-scrolling .secondary-scrollbar {
+    opacity: 1 !important;
+  }
+
+  // Exception : scrollbar de la liste ateliers du compte utilisateur
+  .compte-ateliers__list-wrap .secondary-scrollbar {
+    display: block;
+    opacity: 0 !important;
+    transition: opacity 300ms ease;
+    right: 0;
+    top: 0;
+    bottom: 0;
+  }
+  .compte-ateliers__list-wrap.is-scrolling .secondary-scrollbar {
+    opacity: 1 !important;
   }
 }
 

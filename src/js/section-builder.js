@@ -1,4 +1,4 @@
-﻿import { esc, plainText, normKey, slugify } from "./utils.js";
+import { esc, plainText, normKey, slugify } from "./utils.js";
 import {
   arrowSpan,
   pickField,
@@ -488,7 +488,7 @@ function fixInnerTitleWidths(container) {
   });
 }
 
-// ─── Accordéon inner-titles (mobile, section initiative) ─────────────────────
+// ─── Accordéon inner-titles (mobile) ─────────────────────────────────────────
 function initInnerTitleAccordions(host) {
   if (!window.matchMedia('(max-width: 1279px)').matches) return;
 
@@ -595,13 +595,22 @@ function bindSectionScrollLinks() {
   });
 }
 
+function yieldToMain() {
+  return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
 async function hydrateMainSections() {
   const sections = await _sectionsPromise;
 
-  sections.forEach((section) => {
-    if (!section?.slug) return;
+  // Ordre DOM : lit les data-slug dans l'ordre du document plutot que l'ordre API
+  const domSlugs = [...document.querySelectorAll('.full-section[data-slug]')].map((el) => el.dataset.slug);
+  const sectionsMap = new Map(sections.map((s) => [s.slug, s]));
+  const orderedSections = domSlugs.map((slug) => sectionsMap.get(slug)).filter(Boolean);
 
-    let host = document.querySelector(`.full-section[data-slug=\"${section.slug}\"] .section-inner`);
+  for (const section of orderedSections) {
+    if (!section?.slug) continue;
+
+    let host = document.querySelector(`.full-section[data-slug="${section.slug}"] .section-inner`);
 
     if (!host && section.slug === "accueil") {
       const accueil = document.getElementById("accueil");
@@ -627,27 +636,30 @@ async function hydrateMainSections() {
       }
     }
 
-    if (!host) return;
+    if (host) {
+      const sectionSubsections = parseSectionSubsections(section.builder);
+      const doubleSectionConfig = parseDoubleSectionConfig(section.builder);
 
-    const sectionSubsections = parseSectionSubsections(section.builder);
-    const doubleSectionConfig = parseDoubleSectionConfig(section.builder);
-
-    if (sectionSubsections.length > 0) {
-      renderSectionSubsections(host, sectionSubsections, {
-        doubleSection: doubleSectionConfig.enabled,
-        dominantSide: doubleSectionConfig.dominant
-      });
-      if (section.slug === 'initiative') initInnerTitleAccordions(host);
-      return;
+      if (sectionSubsections.length > 0) {
+        renderSectionSubsections(host, sectionSubsections, {
+          doubleSection: doubleSectionConfig.enabled,
+          dominantSide: doubleSectionConfig.dominant
+        });
+        initInnerTitleAccordions(host);
+      } else {
+        const html = flattenLayouts(section.builder).map(renderSectionLayout).join("");
+        if (html) {
+          host.innerHTML = `<div class="section-builder-stack">${html}</div>`;
+          fixInnerTitleWidths(host);
+          initInnerTitleAccordions(host);
+        }
+      }
     }
 
-    const html = flattenLayouts(section.builder).map(renderSectionLayout).join("");
-    if (html) {
-      host.innerHTML = `<div class="section-builder-stack">${html}</div>`;
-      fixInnerTitleWidths(host);
-      if (section.slug === 'initiative') initInnerTitleAccordions(host);
-    }
-  });
+    // Notifier les abonnes et ceder le fil au navigateur pour qu'il puisse peindre
+    window.dispatchEvent(new CustomEvent("section:hydrated", { detail: { slug: section.slug } }));
+    await yieldToMain();
+  }
 }
 
 export {

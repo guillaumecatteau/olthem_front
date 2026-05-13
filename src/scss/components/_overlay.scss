@@ -15,6 +15,7 @@
   &.is-visible {
     opacity: 1;
     pointer-events: auto;
+    z-index: 1060; // au-dessus du burger menu (1050)
   }
 
   &--fullscreen {
@@ -81,7 +82,7 @@
 
       .section-builder-title__subtitle {
         margin: 4px 0 0;
-        font-size: 18px;
+        font-size: 14px;
         font-weight: $font-weight-regular;
         color: $grey-light;
         text-align: center;
@@ -157,6 +158,17 @@
       li {
         color: $grey-light;
         font-weight: $font-weight-light;
+        font-size: 14px;
+      }
+
+      p > span,
+      li > span {
+        display: block;
+      }
+
+      p:first-child,
+      p:last-child {
+        font-size: 16px;
       }
     }
 
@@ -238,10 +250,59 @@
     &__retour {
       display: none; // remplacé par #overlay-retour-btn
     }
+
+    // Masqué sur mobile même en fullscreen — le bouton retour fixe prend le relais
+    &__retour-inline,
+    &--fullscreen &__retour-inline {
+      display: none;
+    }
+
+    &__inner {
+      padding: 44px 22px 56px;
+    }
+
+    &--fullscreen &__inner {
+      padding-top: 32px;
+      padding-bottom: 48px;
+      justify-content: flex-start;
+    }
+
+    // Centrage vertical sur mobile pour les overlays simples (connexion, mot de
+    // passe oublié). La classe est gérée côté JS dans applyPageOverlayMode +
+    // setPageOverlayContent en fonction du slug de la page chargée.
+    &--fullscreen#{&}--mobile-centered &__inner {
+      justify-content: center;
+    }
+
+    // Layout sticky pour l'overlay recherche
+    &--fullscreen:has(.overlay-search) &__inner {
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    &--fullscreen:has(.overlay-search) &__content {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      max-width: 100%;
+      margin: 0;
+    }
+
+    &__content .section-builder-title--overlay {
+      margin-bottom: 32px;
+    }
+
+    &__content .layout-formbuilder {
+      gap: 16px;
+    }
   }
 
-  &--fullscreen &__retour-inline {
-    display: inline-flex;
+  @include above($bp-xl) {
+    &--fullscreen &__retour-inline {
+      display: inline-flex;
+    }
   }
 }
 
@@ -385,6 +446,76 @@
 
   // &__page-btn: Use .buttonRoundNav class directly in HTML instead
   // This avoids Sass @use scoping limitations
+
+  @include below($bp-xl) {
+    // Conteneur global : flex column
+    &:has(&__sticky) {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+    }
+  }
+
+  &__sticky {
+    // Desktop : bloc normal
+  }
+
+  &__scroll-wrap {
+    // Desktop : bloc normal
+  }
+
+  &__scroll {
+    // Desktop : bloc normal
+  }
+
+  @include below($bp-xl) {
+    &__sticky {
+      flex-shrink: 0;
+      padding: 32px 0 0;
+
+      .section-builder-title--overlay {
+        margin-bottom: 16px;
+      }
+
+      // Formulaire de recherche (formBuilder ou natif)
+      .layout-formbuilder,
+      .overlay-search__form {
+        margin-bottom: 0;
+      }
+    }
+
+    &__count {
+      margin: 8px 0 0;
+      padding: 0 22px;
+    }
+
+    &__scroll-wrap {
+      flex: 1;
+      min-height: 0;
+      position: relative;  // scope anchor pour .secondary-scrollbar
+      overflow: hidden;
+
+      // Override : rail aligné sur la zone de scroll visible
+      .secondary-scrollbar {
+        right: 0;
+        top: 0;
+        bottom: 16px;
+      }
+    }
+
+    &__scroll {
+      height: 100%;
+      overflow-y: auto;
+      scrollbar-width: none;
+      padding: 0 22px 56px;
+
+      &::-webkit-scrollbar {
+        display: none;
+      }
+    }
+  }
 
   // â”€â”€â”€ FormBuilder intÃ©grÃ© (cas spÃ©cial page Recherche) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // Le form est disposÃ© en ligne : champ Ã  gauche, bouton rond Ã  droite.

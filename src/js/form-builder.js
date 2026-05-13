@@ -25,7 +25,8 @@ import {
   boolValue,
   formBuilderPrimitive,
   formBuilderChoice,
-  buildPageOverlayDescriptor
+  buildPageOverlayDescriptor,
+  titleLogoUrl
 } from "./acf-helpers.js";
 
 // Injected at init by main.js via setFormBuilderDependencies()
@@ -1228,21 +1229,25 @@ function bindFormBuilderSubmissions() {
 
       if (isResetPassword) {
         const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get("reset_token") || "";
-        const password = String(payload.values.password ?? payload.values["mot de passe"] ?? "").trim();
-        if (!token) {
-          message.textContent = "Lien invalide. Veuillez recommencer la procédure.";
-          message.classList.add("layout-formbuilder__message--error");
+        const key   = urlParams.get('key')   || urlParams.get('reset_token') || '';
+        const login = urlParams.get('login') || '';
+        const password = String(payload.values.password ?? payload.values['mot de passe'] ?? '').trim();
+        if (!key) {
+          message.textContent = 'Lien invalide. Veuillez recommencer la procédure.';
+          message.classList.add('layout-formbuilder__message--error');
           return;
         }
-        await resetPasswordRequest(token, password);
-        message.textContent = "Mot de passe mis à jour. Vous pouvez maintenant vous connecter.";
-        message.classList.add("layout-formbuilder__message--success");
-        form.querySelectorAll("input, button").forEach((el) => { el.disabled = true; });
-        // Clean token from URL without reload
+        await resetPasswordRequest(key, login, password);
+        message.textContent = 'Mot de passe mis à jour. Vous pouvez maintenant vous connecter.';
+        message.classList.add('layout-formbuilder__message--success');
+        form.querySelectorAll('input, button').forEach((el) => { el.disabled = true; });
+        // Clean params from URL without reload
         const newUrl = new URL(window.location.href);
-        newUrl.searchParams.delete("reset_token");
-        window.history.replaceState({}, "", newUrl.toString());
+        newUrl.searchParams.delete('key');
+        newUrl.searchParams.delete('login');
+        newUrl.searchParams.delete('action');
+        newUrl.searchParams.delete('reset_token');
+        window.history.replaceState({}, '', newUrl.toString());
         setTimeout(() => _closeOverlay(), 3000);
         return;
       }
@@ -1276,10 +1281,10 @@ function bindFormBuilderSubmissions() {
         _openOverlay({
           exactTitle: "Inscription réussie",
           search: "Inscription réussie",
-          backLabel: pageOverlayBackLabel || "Retour au site",
+          backLabel: _getOverlayCurrentRequest()?.backLabel || "Retour au site",
           overlayMode: "overlayTotal",
           username: registeredUsername,
-          logo: defaultOverlayLogo({ exactTitle: "Inscription" })
+          logo: titleLogoUrl("icon_InfoHead_white")
         }, "Inscription réussie");
 
         return;
@@ -1339,18 +1344,20 @@ function bindFormBuilderSubmissions() {
           clearFormBuilderDraft(form);
           if (isAdminAtelierEditMode) {
             _openOverlay(
-              parsePageOverlayDescriptor("title:AdminTool|search:admintool|back:Retour au site|overlay:overlayTotal"),
+              { exactTitle: "AdminTool", search: "admintool", backLabel: "Retour au site", overlayMode: "overlayTotal" },
               "Admin Tool"
             );
           } else {
             _openOverlay(
-              parsePageOverlayDescriptor("title:Compte utilisateur|search:compte utilisateur|back:Retour au site|overlay:overlayTotal"),
+              { exactTitle: "Compte utilisateur", search: "compte utilisateur", backLabel: "Retour au site", overlayMode: "overlayTotal" },
               "Compte utilisateur"
             );
           }
           return;
         } else {
-          await submitFormBuilderEntry(payload);
+          if (isAtelier) payload.process = "atelier";
+          const submitToken = getStoredToken() || null;
+          await submitFormBuilderEntry({ ...payload, token: submitToken });
         }
 
         if (isAtelier) {
@@ -1366,9 +1373,9 @@ function bindFormBuilderSubmissions() {
           _openOverlay({
             exactTitle: "Atelier programmé",
             search: "Atelier programmé",
-            backLabel: pageOverlayBackLabel || "Retour au site",
+            backLabel: _getOverlayCurrentRequest()?.backLabel || "Retour au site",
             overlayMode: "overlayTotal",
-            logo: defaultOverlayLogo({ exactTitle: "Atelier programmé" }),
+            logo: null,
             atelierData: {
               username: currentUser?.username || "",
               nom: String(payload.values.nom || ""),
@@ -1412,7 +1419,8 @@ function bindFormBuilderSubmissions() {
         : (error instanceof Error ? error.message : "Erreur lors de l'envoi.");
 
       if (isAtelier && !atelierEditId) {
-        openErrorOverlay();
+        message.textContent = apiMessage || "Erreur lors de la cr\u00e9ation de l'atelier.";
+        message.classList.add("layout-formbuilder__message--error");
         return;
       }
 
@@ -1434,7 +1442,7 @@ function bindFormBuilderSubmissions() {
           username: pageOverlayLastRegisteredUsername,
           alert: alertMessage,
           inlineReturnToInscription: true,
-          logo: defaultOverlayLogo({ exactTitle: "Inscription" })
+          logo: titleLogoUrl("icon_InfoHead_white")
         }, "Inscription refusée");
 
         return;
@@ -1474,7 +1482,7 @@ function bindFormBuilderSubmissions() {
         return;
       }
 
-      openErrorOverlay();
+      if (_openOverlay) _openOverlay({ exactTitle: "Erreur 404", search: "Erreur 404", backLabel: "Retour au site", overlayMode: "overlayTotal" });
     } finally {
       if (submitButton instanceof HTMLButtonElement) submitButton.disabled = false;
       updateFormBuilderSubmitState(form);

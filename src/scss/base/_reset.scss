@@ -30,6 +30,12 @@ img {
   max-width: 100%;
 }
 
+// Force [hidden] to always hide — prevents display:flex/inline-flex on
+// component classes from overriding the native hidden attribute.
+[hidden] {
+  display: none !important;
+}
+
 a {
   color: inherit;
   text-decoration: none;

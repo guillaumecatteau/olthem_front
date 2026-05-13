@@ -120,6 +120,9 @@ function buildListItemHTML(atelier) {
         data-dest-lat="${destLat}"
         data-dest-lng="${destLng}"
         data-dest-name="${displayName}"
+        data-dest-rue="${atelier.mundaneum ? "Rue de Nimy 76" : (atelier.rue || "")}"
+        data-dest-postal="${atelier.mundaneum ? "7000" : (atelier.code_postal || "")}"
+        data-dest-localite="${atelier.mundaneum ? "Mons" : (atelier.localite || "")}"
         title="Afficher l'itinéraire sur la carte"
         aria-label="Itinéraire vers ${displayName} sur la carte"
         aria-pressed="false"
@@ -337,41 +340,53 @@ function formatDistance(m) {
 
 let _routeOverlayInstance = null;
 
-function _buildRouteOverlayEl(destName) {
+function _buildRouteOverlayEl(destName, destRue, destPostal, destLocalite) {
   const el = document.createElement("div");
   el.className = "route-overlay";
   el.setAttribute("role", "dialog");
   el.setAttribute("aria-modal", "true");
   el.setAttribute("aria-label", `Itinéraire vers ${destName}`);
   el.innerHTML = `
-    <div class="route-overlay__panel">
-      <div class="route-overlay__header">
-        <span class="route-overlay__dest">${destName}</span>
-        <div class="route-profiles">
-          ${ROUTE_PROFILES.map((p, i) => `
-            <button
-              type="button"
-              class="route-profile-btn${i === 0 ? " route-profile-btn--active" : ""}"
-              data-profile="${p.id}"
-            >${p.label}</button>
-          `).join("")}
+    <div class="route-overlay__inner">
+      <div class="route-overlay__content">
+        <div class="route-overlay__double">
+          <div class="route-overlay__panel">
+            <div class="route-overlay__header">
+              <div class="route-overlay__dest-group">
+                <span class="route-overlay__dest">${destName}</span>
+                ${(destRue || destPostal || destLocalite) ? `
+                <span class="route-overlay__address">${[destRue, [destPostal, destLocalite].filter(Boolean).join(" ")].filter(Boolean).join(", ")}</span>` : ""}
+              </div>
+              <div class="route-profiles">
+                ${ROUTE_PROFILES.map((p, i) => `
+                  <button
+                    type="button"
+                    class="route-profile-btn${i === 0 ? " route-profile-btn--active" : ""}"
+                    data-profile="${p.id}"
+                  >${p.label}</button>
+                `).join("")}
+              </div>
+              <div class="route-summary">
+                <span class="route-summary__duration">—</span>
+                <span class="route-summary__sep">·</span>
+                <span class="route-summary__distance">—</span>
+              </div>
+            </div>
+            <div class="route-steps-wrap">
+              <ul class="route-steps" role="list"></ul>
+            </div>
+          </div>
+          <div class="route-overlay__map-col">
+            <div class="route-overlay__map-container"></div>
+          </div>
         </div>
-        <div class="route-summary">
-          <span class="route-summary__duration">—</span>
-          <span class="route-summary__sep">·</span>
-          <span class="route-summary__distance">—</span>
-        </div>
+        <button type="button" class="icon-link route-overlay__close" aria-label="Fermer l'itinéraire">
+          <img class="icon-link__icon" src="./assets/images/icons/icon_Retour.svg" alt="" aria-hidden="true" />
+          <span class="icon-link__label">Retour au site</span>
+        </button>
       </div>
-      <ul class="route-steps" role="list"></ul>
     </div>
-    <div class="route-overlay__map-col">
-      <div class="route-overlay__map-container"></div>
-    </div>
-    <button type="button" class="icon-link route-overlay__close" aria-label="Fermer l'itinéraire">
-      <img class="icon-link__icon" src="./assets/images/icons/icon_Retour.svg" alt="" aria-hidden="true" />
-      <span class="icon-link__label">Retour au site</span>
-    </button>
-  `;
+    `;
   return el;
 }
 
@@ -436,12 +451,20 @@ async function _fetchRouteForOverlay(userLng, userLat, destLng, destLat, profile
   return res.json();
 }
 
-function openRouteOverlay(destName, destLng, destLat, userLng, userLat, token) {
+function openRouteOverlay(destName, destRue, destPostal, destLocalite, destLng, destLat, userLng, userLat, token) {
   if (_routeOverlayInstance) closeRouteOverlay();
 
-  const overlayEl = _buildRouteOverlayEl(destName);
+  const overlayEl = _buildRouteOverlayEl(destName, destRue, destPostal, destLocalite);
   document.body.appendChild(overlayEl);
   lockMainScroll();
+
+  // Mobile : bouton retour sticky bas-gauche
+  const retourBtn = document.getElementById("overlay-retour-btn");
+  if (retourBtn) {
+    retourBtn.setAttribute("aria-hidden", "false");
+    retourBtn.classList.add("is-visible");
+    retourBtn.addEventListener("click", closeRouteOverlay, { once: true });
+  }
 
   const mapContainerEl = overlayEl.querySelector(".route-overlay__map-container");
   const overlayMap = new window.mapboxgl.Map({
@@ -502,6 +525,13 @@ function openRouteOverlay(destName, destLng, destLat, userLng, userLat, token) {
 
 function closeRouteOverlay() {
   if (!_routeOverlayInstance) return;
+
+  const retourBtn = document.getElementById("overlay-retour-btn");
+  if (retourBtn) {
+    retourBtn.classList.remove("is-visible");
+    retourBtn.setAttribute("aria-hidden", "true");
+  }
+
   const { el, map, onKeydown } = _routeOverlayInstance;
   el.classList.remove("route-overlay--visible");
   document.removeEventListener("keydown", onKeydown);
@@ -673,7 +703,7 @@ export async function initAteliersMap(sectionEl) {
     overlayParams = null;
   }
 
-  async function fetchAndDrawRoute(userLng, userLat, destLng, destLat, btn, destName) {
+  async function fetchAndDrawRoute(userLng, userLat, destLng, destLat, btn, destName, destRue, destPostal, destLocalite) {
     const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${userLng},${userLat};${destLng},${destLat}?geometries=geojson&access_token=${token}`;
     try {
       const res = await fetch(url);
@@ -697,7 +727,7 @@ export async function initAteliersMap(sectionEl) {
       activeRouteBtn = btn;
 
       // Reveal “Voir le trajet” button — clicking opens the full-screen overlay
-      overlayParams = { userLng, userLat, destLng, destLat, destName };
+      overlayParams = { userLng, userLat, destLng, destLat, destName, destRue, destPostal, destLocalite };
       trajetBtn.removeAttribute("hidden");
       // Fit map to show the full route
       const coords = data.routes[0].geometry.coordinates;
@@ -733,19 +763,22 @@ export async function initAteliersMap(sectionEl) {
     }
     clearRoute();
 
-    const destLng  = parseFloat(dirBtn.dataset.destLng);
-    const destLat  = parseFloat(dirBtn.dataset.destLat);
-    const destName = dirBtn.dataset.destName || "";
+    const destLng      = parseFloat(dirBtn.dataset.destLng);
+    const destLat      = parseFloat(dirBtn.dataset.destLat);
+    const destName     = dirBtn.dataset.destName     || "";
+    const destRue      = dirBtn.dataset.destRue      || "";
+    const destPostal   = dirBtn.dataset.destPostal   || "";
+    const destLocalite = dirBtn.dataset.destLocalite || "";
 
     if (!navigator.geolocation) {
       const c = map.getCenter();
-      fetchAndDrawRoute(c.lng, c.lat, destLng, destLat, dirBtn, destName);
+      fetchAndDrawRoute(c.lng, c.lat, destLng, destLat, dirBtn, destName, destRue, destPostal, destLocalite);
       return;
     }
 
     navigator.geolocation.getCurrentPosition(
-      (pos) => fetchAndDrawRoute(pos.coords.longitude, pos.coords.latitude, destLng, destLat, dirBtn, destName),
-      ()    => { const c = map.getCenter(); fetchAndDrawRoute(c.lng, c.lat, destLng, destLat, dirBtn, destName); },
+      (pos) => fetchAndDrawRoute(pos.coords.longitude, pos.coords.latitude, destLng, destLat, dirBtn, destName, destRue, destPostal, destLocalite),
+      ()    => { const c = map.getCenter(); fetchAndDrawRoute(c.lng, c.lat, destLng, destLat, dirBtn, destName, destRue, destPostal, destLocalite); },
       { timeout: 5000 }
     );
   });
@@ -755,6 +788,9 @@ export async function initAteliersMap(sectionEl) {
     if (overlayParams) {
       openRouteOverlay(
         overlayParams.destName,
+        overlayParams.destRue,
+        overlayParams.destPostal,
+        overlayParams.destLocalite,
         overlayParams.destLng, overlayParams.destLat,
         overlayParams.userLng, overlayParams.userLat,
         token

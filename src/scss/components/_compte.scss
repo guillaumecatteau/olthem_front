@@ -34,9 +34,9 @@
 
   &__label {
     flex: 0 0 auto;
-    min-width: 196px;
+    min-width: 150px;
     margin: 0;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: $font-weight-light;
     color: $grey-light;
   }
@@ -48,6 +48,9 @@
     font-size: 14px;
     font-weight: $font-weight-regular;
     color: $white;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
 
   &__actions {
@@ -94,10 +97,29 @@
     margin: 0;
   }
 
+  &__list-wrap {
+    position: relative;
+    overflow: hidden;
+
+    .secondary-scrollbar {
+      right: 0;
+      top: 0;
+      bottom: 0;
+    }
+  }
+
+  &__list-scroll {
+    max-height: 318px;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    &::-webkit-scrollbar { display: none; }
+  }
+
   &__list {
     list-style: none;
     margin: 0;
-    padding: 0;
+    padding: 0 16px 0 0;
     display: flex;
     flex-direction: column;
     gap: 16px;

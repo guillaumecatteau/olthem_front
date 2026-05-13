@@ -1,7 +1,7 @@
 /**
  * scroll.js — Magnetic full-page scroll with per-section URL slugs
  *
- * Sections: accueil, initiative, thematiques, ateliers, partenaires
+ * Sections: accueil, le-projet, thematiques, ateliers, partenaires
  * Scroll with enough force (DELTA_THRESHOLD) to navigate between sections.
  * Insufficient force snaps back to the current section.
  * Arrow keys, Page Up/Down and touch swipe are also supported.
@@ -9,7 +9,7 @@
 
 const SECTIONS = [
   'accueil',
-  'initiative',
+  'le-projet',
   'thematiques',
   'ateliers',
   'partenaires',

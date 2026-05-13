@@ -343,7 +343,8 @@
     border-bottom: none;
     border-radius: 16px 0 0 0;
     cursor: pointer;
-    transition: background 0.2s ease;
+    transform: translateY(0);
+    transition: background 0.2s ease, transform 0.3s ease;
 
     &:hover {
       // seulement sur vrais dispositifs hover (pas tactile — évite le stuck-state iOS)
@@ -354,6 +355,10 @@
 
     &[aria-expanded="true"] {
       background: $grey-dark;
+    }
+
+    &--hidden {
+      transform: translateY(100%);
     }
   }
 
@@ -433,14 +438,56 @@
     }
   }
 
-  // ── Bloc auth : recherche + connexion centres horizontalement ─────────────────
+  // ── Carte utilisateur connecté : fond blanc, sommet du menu ─────────────────
+  .burger-menu__user-card {
+    flex-shrink: 0;
+    background: $white;
+    padding: 16px 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    // Icon-link en mode sombre (fond blanc → icônes et texte foncés)
+    .icon-link {
+      gap: 8px;
+
+      .icon-link__icon {
+        height: 18px;
+        filter: brightness(0); // icône noire
+      }
+
+      .icon-link__label {
+        color: $dark;
+        font-size: 15px;
+        font-weight: $font-weight-bold;
+      }
+
+      &:hover {
+        .icon-link__icon {
+          filter: brightness(0) opacity(0.6);
+        }
+
+        .icon-link__label {
+          color: $grey;
+        }
+      }
+    }
+  }
+
+  // ── Bloc auth : recherche + connexion/déconnexion centrés ─────────────────
   .burger-menu__auth {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 40px;
     padding: clamp(16px, 4.5vw, 32px);
     flex-shrink: 0;
+  }
+
+  .burger-menu__auth-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
   }
 
   // Champ de recherche (pleine largeur, sous le bloc auth, espace toujours reserve)
@@ -448,27 +495,85 @@
     height: clamp(48px, 8vw, 60px);
     display: flex;
     align-items: center;
-    padding: 0 clamp(16px, 4.5vw, 32px);
+    padding: 0 22px;
     flex-shrink: 0;
 
     .site-search__input {
-      // Harmonise avec admin tool
-      height: 40px;
-      border: 1px solid rgba($white, 0.2);
-      border-radius: 10px;
-      background: $grey-dark;
-      font-size: 13px;
-      padding: 0 12px;
       width: 100%;
+      min-height: 42px;
+      border: 1px solid $grey-light;
+      border-radius: 24px;
+      background: transparent;
+      color: $white;
+      padding: 0 16px;
       box-sizing: border-box;
+      font-family: $font-family;
+      font-size: 16px;
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.3s ease;
+
+      &::placeholder {
+        color: $grey;
+        font-size: 16px;
+        font-weight: $font-weight-regular;
+        opacity: 1;
+      }
     }
 
     &.is-open .site-search__input {
       opacity: 1;
       pointer-events: auto;
+    }
+  }
+
+  .burger-menu__search-form {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .burger-menu__search-submit {
+    flex-shrink: 0;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: none;
+    background: $grey;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease, background 0.2s ease;
+
+    img {
+      width: 18px;
+      height: 18px;
+      display: block;
+      filter: brightness(0);
+    }
+
+    &:hover {
+      background: $white;
+    }
+
+    .burger-menu__search-wrap.is-open & {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+
+  // État actif du bouton recherche quand le champ est ouvert
+  .burger-menu__search-trigger.is-active {
+    .icon-link__icon {
+      filter: brightness(0) invert(1) opacity(1);
+    }
+
+    .icon-link__label {
+      color: $white;
     }
   }
 
@@ -507,7 +612,7 @@
     border: none;
     color: $grey-light;
     font-family: $font-family;
-    font-size: clamp(18px, 5.5vw, 28px);
+    font-size: 24px;
     font-weight: $font-weight-medium;
     text-transform: uppercase;
     letter-spacing: 0.05em;

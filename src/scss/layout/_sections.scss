@@ -366,13 +366,27 @@
     padding: 0 22px;
     box-sizing: border-box;
     display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 24px;
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 20px;
 
     p {
       margin: 0;
+    }
+  }
+
+  .site-footer__row {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+
+    &--top {
+      align-items: flex-start;
+      justify-content: flex-start;
+    }
+
+    &--bottom {
+      align-items: flex-end;
+      justify-content: space-between;
     }
   }
 
@@ -455,7 +469,7 @@
 
     #social-links {
       display: flex;
-      align-items: center;
+      align-items: flex-end;
       gap: 16px;
 
       p {
@@ -463,8 +477,9 @@
       }
 
       a {
-        display: inline-flex;
+        display: flex;
         align-items: center;
+        line-height: 0;
         color: $white;
       }
 
@@ -547,6 +562,10 @@
     padding: 32px 22px 0 22px;
     align-items: flex-start;
     justify-content: flex-start;
+
+    .layout-text {
+      margin-bottom: 36px;
+    }
   }
 
   // 2ème panel : plein écran
@@ -602,5 +621,67 @@
 
   #ateliers .ateliers-list-col {
     height: 100%;
+  }
+}
+
+@include below($bp-xl) {
+  #partenaires {
+    // Section-inner (sans footer) = plein écran
+    .section-inner {
+      flex: none;
+      height: 100dvh;
+    }
+
+    // Spacing automatique du stack
+    .section-builder-stack {
+      justify-content: space-between;
+    }
+
+    // Footer padding bas
+    .site-footer {
+      padding-bottom: 64px;
+    }
+
+    // Espacement interne du footer
+    .site-footer__inner {
+      gap: 32px;
+    }
+
+    // Ligne 1 : Contact ← → Suivez-nous
+    .site-footer__row--top {
+      justify-content: space-between;
+    }
+
+    // Bloc Suivez-nous aligné à droite
+    .site-footer__row--top .footer-AddOnLinks:last-child {
+      align-items: flex-end;
+    }
+
+    // Ligne 2 : colonne centrée
+    .site-footer__row--bottom {
+      flex-direction: column;
+      align-items: center;
+      gap: 32px;
+    }
+
+    // SideLinks gauche : Mundaneum centré pleine largeur, liens dessous avec séparateur entre eux
+    .site-footer__row--bottom .footer-SideLinks:first-child {
+      justify-content: center;
+
+      > :first-child {
+        flex-basis: 100%;
+        text-align: center;
+      }
+
+      // Pas de séparateur avant le premier lien (Mentions légales)
+      > :nth-child(2)::before {
+        display: none;
+      }
+    }
+
+    // SideLinks droite : site by centré
+    .site-footer__row--bottom .footer-SideLinks:last-child {
+      justify-content: center;
+    }
   }
 }

@@ -1,0 +1,101 @@
+@use "../base/variables" as *;
+
+// ─── Site Loader ─────────────────────────────────────────────────────────────
+// Écran de chargement initial : logo + barre de progression.
+// Visible dès le chargement, masqué dès que l'accueil est hydraté.
+
+.site-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: $dark;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+
+  &.is-hiding {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  // Logo centré (identique au header mais en version plus grande)
+  &__logo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+
+    &-img {
+      width: 200px;
+      max-width: 60vw;
+      height: auto;
+      filter: brightness(0) invert(1);
+    }
+
+    &-tagline {
+      font-family: $font-family;
+      font-size: 12px;
+      font-weight: $font-weight-regular;
+      color: $grey-light;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      line-height: 1;
+      margin: 0;
+    }
+  }
+
+  // Barre de progression animée
+  &__bar-wrap {
+    width: 200px;
+    max-width: 60vw;
+    height: 2px;
+    background: $grey-dark;
+    border-radius: 1px;
+    overflow: hidden;
+  }
+
+  &__bar {
+    height: 100%;
+    width: 0%;
+    background: $white;
+    border-radius: 1px;
+    animation: loader-progress 1.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+}
+
+@keyframes loader-progress {
+  0%   { width: 0%; }
+  60%  { width: 75%; }
+  80%  { width: 88%; }
+  100% { width: 95%; }   // S'arrête à 95% ; le JS finit à 100% avant de masquer
+}
+
+// ─── Animations d'entrée des éléments d'accueil ──────────────────────────────
+// Déclenchées via JS après la disparition du loader.
+
+// État initial : tous les éléments animés sont invisibles au départ
+// (la classe .will-animate est posée sur l'élément par JS avant le premier paint)
+.will-animate {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+// Classe d'entrée appliquée successivement par JS
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-in {
+  animation: fade-in-up 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+}

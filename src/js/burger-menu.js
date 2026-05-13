@@ -13,10 +13,15 @@ if (burgerBtn && burgerMenu) {
   // --- Ouverture / fermeture ---
 
   burgerBtn.addEventListener('click', () => {
-    const isOpen = burgerMenu.classList.toggle('is-open');
-    burgerBtn.setAttribute('aria-expanded', String(isOpen));
-    burgerMenu.setAttribute('aria-hidden', String(!isOpen));
-    document.documentElement.classList.toggle('burger-open', isOpen);
+    const isOpen = !burgerMenu.classList.contains('is-open');
+    if (isOpen) {
+      burgerMenu.classList.add('is-open');
+      burgerBtn.setAttribute('aria-expanded', 'true');
+      burgerMenu.setAttribute('aria-hidden', 'false');
+      document.documentElement.classList.add('burger-open');
+    } else {
+      closeMenu();
+    }
   });
 
   // Fermer avec Echap
@@ -29,6 +34,7 @@ if (burgerBtn && burgerMenu) {
   const searchToggle = document.getElementById('burger-search-toggle');
   const searchWrap   = document.getElementById('burger-search-wrap');
   const searchInput  = document.getElementById('burger-search-input');
+  const searchForm   = document.getElementById('burger-search-form');
 
   if (searchToggle && searchWrap) {
     searchToggle.addEventListener('click', () => {
@@ -39,6 +45,17 @@ if (burgerBtn && burgerMenu) {
       if (isOpen && searchInput) {
         setTimeout(() => searchInput.focus(), 320);
       }
+    });
+  }
+
+  if (searchForm) {
+    searchForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const query = (searchInput?.value ?? '').trim();
+      if (!query) return;
+      // Ne pas appeler closeMenu() ici : openSearchOverlay gère la fermeture
+      // du burger et le masquage du bouton burger via la détection is-open.
+      window.dispatchEvent(new CustomEvent('search:query', { detail: { query } }));
     });
   }
 
@@ -110,6 +127,16 @@ if (burgerBtn && burgerMenu) {
     burgerBtn.setAttribute('aria-expanded', 'false');
     burgerMenu.setAttribute('aria-hidden', 'true');
     document.documentElement.classList.remove('burger-open');
+    // Refermer la recherche intégrée si elle était ouverte
+    if (searchWrap && searchWrap.classList.contains('is-open')) {
+      searchWrap.classList.remove('is-open');
+      searchWrap.setAttribute('aria-hidden', 'true');
+      if (searchToggle) {
+        searchToggle.setAttribute('aria-expanded', 'false');
+        searchToggle.classList.remove('is-active');
+      }
+      if (searchInput) searchInput.value = '';
+    }
   }
 
   function setActiveSection(sectionId) {

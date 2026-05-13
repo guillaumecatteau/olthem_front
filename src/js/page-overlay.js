@@ -1,7 +1,7 @@
-﻿import { esc, plainText, normKey, slugify } from './utils.js';
+﻿import { esc, plainText, normKey, slugify, fixTitleArrowSpacing } from './utils.js';
 import { fetchPage, fetchOptions, fetchMyAteliers, searchLocalContent } from './api.js';
 import { lockMainScroll, unlockMainScroll } from './scroll-lock.js';
-import { getStoredToken, getStoredUser, persistAuthSession } from './auth.js';
+import { getStoredToken, getStoredUser, persistAuthSession, forgotPasswordRequest } from './auth.js';
 import { bindAdminToolOverlay, isAdminToolRequest } from './admin-tool.js?v=20260422-06';
 import { arrowSpan, pickField, boolValue, titleLogoUrl, buildPageOverlayDescriptor } from './acf-helpers.js';
 import {
@@ -119,6 +119,21 @@ function applyPageOverlayMode(request) {
 
   const isFullscreen = isOverlayTotalRequest(request);
   overlay.classList.toggle("page-overlay--fullscreen", isFullscreen);
+
+  // Centrage vertical mobile pour les pages simples (connexion, mot de passe oublié).
+  // Confirmé / corrigé dans setPageOverlayContent une fois la page réellement chargée.
+  const MOBILE_CENTERED_SLUGS = ["connexion", "mot-de-passe-oublie", "nouveau-mot-de-passe"];
+  const reqSlugNorm = (request.slug || "").toLowerCase().trim();
+  if (reqSlugNorm) {
+    overlay.classList.toggle(
+      "page-overlay--mobile-centered",
+      MOBILE_CENTERED_SLUGS.includes(reqSlugNorm)
+    );
+  } else {
+    // Fermeture (request={}) ou requête sans slug → on retire la classe.
+    overlay.classList.remove("page-overlay--mobile-centered");
+  }
+
   // is-main-overlay-open is now managed by lockMainScroll / unlockMainScroll (scroll-lock.js)
 }
 
@@ -354,6 +369,9 @@ async function setPageOverlayContent(page, fallbackTitle = "", fallbackLogo = nu
       ${inlineCloseHtml}`;
     applyPageOverlayMode(pageOverlayCurrentRequest || {});
     content.classList.remove("page-overlay__content--hydrating");
+    fixTitleArrowSpacing(content);
+    const overlayInnerErr = document.querySelector("#page-overlay .page-overlay__inner");
+    if (overlayInnerErr) overlayInnerErr.scrollTop = 0;
     return;
   }
 
@@ -427,6 +445,19 @@ async function setPageOverlayContent(page, fallbackTitle = "", fallbackLogo = nu
   }
 
   applyPageOverlayMode(pageOverlayCurrentRequest || {});
+
+  // Confirmation du centrage mobile selon le slug réellement chargé.
+  // Priorité sur la détection faite dans applyPageOverlayMode (qui ne connaît
+  // que le slug de la requête, pas toujours disponible).
+  const MOBILE_CENTERED_SLUGS = ["connexion", "mot-de-passe-oublie", "nouveau-mot-de-passe"];
+  const loadedOverlay = document.getElementById("page-overlay");
+  if (loadedOverlay) {
+    loadedOverlay.classList.toggle(
+      "page-overlay--mobile-centered",
+      MOBILE_CENTERED_SLUGS.includes(page.slug || "")
+    );
+  }
+
   bindFormBuilderSubmissions();
 
   if (page.slug === "compte-utilisateur") {
@@ -445,6 +476,9 @@ async function setPageOverlayContent(page, fallbackTitle = "", fallbackLogo = nu
   }
 
   content.classList.remove("page-overlay__content--hydrating");
+  fixTitleArrowSpacing(content);
+  const overlayInner = document.querySelector("#page-overlay .page-overlay__inner");
+  if (overlayInner) overlayInner.scrollTop = 0;
 }
 
 function prefillAtelierEditForm(content, ctx) {
@@ -470,7 +504,7 @@ function prefillAtelierEditForm(content, ctx) {
       const hiddenInput = dropdown?.querySelector(".layout-formbuilder__dropdown-value");
       const labelSpan  = dropdown?.querySelector(".layout-formbuilder__dropdown-label");
       if (hiddenInput) hiddenInput.value = String(val ?? "");
-      if (labelSpan && ctx.thematique) labelSpan.textContent = ctx.thematique;
+      if (labelSpan && (ctx.thematique_title || ctx.thematique)) labelSpan.textContent = ctx.thematique_title || ctx.thematique;
       if (dropdown && val) dropdown.classList.add("has-value");
       return;
     }
@@ -629,7 +663,7 @@ function bindCompteUtilisateurOverlay(content, preloadedAteliers = null) {
     <div class="compte-readonly__actions">
       <button type="button" class="compte-edit-btn buttonRound">Modifier</button>
     </div>
-    ${userEmail ? `<p class="compte-reset-password-link"><a href="#" class="compte-reset-password-anchor">R\u00e9initialiser le mot de passe</a></p>` : ""}`;
+    ${userEmail ? `<p class="compte-reset-password-link"><a href="#" class="compte-reset-password-anchor">R\u00e9initialiser le mot de passe</a></p><p class="compte-reset-password-msg" aria-live="polite" hidden></p>` : ""}`;
 
   (formWrapper || form).insertAdjacentElement("beforebegin", readView);
   hideEdit();
@@ -647,13 +681,14 @@ function bindCompteUtilisateurOverlay(content, preloadedAteliers = null) {
     readView.querySelector(".compte-reset-password-anchor")?.addEventListener("click", async (e) => {
       e.preventDefault();
       const anchor = e.currentTarget;
-      anchor.textContent = "Envoi en cours\u2026";
+      const msgEl = readView.querySelector(".compte-reset-password-msg");
       anchor.style.pointerEvents = "none";
+      if (msgEl) { msgEl.textContent = "Envoi en cours\u2026"; msgEl.hidden = false; }
       try {
         await forgotPasswordRequest(userEmail);
-        anchor.textContent = "Lien envoy\u00e9 \u00e0 votre adresse email.";
+        if (msgEl) { msgEl.textContent = "Lien envoy\u00e9 \u00e0 votre adresse email."; }
       } catch {
-        anchor.textContent = "Erreur. Veuillez r\u00e9essayer.";
+        if (msgEl) { msgEl.textContent = "Erreur. Veuillez r\u00e9essayer."; }
         anchor.style.pointerEvents = "";
       }
     });
@@ -741,24 +776,38 @@ function bindCompteUtilisateurOverlay(content, preloadedAteliers = null) {
 
         return `<li class="compte-ateliers__item${isTermine ? " compte-ateliers__item--termine" : ""}" data-atelier-id="${esc(String(a.id))}">
           <div class="compte-ateliers__item-head">
-            <span class="compte-ateliers__thematique">${esc(a.thematique || "")}</span>
+            <span class="compte-ateliers__thematique">${esc(a.thematique_title || "")}</span>
             <span class="compte-ateliers__status ${statusClass}">${esc(statusLabel)}</span>
           </div>
           ${datesHtml}
-          <div class="compte-ateliers__item-lieu">${esc(a.lieu || "")}, ${esc(a.localite || "")}</div>
+          <div class="compte-ateliers__item-lieu">${esc((Number(a.mundaneum) ? "Mundaneum" : a.etablissement) || "")}, ${esc(a.adresse || "")}, ${esc(a.localite || "")}</div>
           ${isConfirme ? `<p class="compte-ateliers__item-note">Pour toute modification, veuillez contacter un organisateur.</p>` : ""}
           ${isAttente ? `<div class="compte-ateliers__item-actions"><button type="button" class="compte-ateliers__edit-btn buttonRound--ghost" data-atelier-id="${esc(String(a.id))}">Modifier</button></div>` : ""}
         </li>`;
       }).join("");
 
-      ateliersSection.innerHTML = `<h3 class="compte-ateliers__title">Mes ateliers</h3><ul class="compte-ateliers__list">${rows}</ul>`;
+      ateliersSection.innerHTML = `<h3 class="compte-ateliers__title">Mes ateliers</h3><div class="compte-ateliers__list-wrap"><div class="compte-ateliers__list-scroll"><ul class="compte-ateliers__list">${rows}</ul></div></div>`;
+
+      // Mobile scrollbar: show on scroll, hide after 800 ms of inactivity
+      const listScrollEl = ateliersSection.querySelector(".compte-ateliers__list-scroll");
+      const listWrapEl = ateliersSection.querySelector(".compte-ateliers__list-wrap");
+      if (listScrollEl && listWrapEl && !listScrollEl.dataset.scrollingBound) {
+        listScrollEl.dataset.scrollingBound = "1";
+        let ateliersScrollHideTimer = null;
+        listScrollEl.addEventListener("scroll", () => {
+          listWrapEl.classList.add("is-scrolling");
+          clearTimeout(ateliersScrollHideTimer);
+          ateliersScrollHideTimer = setTimeout(() => listWrapEl.classList.remove("is-scrolling"), 800);
+        }, { passive: true });
+      }
+      window.dispatchEvent(new CustomEvent("secondary-scroll:refresh"));
 
       // "Modifier" button on pending ateliers → open creation overlay in edit mode
       ateliersSection.addEventListener("click", (e) => {
         const btn = e.target.closest(".compte-ateliers__edit-btn");
         if (!btn) return;
         const id = Number(btn.dataset.atelierId);
-        const target = ateliers.find((a) => a.id === id);
+        const target = ateliers.find((a) => Number(a.id) === id);
         if (!target) return;
         atelierEditContext = target;
         openPageOverlayWithRequest({
@@ -853,9 +902,52 @@ async function openSearchOverlay(query, page = 1, { fromPopstate = false } = {})
   if (closeLabel) closeLabel.textContent = "Retour au site";
 
   applyPageOverlayMode(request);
-  lockMainScroll();
+
+  // Sur mobile : même comportement que openPageOverlayWithRequest
+  const burgerMenu = document.getElementById("burger-menu");
+  const burgerBtn  = document.getElementById("burger-btn");
+  const wasFromBurgerSearch = !!(burgerMenu && burgerMenu.classList.contains("is-open"));
+
+  if (wasFromBurgerSearch) {
+    if (burgerBtn) {
+      burgerBtn.setAttribute("aria-expanded", "false");
+      burgerBtn.classList.add("burger-btn--hidden");
+    }
+    const onOverlayIn = (e) => {
+      if (e.target !== overlay) return;
+      overlay.removeEventListener("transitionend", onOverlayIn);
+      burgerMenu.classList.remove("is-open");
+      burgerMenu.setAttribute("aria-hidden", "true");
+      document.documentElement.classList.remove("burger-open");
+      // Fermer la recherche intégrée si ouverte
+      const bSearchWrap = document.getElementById("burger-search-wrap");
+      const bSearchToggle = document.getElementById("burger-search-toggle");
+      const bSearchInput = document.getElementById("burger-search-input");
+      if (bSearchWrap?.classList.contains("is-open")) {
+        bSearchWrap.classList.remove("is-open");
+        bSearchWrap.setAttribute("aria-hidden", "true");
+        if (bSearchToggle) { bSearchToggle.setAttribute("aria-expanded", "false"); bSearchToggle.classList.remove("is-active"); }
+        if (bSearchInput) bSearchInput.value = "";
+      }
+    };
+    overlay.addEventListener("transitionend", onOverlayIn);
+  }
+
+  if (!overlay.classList.contains("is-visible")) {
+    lockMainScroll();
+  }
   overlay.classList.add("is-visible");
   overlay.setAttribute("aria-hidden", "false");
+
+  // Bouton retour mobile
+  const retourBtn = document.getElementById("overlay-retour-btn");
+  if (retourBtn) {
+    retourBtn.classList.remove("overlay-retour-btn--thm");
+    retourBtn.style.removeProperty("--retour-bg");
+    retourBtn.setAttribute("aria-hidden", "false");
+    retourBtn.classList.add("is-visible");
+    retourBtn.addEventListener("click", () => closePageOverlay(), { once: true });
+  }
   setPageOverlayLoading("Recherche");
 
   // Nouvelle recherche → pushState pour que le bouton Précédent revienne ici.
@@ -984,17 +1076,23 @@ function setSearchOverlayContent(query, results, total, totalPages, page) {
   const retourHtml = pageOverlayInlineCloseHtml("Retour au site");
 
   content.innerHTML = `
-    ${heading}
     <div class="overlay-search">
-      ${searchForm}
-      ${countHtml}
-      ${resultsHtml}
-      ${paginationHtml}
+      <div class="overlay-search__sticky">
+        ${heading}
+        ${searchForm}
+        ${countHtml}
+      </div>
+      <div class="overlay-search__scroll-wrap">
+        <div class="overlay-search__scroll">
+          ${resultsHtml}
+          ${paginationHtml}
+        </div>
+      </div>
     </div>
     ${retourHtml}`;
 
   const retour = content.querySelector(".page-overlay__retour-inline");
-  if (retour) retour.style.display = "inline-flex";
+  // Ne pas forcer inline-flex : la règle CSS mobile (display:none) doit primer.
 
   // If using the formBuilder form: mark as search mode, bind, then pre-fill
   if (useFormBuilder) {
@@ -1014,6 +1112,20 @@ function setSearchOverlayContent(query, results, total, totalPages, page) {
   }
 
   applyPageOverlayMode(pageOverlayCurrentRequest || {});
+  window.dispatchEvent(new CustomEvent('secondary-scroll:refresh'));
+
+  // Mobile scrollbar: show on scroll, hide after 800 ms of inactivity
+  const scrollEl = content.querySelector(".overlay-search__scroll");
+  const scrollWrapEl = content.querySelector(".overlay-search__scroll-wrap");
+  if (scrollEl && scrollWrapEl && !scrollEl.dataset.scrollingBound) {
+    scrollEl.dataset.scrollingBound = "1";
+    let scrollHideTimer = null;
+    scrollEl.addEventListener("scroll", () => {
+      scrollWrapEl.classList.add("is-scrolling");
+      clearTimeout(scrollHideTimer);
+      scrollHideTimer = setTimeout(() => scrollWrapEl.classList.remove("is-scrolling"), 800);
+    }, { passive: true });
+  }
 }
 
 function openPageOverlayWithRequest(request, fallbackTitle = "Page") {
@@ -1074,7 +1186,50 @@ function openPageOverlayWithRequest(request, fallbackTitle = "Page") {
   }
 
   applyPageOverlayMode(request);
-  lockMainScroll();
+
+  // Sur mobile : masquer le bouton burger dès l'ouverture de l'overlay.
+  // Si le menu burger était ouvert, le fermer silencieusement une fois l'overlay opaque.
+  const burgerMenu = document.getElementById("burger-menu");
+  const burgerBtn  = document.getElementById("burger-btn");
+  const wasFromBurger = !!(burgerMenu && burgerMenu.classList.contains("is-open"));
+
+  if (burgerBtn) {
+    burgerBtn.classList.add("burger-btn--hidden");
+  }
+  if (wasFromBurger) {
+    if (burgerBtn) burgerBtn.setAttribute("aria-expanded", "false");
+    // Fermer le menu silencieusement une fois l'overlay opaque par dessus
+    const onOverlayIn = (e) => {
+      if (e.target !== overlay) return;
+      overlay.removeEventListener("transitionend", onOverlayIn);
+      burgerMenu.classList.remove("is-open");
+      burgerMenu.setAttribute("aria-hidden", "true");
+      document.documentElement.classList.remove("burger-open");
+      // Fermer la recherche intégrée si ouverte
+      const bSearchWrap = document.getElementById("burger-search-wrap");
+      const bSearchToggle = document.getElementById("burger-search-toggle");
+      const bSearchInput = document.getElementById("burger-search-input");
+      if (bSearchWrap?.classList.contains("is-open")) {
+        bSearchWrap.classList.remove("is-open");
+        bSearchWrap.setAttribute("aria-hidden", "true");
+        if (bSearchToggle) { bSearchToggle.setAttribute("aria-expanded", "false"); bSearchToggle.classList.remove("is-active"); }
+        if (bSearchInput) bSearchInput.value = "";
+      }
+    };
+    overlay.addEventListener("transitionend", onOverlayIn);
+  }
+
+  // Remettre le scroll de l'overlay au sommet (fait aussi après injection du contenu)
+  const overlayInner = overlay.querySelector(".page-overlay__inner");
+  if (overlayInner) overlayInner.scrollTop = 0;
+
+  // Ne locker qu'une seule fois même si l'overlay est déjà visible
+  // (navigation entre overlays via retour-inline : openPageOverlayWithRequest
+  // peut être rappelé pendant que l'overlay est ouvert → double lock sinon)
+  const wasAlreadyVisible = overlay.classList.contains("is-visible");
+  if (!wasAlreadyVisible) {
+    lockMainScroll();
+  }
 
   overlay.classList.add("is-visible");
   overlay.setAttribute("aria-hidden", "false");
@@ -1089,7 +1244,14 @@ function openPageOverlayWithRequest(request, fallbackTitle = "Page") {
     retourBtn.style.removeProperty("--retour-bg");
     retourBtn.setAttribute("aria-hidden", "false");
     retourBtn.classList.add("is-visible");
-    retourBtn.addEventListener("click", () => closePageOverlay(), { once: true });
+    if (request.inlineReturnToCompte) {
+      retourBtn.addEventListener("click", () => openPageOverlayWithRequest(
+        { search: "compte utilisateur", overlayMode: "overlayTotal", backLabel: "Retour au site" },
+        "Compte utilisateur"
+      ), { once: true });
+    } else {
+      retourBtn.addEventListener("click", () => closePageOverlay(), { once: true });
+    }
   }
 
   const isCompteRequest = slugify(request.search || "") === "compte-utilisateur"
@@ -1142,14 +1304,32 @@ function closePageOverlay({ keepUrl = false } = {}) {
     retourBtn.setAttribute("aria-hidden", "true");
   }
 
-  const onTransitionEnd = (e) => {
-    if (e.target !== overlay) return;
+  // Restaurer le bouton burger mobile (masqué à l'ouverture depuis le menu burger)
+  const burgerBtn = document.getElementById("burger-btn");
+  if (burgerBtn) {
+    burgerBtn.classList.remove("burger-btn--hidden");
+  }
+
+  const CLOSE_TRANSITION_MS = 400; // légèrement au-dessus de la transition 0.35s
+  let fallbackUnlockTimer;
+
+  const doUnlock = () => {
+    clearTimeout(fallbackUnlockTimer);
     overlay.removeEventListener("transitionend", onTransitionEnd);
     applyPageOverlayMode({});
     unlockMainScroll();
     window.dispatchEvent(new CustomEvent("secondary-scroll:refresh"));
   };
+
+  const onTransitionEnd = (e) => {
+    if (e.target !== overlay) return;
+    doUnlock();
+  };
   overlay.addEventListener("transitionend", onTransitionEnd);
+
+  // Fallback : si transitionend ne se déclenche pas (overlay déjà caché,
+  // transition interrompue, etc.), déverrouiller quand même après la durée.
+  fallbackUnlockTimer = setTimeout(doUnlock, CLOSE_TRANSITION_MS);
 }
 
 function bindPageOverlay() {

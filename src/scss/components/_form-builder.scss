@@ -37,6 +37,7 @@
 
   &--simple {
     max-width: 600px;
+    padding-right: 0;
 
     .layout-formbuilder__fields {
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -56,7 +57,7 @@
   &__group-title {
     margin: 0;
     color: $white;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: $font-weight-regular;
     text-transform: none;
     letter-spacing: 0;
@@ -131,6 +132,14 @@
     }
   }
 
+  &__field.is-valid &__input {
+    border-color: $validGreen;
+  }
+
+  &__field.is-valid &__dropdown-toggle {
+    border-color: $validGreen;
+  }
+
   &__field--password &__input {
     padding-right: 46px;
   }
@@ -140,14 +149,16 @@
     right: calc(-1 * ((var(--field-column-gap) / 2) + (var(--validation-icon-size) / 2)));
     top: 21px;
     transform: translateY(-50%);
+    width: var(--validation-icon-size);
+    height: var(--validation-icon-size);
     opacity: 0;
     pointer-events: none;
+    background-color: $validGreen;
+    -webkit-mask: center / contain no-repeat url("../images/icons/icon_check.svg");
+    mask: center / contain no-repeat url("../images/icons/icon_check.svg");
 
     img {
-      display: block;
-      width: var(--validation-icon-size);
-      height: var(--validation-icon-size);
-      filter: brightness(0) saturate(100%) invert(74%) sepia(1%) saturate(0%) hue-rotate(341deg) brightness(94%) contrast(90%);
+      display: none;
     }
   }
 
@@ -296,7 +307,7 @@
     max-height: 240px;
     overflow-y: auto;
     margin: 0;
-    padding: 12px 16px;
+    padding: 6px 0;
     list-style: none;
     background: $dark;
     border: 1px solid $grey-light;
@@ -357,7 +368,7 @@
     justify-content: flex-start;
     gap: 8px;
     color: $grey-light;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: $font-weight-light;
 
     input[type="checkbox"] {
@@ -645,6 +656,17 @@
 @include below($bp-md) {
   .layout-formbuilder {
     max-width: 100%;
+    padding-right: 0;
+    gap: 22px;
+
+    &__input,
+    &__dropdown-toggle {
+      font-size: 14px;
+    }
+
+    &__valid-icon {
+      display: none;
+    }
 
     &__columns {
       grid-template-columns: 1fr;
@@ -652,16 +674,46 @@
     }
 
     &__column {
-      gap: 20px;
+      gap: 16px;
     }
 
     &__fields {
       grid-template-columns: 1fr;
-      gap: 14px;
+      gap: 10px;
     }
 
     &__field--grand {
       grid-column: span 1;
     }
+
+    &__checks--settings {
+      gap: 8px;
+    }
+  }
+
+  .layout-formbuilder--double {
+    .layout-formbuilder__columns {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  // --simple : même surcharge de spécificité
+  .layout-formbuilder--simple {
+    .layout-formbuilder__fields {
+      grid-template-columns: 1fr;
+    }
+    .layout-formbuilder__field--grand {
+      grid-column: span 1;
+    }
+  }
+
+  // Champs spécifiques : pleine largeur forcée
+  .layout-formbuilder [data-linked-column="etablissement"],
+  .layout-formbuilder [data-linked-column="adresse"],
+  .layout-formbuilder [data-linked-column="start_date"],
+  .layout-formbuilder [data-linked-column="end_date"],
+  .layout-formbuilder [data-field-type="email"],
+  .layout-formbuilder [data-field-type="tel"] {
+    grid-column: 1 / -1;
   }
 }

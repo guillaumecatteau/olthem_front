@@ -19,8 +19,23 @@
     <link rel="stylesheet" href="./assets/css/main.css?v=20260507-26" />
   </head>
   <body>
+    <!-- ── Loader initial ─────────────────────────────────────────────────── -->
+    <div class="site-loader" id="site-loader" aria-hidden="true" role="status" aria-label="Chargement en cours">
+      <div class="site-loader__logo">
+        <img
+          class="site-loader__logo-img"
+          src="./assets/images/logos/logo_Olthem.svg"
+          alt="Olthem"
+        />
+        <p class="site-loader__logo-tagline">Plongez dans l&rsquo;éducation aux médias&nbsp;!</p>
+      </div>
+      <div class="site-loader__bar-wrap">
+        <div class="site-loader__bar" id="site-loader-bar"></div>
+      </div>
+    </div>
+
     <!-- ── Top navigation bar ──────────────────────────────────────────────── -->
-    <header class="site-header" id="site-header">
+    <header class="site-header will-animate" id="site-header">
       <div class="site-header__inner">
         <!-- Left: Logo + Tagline -->
         <div class="site-header__left">
@@ -47,8 +62,8 @@
             data-section="accueil"
             >Accueil</a
           >
-          <a class="site-nav__link" href="#initiative" data-section="initiative"
-            >Initiative</a
+          <a class="site-nav__link" href="#le-projet" data-section="le-projet"
+            >Le projet</a
           >
           <a
             class="site-nav__link"
@@ -187,9 +202,9 @@
 
         <section
           class="full-section"
-          id="initiative"
+          id="le-projet"
           data-slug="initiative"
-          aria-label="Initiative"
+          aria-label="Le projet"
         >
           <div class="section-inner"></div>
         </section>
@@ -238,43 +253,55 @@
           <div class="section-inner"></div>
           <footer class="site-footer" role="contentinfo">
             <div class="site-footer__inner">
-              <div class="footer-SideLinks">
-                <p>
-                  <span id="current-year"></span> &copy;
+              <!-- Ligne 1 : Contact + Suivez-nous -->
+              <div class="site-footer__row site-footer__row--top">
+                <div class="footer-AddOnLinks">
+                  <p>Contact :</p>
+                  <p><a href="mailto:info@mundaneum.be">info@mundaneum.be</a></p>
+                </div>
+                <div class="footer-AddOnLinks">
+                  <p>Suivez-nous :</p>
+                  <div id="social-links"></div>
+                </div>
+              </div>
+              <!-- Ligne 2 : Légal + Site by -->
+              <div class="site-footer__row site-footer__row--bottom">
+                <div class="footer-SideLinks">
+                  <p>
+                    <span id="current-year"></span> &copy;
+                    <a
+                      href="https://mundaneum.org/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      >MUNDANEUM</a
+                    >
+                  </p>
                   <a
-                    href="https://mundaneum.org/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    >MUNDANEUM</a
+                    href="#mentions-legales"
+                    class="site-footer__link"
+                    data-page-overlay="title:Mentions légales|search:mentions|back:Retour au site"
+                    >Mentions légales</a
                   >
-                </p>
-                <a
-                  href="#mentions-legales"
-                  class="site-footer__link"
-                  data-page-overlay="title:Mentions légales|search:mentions|back:Retour au site"
-                  >Mentions légales</a
-                >
-              </div>
-              <div class="footer-AddOnLinks">
-                <p>Contact :</p>
-                <p><a href="mailto:info@mundaneum.be">info@mundaneum.be</a></p>
-              </div>
-              <div class="footer-AddOnLinks">
-                <p>Suivez-nous :</p>
-                <div id="social-links"></div>
-              </div>
-              <div class="footer-SideLinks">
-                <p>
-                  site by
                   <a
-                    href="https://gcdigitalarts.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    >GC DIGITAL ARTS</a
+                    href="#politique-de-confidentialite"
+                    class="site-footer__link"
+                    data-page-overlay="title:Politique de confidentialité|search:politique de confidentialité|back:Retour au site"
+                    >Politique de confidentialité</a
                   >
-                </p>
+                </div>
+                <div class="footer-SideLinks">
+                  <p>
+                    site by
+                    <a
+                      href="https://gcdigitalarts.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      >GC DIGITAL ARTS</a
+                    >
+                  </p>
                   <p>Powered by Wordpress</p>
                 </div>
+              </div>
             </div>
           </footer>
         </section>
@@ -323,38 +350,70 @@
     <!-- ── Burger menu plein écran (mobile) ─────────────────────────────── -->
     <div class="burger-menu" id="burger-menu" aria-hidden="true">
 
-      <!-- Auth : recherche + connexion (centré, ordre : Recherche d'abord) -->
+      <!-- Carte utilisateur connecté (au sommet, fond blanc) -->
+      <div class="burger-menu__user-card" id="burger-user-card" hidden>
+        <button
+          class="icon-link icon-link--plain-case"
+          type="button"
+          id="burger-user-link"
+          data-page-overlay="title:Compte utilisateur|search:compte utilisateur|back:Retour au site|overlay:overlayTotal"
+          aria-label="Accéder à votre compte"
+        >
+          <img class="icon-link__icon" id="burger-user-icon" src="./assets/images/icons/icon_User.svg" alt="" aria-hidden="true" />
+          <span class="icon-link__label" id="burger-user-label">Mon compte</span>
+        </button>
+      </div>
+
+      <!-- Auth : recherche + connexion/déconnexion (centré) -->
       <div class="burger-menu__auth">
-        <button
-          class="icon-link burger-menu__search-trigger"
-          type="button"
-          id="burger-search-toggle"
-          aria-label="Ouvrir la recherche"
-          aria-expanded="false"
-        >
-          <img class="icon-link__icon" src="./assets/images/icons/icon_Recherche.svg" alt="" aria-hidden="true" />
-          <span class="icon-link__label">Recherche</span>
-        </button>
-        <button
-          class="icon-link"
-          type="button"
-          data-page-overlay="slug:connexion|back:Retour au site|overlay:overlayTotal"
-          aria-label="Se connecter"
-        >
-          <img class="icon-link__icon" src="./assets/images/icons/icon_Connexion.svg" alt="" aria-hidden="true" />
-          <span class="icon-link__label">Connexion</span>
-        </button>
+        <div class="burger-menu__auth-row">
+          <button
+            class="icon-link burger-menu__search-trigger"
+            type="button"
+            id="burger-search-toggle"
+            aria-label="Ouvrir la recherche"
+            aria-expanded="false"
+          >
+            <img class="icon-link__icon" src="./assets/images/icons/icon_Recherche.svg" alt="" aria-hidden="true" />
+            <span class="icon-link__label">Recherche</span>
+          </button>
+          <button
+            class="icon-link"
+            type="button"
+            id="burger-connexion-btn"
+            data-page-overlay="slug:connexion|back:Retour au site|overlay:overlayTotal"
+            aria-label="Se connecter"
+          >
+            <img class="icon-link__icon" src="./assets/images/icons/icon_Connexion.svg" alt="" aria-hidden="true" />
+            <span class="icon-link__label">Connexion</span>
+          </button>
+          <button
+            class="icon-link"
+            type="button"
+            id="burger-logout-btn"
+            aria-label="Se déconnecter"
+            hidden
+          >
+            <img class="icon-link__icon" src="./assets/images/icons/icon_Deconnexion.svg" alt="" aria-hidden="true" />
+            <span class="icon-link__label">Déconnexion</span>
+          </button>
+        </div>
       </div>
 
       <!-- Champ de recherche (pleine largeur, sous le bloc auth) -->
       <div class="burger-menu__search-wrap" id="burger-search-wrap" aria-hidden="true">
-        <input
-          class="site-search__input"
-          id="burger-search-input"
-          type="search"
-          placeholder="Rechercher…"
-          aria-label="Rechercher dans le site"
-        />
+        <form class="burger-menu__search-form" id="burger-search-form" autocomplete="off">
+          <input
+            class="site-search__input"
+            id="burger-search-input"
+            type="search"
+            placeholder="Rechercher…"
+            aria-label="Rechercher dans le site"
+          />
+          <button class="burger-menu__search-submit" type="submit" aria-label="Lancer la recherche">
+            <img src="./assets/images/icons/icon_Recherche.svg" alt="" aria-hidden="true" />
+          </button>
+        </form>
       </div>
 
       <!-- Navigation centrale -->
@@ -367,9 +426,9 @@
           </a>
         </li>
         <li class="burger-menu__item">
-          <a class="burger-menu__link" href="#initiative" data-section="initiative">
+          <a class="burger-menu__link" href="#le-projet" data-section="le-projet">
             <span class="thm-arrow thm-arrow--right" aria-hidden="true"></span>
-            <span>Initiative</span>
+            <span>Le projet</span>
             <span class="thm-arrow thm-arrow--left" aria-hidden="true"></span>
           </a>
         </li>

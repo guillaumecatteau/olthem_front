@@ -212,16 +212,17 @@ export async function logoutAuthUser(token) {
 }
 
 export async function forgotPasswordRequest(email) {
+  const redirectUrl = window.location.origin + window.location.pathname;
   return requestAuth("forgot-password", {
     method: "POST",
-    body: { email }
+    body: { email, redirect_url: redirectUrl }
   });
 }
 
-export async function resetPasswordRequest(token, password) {
+export async function resetPasswordRequest(key, login, password) {
   return requestAuth("reset-password", {
     method: "POST",
-    body: { token, password }
+    body: { key, login, password }
   });
 }
 
@@ -236,6 +237,13 @@ export function initHeaderAuth() {
   const searchToggle = document.getElementById("header-search-toggle");
   const searchPanel = document.getElementById("header-search-panel");
   const searchInput = document.getElementById("header-search-input");
+
+  // Burger menu auth elements
+  const burgerConnexionBtn = document.getElementById("burger-connexion-btn");
+  const burgerLogoutBtn = document.getElementById("burger-logout-btn");
+  const burgerUserCard = document.getElementById("burger-user-card");
+  const burgerUserIcon = document.getElementById("burger-user-icon");
+  const burgerUserLabel = document.getElementById("burger-user-label");
 
   if (!right || !trigger || !userActions || !userIcon || !userLabel || !logoutLink || !searchToggle || !searchPanel || !searchInput) {
     return;
@@ -297,6 +305,10 @@ export function initHeaderAuth() {
     userLabel.textContent = "Compte utilisateur";
     closeSearchPanel();
     if (triggerLabel) triggerLabel.textContent = "Connexion";
+    // Burger
+    if (burgerUserCard) burgerUserCard.hidden = true;
+    if (burgerConnexionBtn) burgerConnexionBtn.hidden = false;
+    if (burgerLogoutBtn) burgerLogoutBtn.hidden = true;
   }
 
   function setGuestState(animated = false) {
@@ -320,6 +332,14 @@ export function initHeaderAuth() {
     userIcon.setAttribute("src", user.isAdmin ? ADMIN_ICON_PATH : USER_ICON_PATH);
     userLabel.textContent = userDisplayLabel(user);
     closeSearchPanel();
+    // Burger
+    if (burgerUserCard) {
+      if (burgerUserIcon) burgerUserIcon.setAttribute("src", user.isAdmin ? ADMIN_ICON_PATH : USER_ICON_PATH);
+      if (burgerUserLabel) burgerUserLabel.textContent = userDisplayLabel(user);
+      burgerUserCard.hidden = false;
+    }
+    if (burgerConnexionBtn) burgerConnexionBtn.hidden = true;
+    if (burgerLogoutBtn) burgerLogoutBtn.hidden = false;
   }
 
   async function hydrateCurrentUser() {
@@ -374,6 +394,16 @@ export function initHeaderAuth() {
   });
 
   logoutLink.addEventListener("click", async () => {
+    await _doLogout();
+  });
+
+  if (burgerLogoutBtn) {
+    burgerLogoutBtn.addEventListener("click", async () => {
+      await _doLogout();
+    });
+  }
+
+  async function _doLogout() {
     const token = getStoredToken();
 
     try {
@@ -386,7 +416,7 @@ export function initHeaderAuth() {
 
     clearAuthSession();
     setGuestState(true);
-  });
+  }
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && right.classList.contains("is-search-open")) {

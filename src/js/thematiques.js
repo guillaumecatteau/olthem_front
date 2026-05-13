@@ -1739,12 +1739,32 @@ function renderCarousel(thematiques) {
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
+// Attend que toutes les <img> d'un container soient chargées en mémoire.
+// Résout immédiatement si déjà complètes (cache). Résout aussi en cas d'erreur
+// (on ne bloque pas le loader pour une image cassée).
+function _waitForImages(container) {
+  const imgs = [...container.querySelectorAll('img')];
+  if (!imgs.length) return Promise.resolve();
+  return Promise.all(imgs.map(img => {
+    if (img.complete) return Promise.resolve();
+    return new Promise(resolve => {
+      img.addEventListener('load',  resolve, { once: true });
+      img.addEventListener('error', resolve, { once: true });
+    });
+  }));
+}
+
 async function init() {
   try {
     const thematiques = await fetchThematiques();
     _thematiquesStore = thematiques;
     renderHeaderCards(thematiques);
     renderCarousel(thematiques);
+    // Attendre que les images des header cards soient réellement chargées
+    // avant de cacher le loader — évite l'affichage de cards vides.
+    const container = document.getElementById('accueil-header-cards');
+    if (container) await _waitForImages(container);
+    window.dispatchEvent(new CustomEvent('accueil:cards-ready'));
   } catch (err) {
     console.error('[thematiques]', err);
     const container = document.getElementById('accueil-header-cards');
@@ -1755,6 +1775,7 @@ async function init() {
           et, si besoin, forcez l'URL avec ?apiRoot=http://localhost:10010/wp-json
         </p>`;
     }
+    window.dispatchEvent(new CustomEvent('accueil:cards-ready'));
   }
 }
 

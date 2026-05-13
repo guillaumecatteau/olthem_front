@@ -12,6 +12,9 @@ const SCROLLER_SELECTORS = [
   '.admin-tool__latest-scroll',
   '.admin-tool__entries-scroll',
   '.ateliers-list-col',
+  '.overlay-search__scroll',
+  '.compte-ateliers__list-scroll',
+  '.route-steps',
 ];
 
 const stateByScroller = new Map();
@@ -33,6 +36,11 @@ function clearSubsectionEdgeGuard() {
 
 function isSubsectionScroller(scroller) {
   return !!scroller?.classList?.contains('js-section-subsections-scroll');
+}
+
+function isEdgeGuardedScroller(scroller) {
+  return isSubsectionScroller(scroller)
+    || !!scroller?.classList?.contains('ateliers-list-col');
 }
 
 function hasOverflow(el) {
@@ -140,7 +148,7 @@ function ensureDecor(scroller) {
     return stateByScroller.get(scroller);
   }
 
-  const scope = scroller.closest('.admin-tool__scroll-wrap, .admin-tool__panel-main, .full-section, .thm-overlay, .page-overlay, .ateliers-list-wrap') || scroller.parentElement;
+  const scope = scroller.closest('.admin-tool__scroll-wrap, .admin-tool__panel-main, .full-section, .thm-overlay, .page-overlay, .ateliers-list-wrap, .compte-ateliers__list-wrap, .overlay-search__scroll-wrap') || scroller.parentElement;
   if (!scope) return null;
 
   scope.classList.add('has-secondary-scroll-layer');
@@ -239,6 +247,11 @@ function getPreferredScroller(event) {
     return pageOverlay.querySelector('.page-overlay__inner');
   }
 
+  const routeOverlay = document.querySelector('.route-overlay--visible');
+  if (routeOverlay) {
+    return routeOverlay.querySelector('.route-steps');
+  }
+
   const thmOverlay = document.getElementById('thm-overlay');
   if (thmOverlay?.classList.contains('is-visible')) {
     const inner = document.getElementById('thm-overlay-inner');
@@ -251,6 +264,13 @@ function getPreferredScroller(event) {
   }
 
   const candidates = Array.from(document.querySelectorAll('.js-section-subsections-scroll'));
+
+  // Edge-guarded non-subsection scrollers: return if pointer is inside them.
+  const ateliersList = document.querySelector('.ateliers-list-col');
+  if (ateliersList && clientX != null && clientY != null) {
+    if (pointerInsideScrollerRect(ateliersList, clientX, clientY)) return ateliersList;
+  }
+
   if (!candidates.length) return null;
 
   const viewportCenter = window.innerHeight * 0.5;
@@ -318,10 +338,10 @@ function routeWheelToSecondaryScroll(event) {
 
   const direction = Math.sign(event.deltaY) || 0;
   const canScrollInDirection = getScrollableByDirection(preferred, event.deltaY);
-  const isSubsection = isSubsectionScroller(preferred);
+  const isEdgeGuarded = isEdgeGuardedScroller(preferred);
   const now = typeof event.timeStamp === 'number' ? event.timeStamp : performance.now();
 
-  if (isSubsection && !canScrollInDirection) {
+  if (isEdgeGuarded && !canScrollInDirection) {
     const sameEdgeContext = subsectionEdgeGuard.scroller === preferred
       && subsectionEdgeGuard.direction === direction;
 
@@ -357,8 +377,8 @@ function routeWheelToSecondaryScroll(event) {
     return false;
   }
 
-  // Normal internal scroll in subsection cancels edge lock state.
-  if (isSubsection) {
+  // Normal internal scroll in edge-guarded scroller cancels edge lock state.
+  if (isEdgeGuarded) {
     subsectionEdgeGuard.edgeLocked = false;
     subsectionEdgeGuard.scroller = null;
     subsectionEdgeGuard.direction = 0;
