@@ -2,11 +2,15 @@
 // Racines candidates tentées dans l'ordre jusqu'à la première qui répond.
 // L'override runtime (query string ?apiRoot= ou localStorage) est inséré en tête.
 
+// const WP_API_ROOTS_DEFAULT = [
+//   "http://localhost:10010/wp-json",
+//   "http://localhost/wp-json",
+//   "https://olthem.local/wp-json",
+//   "http://olthem.local/wp-json"
+// ];
+
 const WP_API_ROOTS_DEFAULT = [
-  "http://localhost:10010/wp-json",
-  "http://localhost/wp-json",
-  "https://olthem.local/wp-json",
-  "http://olthem.local/wp-json"
+  "https://is9q21ccmpl.preview.infomaniak.website/wp-json"
 ];
 
 function getRuntimeApiRoot() {
