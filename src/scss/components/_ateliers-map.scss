@@ -636,8 +636,9 @@
 }
 
 @include below($bp-xl) {
-  // Masquer la localité pour gagner de l'espace dans la liste
-  .atelier-info__localite { display: none; }
+  .atelier-info__localite {
+    font-size: 0.65rem;
+  }
 
   .ateliers-list {
     padding: 0;

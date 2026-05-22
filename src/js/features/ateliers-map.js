@@ -1,5 +1,7 @@
-import { fetchOptions, fetchUpcomingAteliers } from "./api.js";
-import { lockMainScroll, unlockMainScroll } from "./scroll-lock.js";
+import { fetchOptions, fetchUpcomingAteliers } from "../api/api.js";
+import { lockMainScroll, unlockMainScroll } from "../core/scroll-lock.js";
+import { fetchMapboxRoute } from "../api/api-mapbox.js";
+import { openRouteOverlay, closeRouteOverlay } from "./route-overlay.js";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -95,8 +97,8 @@ function buildBlockHTML() {
 // ─── List rendering ───────────────────────────────────────────────────────────
 
 function buildListItemHTML(atelier) {
-  const displayName = atelier.mundaneum ? "Mundaneum" : (atelier.etablissement || "—");
-  const localite    = [atelier.localite, atelier.code_postal ? `(${atelier.code_postal})` : ""]
+  const displayName = atelier.mundaneum ? "Mundaneum" : (atelier.institution || "\u2014");
+  const localite    = [atelier.city, atelier.postal_code ? `(${atelier.postal_code})` : ""]
     .filter(Boolean).join(" ");
 
   const destLat = atelier.mundaneum ? MUNDANEUM_LAT : atelier.latitude;
@@ -121,8 +123,8 @@ function buildListItemHTML(atelier) {
         data-dest-lng="${destLng}"
         data-dest-name="${displayName}"
         data-dest-rue="${atelier.mundaneum ? "Rue de Nimy 76" : (atelier.rue || "")}"
-        data-dest-postal="${atelier.mundaneum ? "7000" : (atelier.code_postal || "")}"
-        data-dest-localite="${atelier.mundaneum ? "Mons" : (atelier.localite || "")}"
+        data-dest-postal="${atelier.mundaneum ? "7000" : (atelier.postal_code || "")}"
+        data-dest-localite="${atelier.mundaneum ? "Mons" : (atelier.city || "")}"
         title="Afficher l'itinéraire sur la carte"
         aria-label="Itinéraire vers ${displayName} sur la carte"
         aria-pressed="false"
@@ -249,7 +251,7 @@ function buildPopupHTML(group) {
       ${dateBadgeHTML(item.valid_date, true)}
       <div class="atelier-popup-item__info">
         ${item.thematique_titre ? `<strong>${item.thematique_titre}</strong>` : ""}
-        <span>${isMundaneum ? "Mundaneum" : (item.etablissement || "")}</span>
+        <span>${isMundaneum ? "Mundaneum" : (item.institution || "")}</span>
       </div>
     </div>
   `).join("");
@@ -318,227 +320,7 @@ function fitMapToPOIs(map, groups) {
   );
   map.fitBounds(bounds, { padding: 80, maxZoom: 12 });
 }
-// ─── Route overlay ───────────────────────────────────────────────────────────────
 
-const ROUTE_PROFILES = [
-  { id: "driving", label: "Voiture" },
-  { id: "cycling", label: "Vélo"    },
-  { id: "walking", label: "Marche"  },
-];
-
-function formatDuration(s) {
-  const h = Math.floor(s / 3600);
-  const m = Math.round((s % 3600) / 60);
-  return h > 0 ? `${h} h ${m} min` : `${m} min`;
-}
-
-function formatDistance(m) {
-  return m >= 1000
-    ? `${(m / 1000).toFixed(1).replace(".", ",")} km`
-    : `${Math.round(m)} m`;
-}
-
-let _routeOverlayInstance = null;
-
-function _buildRouteOverlayEl(destName, destRue, destPostal, destLocalite) {
-  const el = document.createElement("div");
-  el.className = "route-overlay";
-  el.setAttribute("role", "dialog");
-  el.setAttribute("aria-modal", "true");
-  el.setAttribute("aria-label", `Itinéraire vers ${destName}`);
-  el.innerHTML = `
-    <div class="route-overlay__inner">
-      <div class="route-overlay__content">
-        <div class="route-overlay__double">
-          <div class="route-overlay__panel">
-            <div class="route-overlay__header">
-              <div class="route-overlay__dest-group">
-                <span class="route-overlay__dest">${destName}</span>
-                ${(destRue || destPostal || destLocalite) ? `
-                <span class="route-overlay__address">${[destRue, [destPostal, destLocalite].filter(Boolean).join(" ")].filter(Boolean).join(", ")}</span>` : ""}
-              </div>
-              <div class="route-profiles">
-                ${ROUTE_PROFILES.map((p, i) => `
-                  <button
-                    type="button"
-                    class="route-profile-btn${i === 0 ? " route-profile-btn--active" : ""}"
-                    data-profile="${p.id}"
-                  >${p.label}</button>
-                `).join("")}
-              </div>
-              <div class="route-summary">
-                <span class="route-summary__duration">—</span>
-                <span class="route-summary__sep">·</span>
-                <span class="route-summary__distance">—</span>
-              </div>
-            </div>
-            <div class="route-steps-wrap">
-              <ul class="route-steps" role="list"></ul>
-            </div>
-          </div>
-          <div class="route-overlay__map-col">
-            <div class="route-overlay__map-container"></div>
-          </div>
-        </div>
-        <button type="button" class="icon-link route-overlay__close" aria-label="Fermer l'itinéraire">
-          <img class="icon-link__icon" src="./assets/images/icons/icon_Retour.svg" alt="" aria-hidden="true" />
-          <span class="icon-link__label">Retour au site</span>
-        </button>
-      </div>
-    </div>
-    `;
-  return el;
-}
-
-function _renderRouteInOverlay(overlayEl, overlayMap, routeData, profile) {
-  const route   = routeData.routes[0];
-  const durEl   = overlayEl.querySelector(".route-summary__duration");
-  const distEl  = overlayEl.querySelector(".route-summary__distance");
-  const stepsEl = overlayEl.querySelector(".route-steps");
-
-  durEl.textContent  = formatDuration(route.duration);
-  distEl.textContent = formatDistance(route.distance);
-
-  overlayEl.querySelectorAll(".route-profile-btn").forEach(btn => {
-    btn.classList.toggle("route-profile-btn--active", btn.dataset.profile === profile);
-  });
-
-  const steps = route.legs[0]?.steps ?? [];
-  stepsEl.innerHTML = steps.map((step, i) => `
-    <li class="route-step">
-      <span class="route-step__num">${i + 1}</span>
-      <span class="route-step__instruction">${step.maneuver.instruction}</span>
-      <span class="route-step__dist">${formatDistance(step.distance)}</span>
-    </li>
-  `).join("");
-
-  function drawLine() {
-    try {
-      if (overlayMap.getSource("overlay-route")) {
-        overlayMap.getSource("overlay-route").setData({ type: "Feature", geometry: route.geometry });
-      } else {
-        overlayMap.addSource("overlay-route", {
-          type: "geojson",
-          data: { type: "Feature", geometry: route.geometry }
-        });
-        overlayMap.addLayer({
-          id:     "overlay-route",
-          type:   "line",
-          source: "overlay-route",
-          layout: { "line-join": "round", "line-cap": "round" },
-          paint:  { "line-color": "#4a90d9", "line-width": 5, "line-opacity": 0.9 }
-        });
-      }
-    } catch { /* ignore */ }
-    const coords = route.geometry.coordinates;
-    if (coords.length > 1) {
-      const bounds = coords.reduce(
-        (b, c) => b.extend(c),
-        new window.mapboxgl.LngLatBounds(coords[0], coords[0])
-      );
-      overlayMap.fitBounds(bounds, { padding: 60, duration: 600 });
-    }
-  }
-
-  if (overlayMap.isStyleLoaded()) drawLine();
-  else overlayMap.once("load", drawLine);
-}
-
-async function _fetchRouteForOverlay(userLng, userLat, destLng, destLat, profile, token) {
-  const url = `https://api.mapbox.com/directions/v5/mapbox/${profile}/${userLng},${userLat};${destLng},${destLat}?geometries=geojson&steps=true&language=fr&access_token=${token}`;
-  const res  = await fetch(url);
-  if (!res.ok) throw new Error("Directions fetch failed");
-  return res.json();
-}
-
-function openRouteOverlay(destName, destRue, destPostal, destLocalite, destLng, destLat, userLng, userLat, token) {
-  if (_routeOverlayInstance) closeRouteOverlay();
-
-  const overlayEl = _buildRouteOverlayEl(destName, destRue, destPostal, destLocalite);
-  document.body.appendChild(overlayEl);
-  lockMainScroll();
-
-  // Mobile : bouton retour sticky bas-gauche
-  const retourBtn = document.getElementById("overlay-retour-btn");
-  if (retourBtn) {
-    retourBtn.setAttribute("aria-hidden", "false");
-    retourBtn.classList.add("is-visible");
-    retourBtn.addEventListener("click", closeRouteOverlay, { once: true });
-  }
-
-  const mapContainerEl = overlayEl.querySelector(".route-overlay__map-container");
-  const overlayMap = new window.mapboxgl.Map({
-    container:          mapContainerEl,
-    style:              "mapbox://styles/mapbox/light-v11",
-    scrollZoom:         true,
-    attributionControl: true,
-  });
-
-  // Trigger fade-in transition, then resize so Mapbox measures the final container
-  requestAnimationFrame(() => {
-    overlayEl.classList.add("route-overlay--visible");
-    overlayEl.addEventListener("transitionend", () => overlayMap.resize(), { once: true });
-  });
-
-  overlayMap.addControl(new window.mapboxgl.NavigationControl({ visualizePitch: false }), "top-right");
-  overlayMap.addControl(new window.mapboxgl.GeolocateControl({
-    positionOptions:    { enableHighAccuracy: true },
-    trackUserLocation:  true,
-    showUserHeading:    true,
-    showAccuracyCircle: true,
-  }), "top-right");
-
-  overlayMap.on("load", () => {
-    const destMarkerEl = document.createElement("div");
-    destMarkerEl.className = "atelier-marker";
-    destMarkerEl.innerHTML = ICON_MARKER_DEFAULT;
-    new window.mapboxgl.Marker({ element: destMarkerEl })
-      .setLngLat([destLng, destLat])
-      .addTo(overlayMap);
-  });
-
-  let currentProfile = "driving";
-
-  async function loadProfile(profile) {
-    try {
-      const data = await _fetchRouteForOverlay(userLng, userLat, destLng, destLat, profile, token);
-      if (!data.routes?.[0]) return;
-      currentProfile = profile;
-      _renderRouteInOverlay(overlayEl, overlayMap, data, profile);
-    } catch { /* silently ignore */ }
-  }
-
-  loadProfile("driving");
-
-  overlayEl.querySelector(".route-profiles").addEventListener("click", (e) => {
-    const btn = e.target.closest(".route-profile-btn");
-    if (!btn || btn.dataset.profile === currentProfile) return;
-    loadProfile(btn.dataset.profile);
-  });
-
-  const onKeydown = (e) => { if (e.key === "Escape") closeRouteOverlay(); };
-  overlayEl.querySelector(".route-overlay__close").addEventListener("click", closeRouteOverlay);
-  document.addEventListener("keydown", onKeydown);
-
-  _routeOverlayInstance = { el: overlayEl, map: overlayMap, onKeydown };
-}
-
-function closeRouteOverlay() {
-  if (!_routeOverlayInstance) return;
-
-  const retourBtn = document.getElementById("overlay-retour-btn");
-  if (retourBtn) {
-    retourBtn.classList.remove("is-visible");
-    retourBtn.setAttribute("aria-hidden", "true");
-  }
-
-  const { el, map, onKeydown } = _routeOverlayInstance;
-  el.classList.remove("route-overlay--visible");
-  document.removeEventListener("keydown", onKeydown);
-  unlockMainScroll();
-  setTimeout(() => { map.remove(); el.remove(); }, 300);
-  _routeOverlayInstance = null;
-}
 // ─── Public entry point ───────────────────────────────────────────────────────
 
 export async function initAteliersMap(sectionEl) {
@@ -704,11 +486,8 @@ export async function initAteliersMap(sectionEl) {
   }
 
   async function fetchAndDrawRoute(userLng, userLat, destLng, destLat, btn, destName, destRue, destPostal, destLocalite) {
-    const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${userLng},${userLat};${destLng},${destLat}?geometries=geojson&access_token=${token}`;
     try {
-      const res = await fetch(url);
-      if (!res.ok) return;
-      const data = await res.json();
+      const data = await fetchMapboxRoute(userLng, userLat, destLng, destLat, token);
       if (!data.routes?.[0]) return;
       clearRoute();
       map.addSource("ateliers-route", {

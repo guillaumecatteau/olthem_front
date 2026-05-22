@@ -1,4 +1,4 @@
-import { RestApiError, requestJsonAcrossRoots } from "./rest-client.js";
+import { RestApiError, requestJsonAcrossRoots } from "../core/rest-client.js";
 
 const AUTH_TOKEN_KEY = "olthem.auth.token";
 const AUTH_USER_KEY = "olthem.auth.user";
@@ -12,8 +12,8 @@ function normalizeUser(user) {
   return {
     id: user.id ?? null,
     username: user.username ?? "",
-    nom: user.nom ?? "",
-    prenom: user.prenom ?? "",
+    last_name: user.last_name ?? "",
+    first_name: user.first_name ?? "",
     email: user.email ?? "",
     remember: !!user.remember,
     newsletter: !!user.newsletter,
@@ -25,8 +25,8 @@ function normalizeUser(user) {
 function userDisplayLabel(user) {
   if (!user) return "Connexion";
 
-  const prenom = String(user.prenom ?? "").trim();
-  const nom = String(user.nom ?? "").trim();
+  const prenom = String(user.first_name ?? "").trim();
+  const nom = String(user.last_name ?? "").trim();
   const username = String(user.username ?? "").trim();
   const email = String(user.email ?? "").trim();
 

@@ -1,7 +1,12 @@
-﻿import { config } from "./config.js";
-import { RestApiError, requestJsonAcrossRoots } from "./rest-client.js";
+﻿import { config } from "../core/config.js";
+import { RestApiError, requestJsonAcrossRoots } from "../core/rest-client.js";
 import { getStoredToken } from "./auth.js";
-import { stripHtml } from "./utils.js";
+import { stripHtml } from "../core/utils.js";
+
+export async function fetchSiteUrl() {
+  const data = await requestJsonAcrossRoots("");
+  return typeof data?.url === "string" ? data.url : null;
+}
 
 export async function fetchThematiques() {
   const items = await requestJsonAcrossRoots("/wp/v2/thematiques", {
@@ -201,16 +206,16 @@ export async function fetchUpcomingAteliers() {
     return items.map(item => ({
       id:               item.id,
       mundaneum:        !!item.mundaneum,
-      etablissement:    item.etablissement    || "",
-      localite:         item.localite         || "",
-      code_postal:      item.code_postal      || "",
-      rue:              item.adresse          || "",
+      institution:      item.institution      || "",
+      city:             item.city             || "",
+      postal_code:      item.postal_code      || "",
+      rue:              item.address          || "",
       valid_date:       item.valid_date        || null,
       share_contact:    !!item.share_contact,
       contact_email:    item.contact_email     || null,
       latitude:         item.latitude  != null ? parseFloat(item.latitude)  : null,
       longitude:        item.longitude != null ? parseFloat(item.longitude) : null,
-      thematique_id:    item.thematique_id    || null,
+      thematic_id:      item.thematic_id      || null,
       thematique_titre: item.thematique_titre || ""
     }));
   } catch {
@@ -394,4 +399,15 @@ export async function fetchSearchResults(query, page = 1) {
     }
   }
   return { results: [], total: 0, totalPages: 0 };
+}
+
+// ─── Soumission de formulaire ─────────────────────────────────────────────
+
+export async function submitFormBuilderEntry({ table, values, process = "", token = null }) {
+  return requestJsonAcrossRoots("/olthem/v1/forms/submit", {
+    method: "POST",
+    body: { table, values, process },
+    token,
+    failFastOnClientError: true
+  });
 }

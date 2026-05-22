@@ -39,7 +39,7 @@
       <div class="site-header__inner">
         <!-- Left: Logo + Tagline -->
         <div class="site-header__left">
-          <div class="site-logo">
+          <a class="site-logo js-site-logo-link" href="#" aria-label="Accueil Olthem">
             <img
               class="site-logo__img"
               src="./assets/images/logos/logo_Olthem.svg"
@@ -48,7 +48,7 @@
             <p class="site-logo__tagline">
               Plongez dans l'éducation aux médias !
             </p>
-          </div>
+          </a>
         </div>
 
         <!-- Center: Navigation -->
@@ -188,14 +188,14 @@
         >
           <!-- Logo mobile : visible uniquement en version mobile -->
           <div class="mobile-header">
-            <div class="site-logo">
+            <a class="site-logo js-site-logo-link" href="#" aria-label="Accueil Olthem">
               <img
                 class="site-logo__img"
                 src="./assets/images/logos/logo_Olthem.svg"
                 alt="Olthem"
               />
               <p class="site-logo__tagline">Plongez dans l&rsquo;éducation aux médias&nbsp;!</p>
-            </div>
+            </a>
           </div>
           <div class="accueil-header-cards" id="accueil-header-cards"></div>
         </section>
@@ -309,10 +309,10 @@
     </div>
 
     <script type="module" src="./src/js/main.js?v=20260507-12"></script>
-    <script type="module" src="./src/js/scroll.js?v=20260507-01"></script>
-    <script type="module" src="./src/js/thematiques.js?v=20260507-01"></script>
-    <script type="module" src="./src/js/secondary-scroll.js?v=20260506-01"></script>
-    <script type="module" src="./src/js/burger-menu.js?v=20260507-01"></script>
+    <script type="module" src="./src/js/components/scroll.js?v=20260507-01"></script>
+    <script type="module" src="./src/js/features/thematiques.js?v=20260507-01"></script>
+    <script type="module" src="./src/js/components/secondary-scroll.js?v=20260506-01"></script>
+    <script type="module" src="./src/js/components/burger-menu.js?v=20260507-01"></script>
 
     <!-- ── Burger button (mobile, sticky bas-droit) ────────────────────── -->
     <button

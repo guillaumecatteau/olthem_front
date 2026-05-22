@@ -1,8 +1,8 @@
-import { fetchSections, fetchThematiques } from "./api.js";
-import { initHeaderAuth } from "./auth.js";
-import { setFormBuilderDependencies, bindFormBuilderSubmissions } from "./form-builder.js";
-import { setSectionsPromise, hydrateMainSections, bindSectionScrollLinks } from "./section-builder.js";
-import { initAteliersMap } from "./ateliers-map.js";
+import { fetchSections, fetchThematiques, fetchSiteUrl } from "./api/api.js";
+import { initHeaderAuth } from "./api/auth.js";
+import { setFormBuilderDependencies, bindFormBuilderSubmissions } from "./features/forms/form-builder.js";
+import { setSectionsPromise, hydrateMainSections, bindSectionScrollLinks } from "./features/section-builder.js";
+import { initAteliersMap } from "./features/ateliers-map.js";
 import {
   openPageOverlayWithRequest,
   openPageOverlay,
@@ -12,7 +12,7 @@ import {
   hydrateSocialLinks,
   setPageOverlayDependencies,
   getPageOverlayCurrentRequest
-} from "./page-overlay.js";
+} from "./features/page-overlay.js";
 
 const thematiquesPromise = fetchThematiques().catch(() => []);
 const sectionsPromise    = fetchSections().catch(() => []);
@@ -111,6 +111,11 @@ bindSectionScrollLinks();
 initHeaderAuth();
 bindFormBuilderSubmissions();
 bindSearchOverlay();
+
+fetchSiteUrl().then(url => {
+  if (!url) return;
+  document.querySelectorAll(".js-site-logo-link").forEach(a => { a.href = url; });
+}).catch(() => {});
 
 (function autoOpenResetOverlay() {
   const params = new URLSearchParams(window.location.search);

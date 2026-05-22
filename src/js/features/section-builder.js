@@ -1,4 +1,4 @@
-import { esc, plainText, normKey, slugify } from "./utils.js";
+import { esc, plainText, normKey, slugify } from "../core/utils.js";
 import {
   arrowSpan,
   pickField,
@@ -9,8 +9,8 @@ import {
   boolValue,
   buildPageOverlayDescriptor,
   titleLogoUrl
-} from "./acf-helpers.js";
-import { renderFormBuilderLayout } from './form-builder.js';
+} from "../helpers/acf-helpers.js";
+import { renderFormBuilderLayout } from './forms/form-builder.js';
 
 let _sectionsPromise = Promise.resolve([]);
 export function setSectionsPromise(p) { _sectionsPromise = p; }

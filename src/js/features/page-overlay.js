@@ -1,13 +1,14 @@
-﻿import { esc, plainText, normKey, slugify, fixTitleArrowSpacing } from './utils.js';
-import { fetchPage, fetchOptions, fetchMyAteliers, searchLocalContent } from './api.js';
-import { lockMainScroll, unlockMainScroll } from './scroll-lock.js';
-import { getStoredToken, getStoredUser, persistAuthSession, forgotPasswordRequest } from './auth.js';
-import { bindAdminToolOverlay, isAdminToolRequest } from './admin-tool.js?v=20260422-06';
-import { arrowSpan, pickField, boolValue, titleLogoUrl, buildPageOverlayDescriptor } from './acf-helpers.js';
+﻿import { esc, plainText, normKey, slugify, fixTitleArrowSpacing } from '../core/utils.js';
+import { fetchPage, fetchOptions, fetchMyAteliers, searchLocalContent } from '../api/api.js';
+import { lockMainScroll, unlockMainScroll } from '../core/scroll-lock.js';
+import { getStoredToken, getStoredUser, persistAuthSession, forgotPasswordRequest } from '../api/auth.js';
+import { bindAdminToolOverlay, isAdminToolRequest } from '../admin/admin-tool.js';
+import { arrowSpan, pickField, boolValue, titleLogoUrl, buildPageOverlayDescriptor } from '../helpers/acf-helpers.js';
 import {
   sectionSlugFromWpUrl, SCROLL_SECTIONS, flattenLayouts, renderSectionLayout
 } from './section-builder.js';
-import { renderFormBuilderLayout, bindFormBuilderSubmissions } from './form-builder.js';
+import { renderFormBuilderLayout, bindFormBuilderSubmissions } from './forms/form-builder.js';
+import { getLastRegisteredUsername, getLastAlertMessage } from './forms/form-submit.js';
 
 // Injected by main.js to avoid circular dependencies
 let _thematiquesPromise = Promise.resolve([]);
@@ -26,8 +27,7 @@ let atelierEditContext = null; // set before opening creation overlay in edit mo
 let searchOverlayCurrentQuery = "";
 let _searchFormBuilderHtml = null; // null = not fetched yet, false = unavailable
 let _searchHeadingHtml = null;     // null = not fetched yet, false = unavailable
-let pageOverlayLastRegisteredUsername = "";
-let pageOverlayLastAlertMessage = "";
+
 
 function pageOverlayCacheKey(options) {
   return JSON.stringify({
@@ -141,14 +141,14 @@ function overlayUsernameFromRequest(request = {}) {
   if (request && typeof request.username === "string" && request.username.trim()) {
     return request.username.trim();
   }
-  return pageOverlayLastRegisteredUsername || "";
+  return getLastRegisteredUsername();
 }
 
 function overlayAlertFromRequest(request = {}) {
   if (request && typeof request.alert === "string" && request.alert.trim()) {
     return request.alert.trim();
   }
-  return pageOverlayLastAlertMessage || "";
+  return getLastAlertMessage();
 }
 
 // Find index of first ':' in a string that is NOT inside an HTML tag.
@@ -180,17 +180,17 @@ function applyOverlayDynamicTokens(rawHtml, request = {}) {
       new RegExp(`\\[(?:<[^>]+>)*${name}(?:<\/[a-z0-9]+>)*\\]`, "gi");
 
     html = html.replace(tokenRe("USERNAME"), bold(atelier.username || username));
-    html = html.replace(tokenRe("prenom"), bold(atelier.prenom));
-    html = html.replace(tokenRe("nom"), bold(atelier.nom));
+    html = html.replace(tokenRe("first_name"), bold(atelier.first_name));
+    html = html.replace(tokenRe("last_name"), bold(atelier.last_name));
     html = html.replace(tokenRe("start_date"), bold(atelier.start_date));
     html = html.replace(tokenRe("end_date"), bold(atelier.end_date));
-    html = html.replace(tokenRe("nb_participants"), bold(atelier.nb_participants));
+    html = html.replace(tokenRe("participants_count"), bold(atelier.participants_count));
     html = html.replace(tokenRe("email"), bold(atelier.email));
-    html = html.replace(tokenRe("telephone"), bold(atelier.telephone));
-    html = html.replace(tokenRe("etablissement"), bold(atelier.etablissement));
-    html = html.replace(tokenRe("adresse"), bold(atelier.adresse));
-    html = html.replace(tokenRe("code_postal"), bold(atelier.code_postal));
-    html = html.replace(tokenRe("localite"), bold(atelier.localite));
+    html = html.replace(tokenRe("phone"), bold(atelier.phone));
+    html = html.replace(tokenRe("institution"), bold(atelier.institution));
+    html = html.replace(tokenRe("address"), bold(atelier.address));
+    html = html.replace(tokenRe("postal_code"), bold(atelier.postal_code));
+    html = html.replace(tokenRe("city"), bold(atelier.city));
     html = html.replace(tokenRe("THEMATIQUE"), bold(atelier.thematique));
     html = html.replace(tokenRe("displayEvent"), bold(atelier.displayEvent));
     html = html.replace(tokenRe("displayContact"), bold(atelier.displayContact));
@@ -198,8 +198,8 @@ function applyOverlayDynamicTokens(rawHtml, request = {}) {
     html = html.replace(tokenRe("LIEU"), () => {
       if (atelier.mundaneum) return bold("MUNDANEUM, Rue de Nimy, 76 - 7000 Mons");
       const line = [
-        atelier.etablissement,
-        [atelier.adresse, [atelier.code_postal, atelier.localite].filter(Boolean).join(" ")].filter(Boolean).join(" \u2013 ")
+        atelier.institution,
+        [atelier.address, [atelier.postal_code, atelier.city].filter(Boolean).join(" ")].filter(Boolean).join(" \u2013 ")
       ].filter(Boolean).join(", ");
       return bold(line);
     });
@@ -520,10 +520,10 @@ function prefillAtelierEditForm(content, ctx) {
   };
 
   // Fill all editable fields (mundaneum last so toggle() runs after address fields exist)
-  const cols = ["nom", "prenom", "email", "telephone", "start_date", "end_date", "valid_date", "nb_participants", "thematique_id", "displayEvent", "displayContact"];
+  const cols = ["last_name", "first_name", "email", "phone", "start_date", "end_date", "valid_date", "participants_count", "thematic_id", "displayEvent", "displayContact"];
   cols.forEach((col) => { if (col in ctx) fill(col, ctx[col]); });
   // Address fields (may be overridden by mundaneum toggle)
-  ["etablissement", "adresse", "localite", "code_postal"].forEach((col) => { if (col in ctx) fill(col, ctx[col]); });
+  ["institution", "address", "city", "postal_code"].forEach((col) => { if (col in ctx) fill(col, ctx[col]); });
   // Mundaneum last – triggers toggle() which may disable & fill address fields
   if ("mundaneum" in ctx) fill("mundaneum", ctx.mundaneum);
 
@@ -780,7 +780,7 @@ function bindCompteUtilisateurOverlay(content, preloadedAteliers = null) {
             <span class="compte-ateliers__status ${statusClass}">${esc(statusLabel)}</span>
           </div>
           ${datesHtml}
-          <div class="compte-ateliers__item-lieu">${esc((Number(a.mundaneum) ? "Mundaneum" : a.etablissement) || "")}, ${esc(a.adresse || "")}, ${esc(a.localite || "")}</div>
+          <div class="compte-ateliers__item-lieu">${esc((Number(a.mundaneum) ? "Mundaneum" : a.institution) || "")}, ${esc(a.address || "")}, ${esc(a.city || "")}</div>
           ${isConfirme ? `<p class="compte-ateliers__item-note">Pour toute modification, veuillez contacter un organisateur.</p>` : ""}
           ${isAttente ? `<div class="compte-ateliers__item-actions"><button type="button" class="compte-ateliers__edit-btn buttonRound--ghost" data-atelier-id="${esc(String(a.id))}">Modifier</button></div>` : ""}
         </li>`;

@@ -1,4 +1,4 @@
-﻿import { esc, plainText, normKey, slugify } from "./utils.js";
+﻿import { esc, plainText, normKey, slugify } from "../core/utils.js";
 
 function formSettingKeyFromChoice(choice, index) {
   const rawValue = String(choice?.value ?? "").trim();

@@ -1111,6 +1111,25 @@
     &__entry-details {
       grid-template-columns: 1fr 1fr;
     }
+
+    &__edit-row--5 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    &__edit-row--4 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    &__edit-row--3 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    &__edit-row--email-checks {
+      grid-template-columns: 1fr;
+    }
+
+    &__edit-row--email-checks &__edit-field { grid-column: 1; }
+    &__edit-row--email-checks &__edit-checks { grid-column: 1; }
   }
 }
 
@@ -1120,7 +1139,11 @@
     &__overview-columns,
     &__filters,
     &__entry-details,
-    &__entry-edit {
+    &__entry-edit,
+    &__edit-row--5,
+    &__edit-row--4,
+    &__edit-row--3,
+    &__edit-row--email-checks {
       grid-template-columns: 1fr;
     }
 
