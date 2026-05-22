@@ -180,10 +180,11 @@ export async function fetchPage(options = {}) {
 
 export async function fetchOptions() {
   const fallback = {
-    facebook_url: "https://www.facebook.com/Mundaneum.officiel/",
-    X_url: "https://x.com/mundaneumasbl?lang=fr",
+    facebook_url:  "https://www.facebook.com/Mundaneum.officiel/",
+    X_url:         "https://x.com/mundaneumasbl?lang=fr",
     instagram_url: "https://www.instagram.com/mundaneumasbl/?hl=fr",
-    mapbox_token: ""
+    mapbox_token:  "",
+    site_url:      ""
   };
   try {
     const data = await requestJsonAcrossRoots("/wp/v2/options");
@@ -192,7 +193,8 @@ export async function fetchOptions() {
       facebook_url:  data.facebook_url  || fallback.facebook_url,
       X_url:         data.X_url         || fallback.X_url,
       instagram_url: data.instagram_url || fallback.instagram_url,
-      mapbox_token:  data.mapbox_token  || ""
+      mapbox_token:  data.mapbox_token  || "",
+      site_url:      data.site_url      || ""
     };
   } catch {
     return fallback;

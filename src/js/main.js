@@ -1,4 +1,4 @@
-import { fetchSections, fetchThematiques, fetchSiteUrl } from "./api/api.js";
+import { fetchSections, fetchThematiques, fetchOptions } from "./api/api.js";
 import { initHeaderAuth } from "./api/auth.js";
 import { setFormBuilderDependencies, bindFormBuilderSubmissions } from "./features/forms/form-builder.js";
 import { setSectionsPromise, hydrateMainSections, bindSectionScrollLinks } from "./features/section-builder.js";
@@ -112,9 +112,9 @@ initHeaderAuth();
 bindFormBuilderSubmissions();
 bindSearchOverlay();
 
-fetchSiteUrl().then(url => {
-  if (!url) return;
-  document.querySelectorAll(".js-site-logo-link").forEach(a => { a.href = url; });
+fetchOptions().then(opts => {
+  if (!opts.site_url) return;
+  document.querySelectorAll(".js-site-logo-link").forEach(a => { a.href = opts.site_url; });
 }).catch(() => {});
 
 (function autoOpenResetOverlay() {
