@@ -1,6 +1,12 @@
 node_modules/
 assets/css/style.css.map
 
+# Médias lourds
+assets/images/galleries/
+assets/images/logos/
+assets/images/themes/
+assets/medias/
+
 # VS Code
 .vscode/
 *.code-workspace

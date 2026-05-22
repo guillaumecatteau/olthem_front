@@ -98,14 +98,14 @@ function saveAuthSession(payload, options = {}) {
     secondaryStorage?.removeItem(AUTH_TOKEN_KEY);
     secondaryStorage?.removeItem(AUTH_USER_KEY);
   } catch {
-    // Ignore storage failures.
+    // Ignorer les échecs du stockage.
   }
 
   try {
     primaryStorage?.setItem(AUTH_TOKEN_KEY, token);
     primaryStorage?.setItem(AUTH_USER_KEY, JSON.stringify(user));
   } catch {
-    // Storage can fail in private contexts; auth still works for the current page.
+    // Le stockage peut échouer en navigation privée ; la session reste fonctionnelle pour la page en cours.
   }
 }
 
@@ -115,7 +115,7 @@ function clearAuthSession() {
       storage?.removeItem(AUTH_TOKEN_KEY);
       storage?.removeItem(AUTH_USER_KEY);
     } catch {
-      // Nothing else to do.
+      // Rien d'autre à faire.
     }
   });
 }

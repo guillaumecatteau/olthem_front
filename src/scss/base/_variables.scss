@@ -1,14 +1,14 @@
 // ─── Layout ──────────────────────────────────────────────────────────────────
 $header-height:             140px;
-$container-max-width:        960px;  // contentContainer
-$large-container-max-width: 1200px;  // largeContainer
+$container-max-width:        960px;  // conteneur principal
+$large-container-max-width: 1200px;  // conteneur large
 
 // ─── Breakpoints ─────────────────────────────────────────────────────────────
 // $bp-xl est le seuil mobile ↔ desktop : scroll magnétique, header, menu burger
 $bp-sm:  480px;   // petit mobile
 $bp-md:  768px;   // tablette portrait
 $bp-lg: 1024px;   // tablette paysage
-$bp-xl: 1280px;   // pivot principal mobile ↔ desktop
+$bp-xl: 1280px;   // pivot principal mobile ↔ grand écran
 
 // ─── Mixins responsive ───────────────────────────────────────────────────────
 @mixin below($bp) {

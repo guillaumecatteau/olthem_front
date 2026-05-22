@@ -179,7 +179,7 @@ function getFormBuilderRememberChoice(values = {}) {
   const entry = Object.entries(values).find(([key]) => /remember|souvenir/.test(String(key).toLowerCase()));
   if (!entry) return false;
   const rawValue = entry[1];
-  // Case unique → 1/0 ; tableau → fallback héritage
+  // Case unique → 1/0 ; tableau → valeur par défaut (héritage)
   if (Array.isArray(rawValue)) return rawValue.length > 0;
   return rawValue === true || rawValue === 1 || rawValue === "1";
 }
@@ -293,7 +293,7 @@ export function bindFormBuilderSubmissions() {
             setFormBuilderFieldState(holder, { valid: true, message: "" });
           }
         } catch {
-          holder.dataset.usernameTaken = "0"; // fail open
+          holder.dataset.usernameTaken = "0"; // sûr par défaut (pas de blocage)
         }
         updateFormBuilderSubmitState(form);
       });

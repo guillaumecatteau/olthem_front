@@ -22,16 +22,15 @@
     pointer-events: none;
   }
 
-  // Logo centré (identique au header mais en version plus grande)
+  // Logo centré — l'accroche définit la largeur du bloc, le logo s'y aligne
   &__logo {
-    display: flex;
+    display: inline-flex;
     flex-direction: column;
-    align-items: center;
+    align-items: stretch;
     gap: 8px;
 
     &-img {
-      width: 200px;
-      max-width: 60vw;
+      width: 100%;
       height: auto;
       filter: brightness(0) invert(1);
     }
@@ -45,6 +44,11 @@
       letter-spacing: 0.06em;
       line-height: 1;
       margin: 0;
+      white-space: nowrap;
+
+      @include above($bp-xl) {
+        font-size: 18px;
+      }
     }
   }
 
@@ -56,6 +60,10 @@
     background: $grey-dark;
     border-radius: 1px;
     overflow: hidden;
+
+    @include above($bp-xl) {
+      width: 300px;
+    }
   }
 
   &__bar {

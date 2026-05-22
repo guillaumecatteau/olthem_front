@@ -137,7 +137,7 @@ function setupIframeInteraction(scroller) {
       scroller.scrollTop += e.deltaY * WHEEL_FACTOR;
     };
 
-    // Keep iframe fully native-interactive; only wheel is rerouted when possible.
+    // L'iframe reste entièrement interactive nativement ; seule la roue est réacheminée si possible.
     wrapper.addEventListener('wheel', routeWheelToScroller, { passive: false });
     iframe.addEventListener('wheel', routeWheelToScroller, { passive: false });
   });

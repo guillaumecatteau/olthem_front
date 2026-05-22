@@ -1,12 +1,12 @@
-// admin-ateliers.js — Panel Ateliers de l'admin tool.
+﻿// admin-ateliers.js — Panel Ateliers de l'admin tool.
 //
 // Responsabilité : construire et gérer le panel de gestion des ateliers
 // (filtres, liste paginée, formulaire d'édition inline, suppression).
 //
-// Expose aussi les helpers de statut atelierAtelierStatus et atelierStatusTag
-// qui sont réutilisés par l'overview dans admin-tool.js.
+// Expose aussi les fonctions de statut atelierAtelierStatus et atelierStatusTag
+// qui sont réutilisés par le tableau de bord dans admin-tool.js.
 //
-// Exposé via la factory createAteliersPanel(state, panels, token, deps).
+// Exposé via la fonction createAteliersPanel(state, panels, token, deps).
 // Retourne { loadAteliers } pour permettre au parent de déclencher
 // le chargement initial ou de rafraîchir la liste depuis l'extérieur.
 
@@ -37,7 +37,7 @@ export function atelierStatusTag(atelier) {
   return `<span class="compte-ateliers__status compte-ateliers__status--${mod}">${label}</span>`;
 }
 
-// ─── Factory ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Constructeur de panel \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function createAteliersPanel(state, panels, token, deps) {
   const {

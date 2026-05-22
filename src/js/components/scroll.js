@@ -1,10 +1,10 @@
 /**
- * scroll.js — Magnetic full-page scroll with per-section URL slugs
+ * scroll.js — Défilement magnétique pleine page avec slugs d'URL par section
  *
- * Sections: accueil, le-projet, thematiques, ateliers, partenaires
- * Scroll with enough force (DELTA_THRESHOLD) to navigate between sections.
- * Insufficient force snaps back to the current section.
- * Arrow keys, Page Up/Down and touch swipe are also supported.
+ * Sections : accueil, le-projet, thematiques, ateliers, partenaires
+ * Défiler avec suffisamment de force (DELTA_THRESHOLD) pour naviguer entre sections.
+ * Une force insuffisante ramène à la section courante (snap-back).
+ * Les touches fléchées, Page Préc/Suiv et le swipe tactile sont aussi supportés.
  */
 
 const SECTIONS = [
@@ -15,8 +15,8 @@ const SECTIONS = [
   'partenaires',
 ];
 
-// ─── Mobile detection ─────────────────────────────────────────────────────────
-// $bp-xl = 1280px — keep in sync with $bp-xl in _variables.scss
+// ─── Détection de la mise en page mobile ────────────────────────────────────────────────
+// $bp-xl = 1280px — synchroniser avec $bp-xl dans _variables.scss
 const MOBILE_MQ = window.matchMedia('(max-width: 1279px)');
 function isMobileLayout() { return MOBILE_MQ.matches; }
 
@@ -29,12 +29,12 @@ if (isMobileLayout()) {
   history.scrollRestoration = 'manual';
 }
 
-const HEADER_HEIGHT  = 140;   // px — keep in sync with $header-height in _variables.scss
-const DELTA_THRESHOLD = 80;   // accumulated wheel delta needed to trigger section change
+const HEADER_HEIGHT  = 140;   // px — synchroniser avec $header-height dans _variables.scss
+const DELTA_THRESHOLD = 80;   // delta roue cumulé nécessaire pour déclencher le changement de section
 const SUBSECTION_ZONE_THRESHOLD_MULTIPLIER = 1.15;
-const ANIM_DURATION   = 800;  // ms — section-change animation
-const SNAP_DURATION   = 400;  // ms — snap-back animation (softer)
-const SNAP_DELAY      = 350;  // ms — idle time before snap-back fires
+const ANIM_DURATION   = 800;  // ms — animation de changement de section
+const SNAP_DURATION   = 400;  // ms — animation de retour au snap (plus douce)
+const SNAP_DELAY      = 350;  // ms — délai d'inactivité avant le déclenchement du retour au snap
 
 const navLinks = [...document.querySelectorAll('.site-nav__link[data-section]')];
 const siteHeader = document.getElementById('site-header');
@@ -45,8 +45,8 @@ let isAnimating     = false;
 let accumulatedDelta = 0;
 let snapTimer       = null;
 
-// Keep a native scrollbar thumb in sync with magnetic sections without
-// delegating navigation to native page scroll.
+// Maintient en synchronisation la position du curseur de la barre de défilement native
+// avec les sections magnétiques, sans déléguer la navigation au défilement natif de la page.
 const scrollSpacer = (() => {
   if (isMobileLayout()) return null; // mobile : scroll natif, pas besoin du spacer
   const existing = document.getElementById('scroll-height-spacer');

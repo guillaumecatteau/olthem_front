@@ -1,19 +1,19 @@
-import { fetchOptions, fetchUpcomingAteliers } from "../api/api.js";
+﻿import { fetchOptions, fetchUpcomingAteliers } from "../api/api.js";
 import { lockMainScroll, unlockMainScroll } from "../core/scroll-lock.js";
 import { fetchMapboxRoute } from "../api/api-mapbox.js";
 import { openRouteOverlay, closeRouteOverlay } from "./route-overlay.js";
 
-// ─── Constants ───────────────────────────────────────────────────────────────
+// ─── Constantes ────────────────────────────────────────────────────────────────
 
 const MUNDANEUM_LNG     = 3.9518;
 const MUNDANEUM_LAT     = 50.4553;
 const MUNDANEUM_ADDRESS = "Rue de Nimy 76, 7000 Mons";
 const MAPBOX_VERSION    = "v3.3.0";
 
-// Wallonia + Brussels max extent [SW, NE]
+// Étendue maximale Wallonie + Bruxelles [SO, NE]
 const WALLONIA_BOUNDS = [[2.5, 49.4], [6.5, 51.6]];
 
-// ─── Mapbox GL JS loader ──────────────────────────────────────────────────────
+// ─── Chargement de Mapbox GL JS ───────────────────────────────────────────────────
 
 function loadMapboxGL() {
   return new Promise((resolve, reject) => {
@@ -42,7 +42,7 @@ function parseDateParts(isoDate) {
   const date      = new Date(year, month - 1, day);
   const dayStr    = String(day);
   const monthStr  = new Intl.DateTimeFormat("fr-BE", { month: "short" }).format(date)
-    .replace(/\.$/, ""); // remove trailing dot some locales add
+    .replace(/\.$/, ""); // supprime le point final que certaines locales ajoutent
   const yearStr   = String(year);
   return { day: dayStr, month: monthStr, year: yearStr };
 }
@@ -62,7 +62,7 @@ function dateBadgeHTML(isoDate, small = false) {
 
 const ICON_CONTACT    = `<img src="./assets/images/icons/icon_Contact.svg"    alt="" aria-hidden="true" class="atelier-icon-img">`;
 const ICON_DIRECTION  = `<img src="./assets/images/icons/icon_Direction.svg"  alt="" aria-hidden="true" class="atelier-icon-img">`;
-// Marker inner icons (inverted to appear white on dark background)
+// Icônes internes des marqueurs (inversées pour apparaître en blanc sur fond sombre)
 const ICON_MARKER_DEFAULT   = `<img src="./assets/images/icons/icon_InfoHead.svg"   alt="" aria-hidden="true" class="atelier-marker__icon">`;
 const ICON_MARKER_MUNDANEUM = `<img src="./assets/images/icons/icon_Mundaneum.svg"  alt="" aria-hidden="true" class="atelier-marker__icon atelier-marker__icon--mundaneum">`;
 
@@ -106,7 +106,7 @@ function buildListItemHTML(atelier) {
 
   let iconsHTML = "";
   if (atelier.share_contact && atelier.contact_email) {
-    // Sanitize: contact_email comes from the API we control, still validate basic shape
+    // Validation : contact_email provient de notre API, on vérifie quand même la forme basique
     const safeEmail = String(atelier.contact_email).replace(/[^a-zA-Z0-9._%+\-@]/g, "");
     iconsHTML += `<a
         href="mailto:${safeEmail}"
@@ -160,7 +160,7 @@ function renderList(listEl, ateliers, onItemClick) {
     li.innerHTML          = buildListItemHTML(atelier);
 
     li.addEventListener("click", (e) => {
-      // Don't trigger item-click when an icon link is clicked
+      // Ignorer le clic sur un lien-icône (contact, itinéraire)
       if (e.target.closest(".atelier-icon-link")) return;
       onItemClick(atelier);
     });
@@ -195,17 +195,17 @@ function highlightItems(listEl, atelierIds) {
   if (firstEl) firstEl.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
-// ─── Location grouping ────────────────────────────────────────────────────────
+// ─── Regroupement par lieu ─────────────────────────────────────────────────────────────
 
 /**
- * Groups ateliers by location.
- * Returns Map<key, { coords: [lng, lat], items: atelier[], isMundaneum: boolean }>
- * The Mundaneum group always exists so its marker is always visible.
+ * Regroupe les ateliers par lieu géographique.
+ * Retourne Map<clé, { coords: [lng, lat], items: atelier[], isMundaneum: boolean }>
+ * Le groupe Mundaneum est toujours présent pour que son marqueur soit toujours visible.
  */
 function groupByLocation(ateliers) {
   const groups = new Map();
 
-  // Mundaneum always present
+  // Le Mundaneum est toujours présent
   groups.set("mundaneum", {
     coords:      [MUNDANEUM_LNG, MUNDANEUM_LAT],
     items:       [],
@@ -265,14 +265,14 @@ function addMarkersAndInteractions(map, groups, listEl, markersByGroup) {
   groups.forEach((group, key) => {
     const { coords, items, isMundaneum } = group;
 
-    // Marker element
+    // Élément marqueur
     const el       = document.createElement("div");
     el.className   = `atelier-marker${isMundaneum ? " atelier-marker--mundaneum" : ""}`;
     el.innerHTML   = isMundaneum ? ICON_MARKER_MUNDANEUM : ICON_MARKER_DEFAULT;
-    // Mundaneum always on top of other markers
+    // Le Mundaneum est toujours au-dessus des autres marqueurs
     if (isMundaneum) el.style.zIndex = "10";
 
-    // Popup
+    // Bulle d'information
     const popup = new window.mapboxgl.Popup({
       closeButton:  false,
       closeOnClick: false,
@@ -286,11 +286,11 @@ function addMarkersAndInteractions(map, groups, listEl, markersByGroup) {
 
     markersByGroup.set(key, { marker, el });
 
-    // Hover
+    // Survol
     el.addEventListener("mouseenter", () => popup.addTo(map).setLngLat(coords));
     el.addEventListener("mouseleave", () => popup.remove());
 
-    // Click → highlight list items + enlarge this marker
+    // Clic → mise en évidence dans la liste + agrandissement du marqueur
     el.addEventListener("click", () => {
       if (!items.length) return;
       setActiveMarker(markersByGroup, key);
@@ -299,7 +299,7 @@ function addMarkersAndInteractions(map, groups, listEl, markersByGroup) {
   });
 }
 
-// ─── Map fit ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Ajustement de la vue cartographique \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function fitMapToPOIs(map, groups) {
   const allCoords = [...groups.values()]
@@ -321,11 +321,11 @@ function fitMapToPOIs(map, groups) {
   map.fitBounds(bounds, { padding: 80, maxZoom: 12 });
 }
 
-// ─── Public entry point ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Point d\u0027entr\u00e9e public \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export async function initAteliersMap(sectionEl) {
-  // Target the right double-panel if the section uses that layout,
-  // then the left panel, then .section-inner as a final fallback.
+  // Cible le bon double-panel si la section utilise ce layout,
+  // puis le panel gauche, puis .section-inner en dernier recours.
   const host =
     sectionEl.querySelector(".section-subsections-double__panel--right") ||
     sectionEl.querySelector(".section-subsections-double__panel--left")  ||
@@ -333,7 +333,7 @@ export async function initAteliersMap(sectionEl) {
 
   if (!host) return;
 
-  // Inject block structure
+  // Injection de la structure du bloc
   const wrapper   = document.createElement("div");
   wrapper.innerHTML = buildBlockHTML();
   const blockEl   = wrapper.firstElementChild;
@@ -345,13 +345,13 @@ export async function initAteliersMap(sectionEl) {
   const mapColEl       = blockEl.querySelector(".ateliers-map-col");
   const trajetBtn      = blockEl.querySelector(".ateliers-trajet-btn");
 
-  // Fetch data
+  // Récupération des données
   const [options, ateliers] = await Promise.all([
     fetchOptions().catch(() => ({})),
     fetchUpcomingAteliers().catch(() => [])
   ]);
 
-  // Sort by date ASC
+  // Tri par date croissante
   const sorted = [...ateliers].sort((a, b) => {
     if (!a.valid_date) return 1;
     if (!b.valid_date) return -1;
@@ -361,7 +361,7 @@ export async function initAteliersMap(sectionEl) {
   const groups       = groupByLocation(sorted);
   const markersByGroup = new Map();
 
-  // Render list (callback: fly map to group POI + enlarge it on item click)
+  // Rendu de la liste (callback : recentrage carte sur le POI du groupe + agrandissement au clic)
   renderList(listEl, sorted, (atelier) => {
     const groupKey = atelier.mundaneum
       ? "mundaneum"
@@ -400,8 +400,8 @@ export async function initAteliersMap(sectionEl) {
     scrollViewport.addEventListener('scroll', updateMapInteractivity, { passive: true });
   }
 
-  // The list column uses the secondary-scroll system.
-  // Notify it so it calibrates the custom scrollbar.
+  // La colonne liste utilise le système de défilement secondaire.
+  // On le notifie pour qu'il calibre la barre de défilement personnalisée.
   window.dispatchEvent(new CustomEvent("secondary-scroll:refresh"));
 
   // Sur mobile : afficher la scrollbar uniquement pendant le défilement de la liste.
@@ -416,7 +416,7 @@ export async function initAteliersMap(sectionEl) {
     }, { passive: true });
   }
 
-  // Intercept wheel on the list column → scroll the list, not the section.
+  // Interception de la roue sur la colonne liste → défilement de la liste, pas de la section.
   if (listColEl) {
     listColEl.addEventListener("wheel", (e) => {
       const el = listColEl;
@@ -424,7 +424,7 @@ export async function initAteliersMap(sectionEl) {
       const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
       const goingUp   = e.deltaY < 0;
       const goingDown = e.deltaY > 0;
-      // Only absorb the event when the list can actually scroll in that direction
+      // N'absorber l'événement que si la liste peut défiler dans ce sens
       if ((goingDown && !atBottom) || (goingUp && !atTop)) {
         e.stopPropagation();
         el.scrollTop += e.deltaY;
@@ -432,7 +432,7 @@ export async function initAteliersMap(sectionEl) {
     }, { passive: true });
   }
 
-  // Init Mapbox
+  // Initialisation de Mapbox
   const token = (typeof options.mapbox_token === "string" ? options.mapbox_token : "").trim();
   if (!token) {
     mapColEl.classList.add("ateliers-map-col--unavailable");
@@ -458,12 +458,12 @@ export async function initAteliersMap(sectionEl) {
     attributionControl: true
   });
 
-  // Store ref for item-click pan
+  // Référence pour le recentrage au clic sur un élément de la liste
   window._ateliersMap = map;
 
   map.addControl(new window.mapboxgl.NavigationControl({ visualizePitch: false }), "top-right");
 
-  // Intercept wheel on map container → never propagate to section scroll
+  // Interception de la roue sur le conteneur carte → ne jamais propager au scroll de section
   mapContainerEl.addEventListener("wheel", (e) => {
     e.stopPropagation();
   }, { passive: true });
@@ -471,7 +471,7 @@ export async function initAteliersMap(sectionEl) {
   mapContainerEl.addEventListener("mouseenter", () => map.scrollZoom.enable());
   mapContainerEl.addEventListener("mouseleave", () => map.scrollZoom.disable());
 
-  // ─── Mapbox Directions itinerary ─────────────────────────────────────────────
+// \u2500\u2500\u2500 Itin\u00e9raire Mapbox Directions \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
   let activeRouteBtn = null;
   let overlayParams  = null;
@@ -480,7 +480,7 @@ export async function initAteliersMap(sectionEl) {
     try {
       if (map.getLayer("ateliers-route")) map.removeLayer("ateliers-route");
       if (map.getSource("ateliers-route")) map.removeSource("ateliers-route");
-    } catch { /* map not ready or layer already gone */ }
+    } catch { /* carte non prête ou couche déjà supprimée */ }
     trajetBtn.setAttribute("hidden", "");
     overlayParams = null;
   }

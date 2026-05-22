@@ -10,7 +10,7 @@ import {
 import { renderFormBuilderLayout, bindFormBuilderSubmissions } from './forms/form-builder.js';
 import { getLastRegisteredUsername, getLastAlertMessage } from './forms/form-submit.js';
 
-// Injected by main.js to avoid circular dependencies
+// Injecté depuis main.js pour éviter les dépendances circulaires
 let _thematiquesPromise = Promise.resolve([]);
 let _sectionsPromise = Promise.resolve([]);
 export function setPageOverlayDependencies(deps) {
@@ -23,10 +23,10 @@ let pageOverlayPreviousUrl = null;
 let pageOverlayPreviousState = null;
 let pageOverlayCurrentRequest = null;
 let pageOverlayBackLabel = "Retour au site";
-let atelierEditContext = null; // set before opening creation overlay in edit mode
+let atelierEditContext = null; // défini avant l'ouverture de l'overlay d'édition d'atelier
 let searchOverlayCurrentQuery = "";
-let _searchFormBuilderHtml = null; // null = not fetched yet, false = unavailable
-let _searchHeadingHtml = null;     // null = not fetched yet, false = unavailable
+let _searchFormBuilderHtml = null; // null = pas encore chargé, false = indisponible
+let _searchHeadingHtml = null;     // null = pas encore chargé, false = indisponible
 
 
 function pageOverlayCacheKey(options) {
@@ -134,7 +134,7 @@ function applyPageOverlayMode(request) {
     overlay.classList.remove("page-overlay--mobile-centered");
   }
 
-  // is-main-overlay-open is now managed by lockMainScroll / unlockMainScroll (scroll-lock.js)
+  // is-main-overlay-open est désormais géré par lockMainScroll / unlockMainScroll (scroll-lock.js)
 }
 
 function overlayUsernameFromRequest(request = {}) {
@@ -151,7 +151,7 @@ function overlayAlertFromRequest(request = {}) {
   return getLastAlertMessage();
 }
 
-// Find index of first ':' in a string that is NOT inside an HTML tag.
+// Applique les jetons dynamiques au HTML brut de l'overlay.
 function applyOverlayDynamicTokens(rawHtml, request = {}) {
   let html = String(rawHtml ?? "");
   const username = overlayUsernameFromRequest(request);
@@ -204,7 +204,7 @@ function applyOverlayDynamicTokens(rawHtml, request = {}) {
       return bold(line);
     });
 
-    // §...§ delimiters -> white span
+    // Délimiteurs §...§ → span en blanc
     html = html.replace(/\u00a7([^\u00a7]+?)\u00a7/g, (m, inner) =>
       `<span class="page-overlay__line-value">${inner}</span>`
     );
@@ -274,8 +274,8 @@ async function getOverlayPage(options) {
   if (!pageOverlayCache.has(key)) {
     const promise = fetchPage(options);
     pageOverlayCache.set(key, promise);
-    // Don't keep null or rejected results in the cache so transient
-    // failures (server briefly unreachable) don't get stuck permanently.
+    // Ne pas conserver les résultats null ou rejetés dans le cache :
+    // les échecs transitoires (serveur temporairement inaccessible) ne doivent pas rester bloqués.
     promise.then((page) => {
       if (!page) pageOverlayCache.delete(key);
     }).catch(() => {
@@ -519,24 +519,24 @@ function prefillAtelierEditForm(content, ctx) {
     }
   };
 
-  // Fill all editable fields (mundaneum last so toggle() runs after address fields exist)
+  // Remplit tous les champs éditables (mundaneum en dernier pour que toggle() s'exécute après les champs d'adresse)
   const cols = ["last_name", "first_name", "email", "phone", "start_date", "end_date", "valid_date", "participants_count", "thematic_id", "displayEvent", "displayContact"];
   cols.forEach((col) => { if (col in ctx) fill(col, ctx[col]); });
-  // Address fields (may be overridden by mundaneum toggle)
+  // Champs d'adresse (peuvent être remplacés par le toggle mundaneum)
   ["institution", "address", "city", "postal_code"].forEach((col) => { if (col in ctx) fill(col, ctx[col]); });
-  // Mundaneum last – triggers toggle() which may disable & fill address fields
+  // Mundaneum en dernier — déclenche toggle() qui peut désactiver et remplir les champs d'adresse
   if ("mundaneum" in ctx) fill("mundaneum", ctx.mundaneum);
 
-  // Mark form in edit mode so the submit handler knows to call updateMyAtelier
+  // Marque le formulaire en mode édition pour que le handler d'envoi appelle updateMyAtelier
   form.dataset.atelierEditId = String(ctx.id);
   form.dataset.atelierEditMode = "1";
   form.dataset.adminAtelierEditMode = ctx.adminMode ? "1" : "0";
 
-  // Update page title to reflect edit mode
+  // Met à jour le titre de la page pour refléter le mode édition
   const titleEl = content.querySelector(".section-builder-title__title, h2.section-builder-title__title");
   if (titleEl) titleEl.textContent = "Modifier l\u2019atelier";
 
-  // Disable submit until a field is actually changed
+  // Désactive l'envoi tant qu'aucun champ n'a été modifié
   const editSubmitBtn = form.querySelector(".layout-formbuilder__submit");
   if (editSubmitBtn) {
     editSubmitBtn.disabled = true;
@@ -574,7 +574,7 @@ function bindCompteUtilisateurOverlay(content, preloadedAteliers = null) {
   const form = content.querySelector(".layout-formbuilder");
   if (!form) return;
 
-  // Pre-fill form inputs from a user object
+  // Pré-remplit les champs du formulaire depuis un objet utilisateur
   const prefillForm = (user) => {
     if (!user) return;
     form.querySelectorAll("[data-linked-column]").forEach((holder) => {
@@ -592,7 +592,7 @@ function bindCompteUtilisateurOverlay(content, preloadedAteliers = null) {
     });
   };
 
-  // Build label/value rows from current stored user
+  // Construit les lignes label/valeur depuis l'utilisateur stocké
   const renderReadRows = () => {
     const user = getStoredUser();
     const rows = [];
@@ -614,14 +614,14 @@ function bindCompteUtilisateurOverlay(content, preloadedAteliers = null) {
     return rows.join("");
   };
 
-  // Pre-fill then start in read mode
+  // Pré-remplit, puis démarre en mode lecture
   prefillForm(getStoredUser());
 
   const formWrapper = form.closest(".section-builder-stack--overlay");
   const hideEdit = () => { if (formWrapper) formWrapper.style.display = "none"; else form.style.display = "none"; };
   const showEdit = () => { if (formWrapper) formWrapper.style.display = ""; else form.style.display = ""; };
 
-  // Snapshot of original user values — used for change detection & cancel
+  // Instantané des valeurs d'origine — utilisé pour la détection de modifications et l'annulation
   let originalSnapshot = {};
   const takeSnapshot = () => {
     const snap = {};
@@ -654,7 +654,7 @@ function bindCompteUtilisateurOverlay(content, preloadedAteliers = null) {
       });
   };
 
-  // Build read-only display block
+  // Construction du bloc d'affichage en lecture seule
   const userEmail = getStoredUser()?.email || "";
   const readView = document.createElement("div");
   readView.className = "compte-readonly";
@@ -668,7 +668,7 @@ function bindCompteUtilisateurOverlay(content, preloadedAteliers = null) {
   (formWrapper || form).insertAdjacentElement("beforebegin", readView);
   hideEdit();
 
-  // "Modifier" : switch to edit mode
+  // "Modifier" : passage en mode édition
   readView.querySelector(".compte-edit-btn").addEventListener("click", () => {
     readView.style.display = "none";
     showEdit();
@@ -676,7 +676,7 @@ function bindCompteUtilisateurOverlay(content, preloadedAteliers = null) {
     if (submitBtn) submitBtn.disabled = true;
   });
 
-  // Reset password link
+  // Lien de réinitialisation du mot de passe
   if (userEmail) {
     readView.querySelector(".compte-reset-password-anchor")?.addEventListener("click", async (e) => {
       e.preventDefault();

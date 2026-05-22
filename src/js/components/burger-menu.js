@@ -10,7 +10,7 @@ const burgerBtn   = document.getElementById('burger-btn');
 const burgerMenu  = document.getElementById('burger-menu');
 
 if (burgerBtn && burgerMenu) {
-  // --- Ouverture / fermeture ---
+  // \u2500\u2500\u2500 Ouverture / fermeture \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
   burgerBtn.addEventListener('click', () => {
     const isOpen = !burgerMenu.classList.contains('is-open');
@@ -29,7 +29,7 @@ if (burgerBtn && burgerMenu) {
     if (e.key === 'Escape' && burgerMenu.classList.contains('is-open')) closeMenu();
   });
 
-  // --- Recherche integree ---
+  // \u2500\u2500\u2500 Recherche int\u00e9gr\u00e9e \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
   const searchToggle = document.getElementById('burger-search-toggle');
   const searchWrap   = document.getElementById('burger-search-wrap');
@@ -59,7 +59,7 @@ if (burgerBtn && burgerMenu) {
     });
   }
 
-  // --- Navigation ---
+  // \u2500\u2500\u2500 Navigation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
   const burgerLinks = burgerMenu.querySelectorAll('.burger-menu__link[data-section]');
 
@@ -88,7 +88,7 @@ if (burgerBtn && burgerMenu) {
     });
   });
 
-  // --- Synchronisation etat actif via IntersectionObserver ---
+  // \u2500\u2500\u2500 Synchronisation \u00e9tat actif via IntersectionObserver \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
   const MOBILE_MQ = window.matchMedia('(max-width: 1279px)');
 
@@ -114,13 +114,13 @@ if (burgerBtn && burgerMenu) {
     sections.forEach((section) => observer.observe(section));
   }
 
-  // --- Bloquer tout scroll sous le menu quand il est ouvert ---
+  // \u2500\u2500\u2500 Blocage du scroll en arri\u00e8re-plan \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
   // Chrome route wheel vers le prochain élément scrollable même si overflow:hidden.
   // preventDefault() coupe la chaîne de scroll à la source.
   burgerMenu.addEventListener('wheel',     (e) => e.preventDefault(), { passive: false });
   burgerMenu.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
 
-  // --- Helpers ---
+  // \u2500\u2500\u2500 Utilitaires \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
   function closeMenu() {
     burgerMenu.classList.remove('is-open');

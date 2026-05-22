@@ -1,9 +1,9 @@
-// admin-users.js — Panel Utilisateurs de l'admin tool.
+﻿// admin-users.js — Panel Utilisateurs de l'admin tool.
 //
 // Responsabilité : construire et gérer le panel de gestion des utilisateurs
 // (filtres, liste paginée, formulaire d'édition inline, suppression).
 //
-// Exposé via la factory createUsersPanel(state, panels, token, deps).
+// Exposé via la fonction createUsersPanel(state, panels, token, deps).
 // Retourne { loadUsers } pour permettre au parent (admin-tool.js) de déclencher
 // le chargement initial ou de rafraîchir la liste depuis l'extérieur.
 
@@ -21,7 +21,7 @@ function userInputValidation(values) {
   return errors;
 }
 
-// ─── Factory ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Constructeur de panel \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function createUsersPanel(state, panels, token, deps) {
   const {

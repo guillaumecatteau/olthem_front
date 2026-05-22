@@ -1,6 +1,6 @@
 ﻿// ─── Rendu du FormBuilder ──────────────────────────────────────────────────────
 // Responsabilité : rendu HTML des champs, groupes et layouts de formulaire,
-// état du bouton submit, et injection des dépendances overlay.
+// état du bouton d'envoi, et injection des dépendances overlay.
 // La validation et la soumission sont dans form-validator.js / form-submit.js.
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -101,7 +101,7 @@ export function renderFormBuilderField(item, groupIndex, fieldIndex) {
     const maxAttr = pickField(item, ["number_max", "numberMax"]);
     const prefixAttr = plainText(pickField(item, ["number_prefix", "numberPrefix", "prefix"])) || "";
 
-    // Defaults par colonne connue (participants_count)
+    // Valeurs par défaut par colonne connue (participants_count)
     const isParticipants = linkedColumn === "participants_count";
     const step = Number(stepAttr) > 0 ? Number(stepAttr) : (isParticipants ? 10 : 1);
     const prefix = prefixAttr || (isParticipants ? "+" : "");

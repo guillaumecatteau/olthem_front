@@ -25,7 +25,7 @@ import { esc, slugify, formatDateTime, formatDate } from "../core/utils.js";
 import { createUsersPanel } from "./admin-users.js";
 import { createAteliersPanel, atelierStatusTag } from "./admin-ateliers.js";
 
-// ─── Helpers partagés ─────────────────────────────────────────────────────────
+// ─── Utilitaires partagés ─────────────────────────────────────────────────────────────
 
 function createPager({ page, totalPages, onPageClick }) {
   const safeTotal = Math.max(1, Number(totalPages || 1));
@@ -152,7 +152,7 @@ export async function bindAdminToolOverlay(content, page, options = {}) {
     fetchAdminAteliers, updateAdminAtelier, deleteAdminAtelier, fetchThematiques, showConfirm
   });
 
-  // ─── Overview ────────────────────────────────────────────────────────────────
+  // ─── Tableau de bord ────────────────────────────────────────────────────────────────
 
   const renderOverview = async (preloaded = null) => {
     if (!panels.overview) return;

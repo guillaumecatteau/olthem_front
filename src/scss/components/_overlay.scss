@@ -158,17 +158,12 @@
       li {
         color: $grey-light;
         font-weight: $font-weight-light;
-        font-size: 14px;
+        font-size: 16px;
       }
 
       p > span,
       li > span {
         display: block;
-      }
-
-      p:first-child,
-      p:last-child {
-        font-size: 16px;
       }
     }
 
