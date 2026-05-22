@@ -1,2 +1,12 @@
 node_modules/
 assets/css/style.css.map
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Documentation locale (TFE)
+docs/
+
+# npm lock file (CSS déjà compilé, pas besoin de réinstaller)
+package-lock.json
