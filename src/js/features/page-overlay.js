@@ -1,4 +1,4 @@
-﻿import { esc, plainText, normKey, slugify, fixTitleArrowSpacing } from '../core/utils.js';
+﻿import { esc, plainText, normKey, slugify, fixTitleArrowSpacing, makeExternalLinksNewTab } from '../core/utils.js';
 import { fetchPage, fetchOptions, fetchMyAteliers, searchLocalContent } from '../api/api.js';
 import { lockMainScroll, unlockMainScroll } from '../core/scroll-lock.js';
 import { getStoredToken, getStoredUser, persistAuthSession, forgotPasswordRequest } from '../api/auth.js';
@@ -110,7 +110,13 @@ function isOverlayTotalRequest(request = {}) {
     || search === "inscription-reussie"
     || slug === "inscriptionreussie"
     || title === "inscriptionreussie"
-    || search === "inscriptionreussie";
+    || search === "inscriptionreussie"
+    || slug === "mentions-legales"
+    || title === "mentions-legales"
+    || search === "mentions-legales"
+    || slug === "politique-de-confidentialite"
+    || title === "politique-de-confidentialite"
+    || search === "politique-de-confidentialite";
 }
 
 function applyPageOverlayMode(request) {
@@ -247,8 +253,21 @@ function overlayUrlForRequest(request) {
 }
 
 function syncPageOverlayUrl(request) {
-  pageOverlayPreviousUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-  pageOverlayPreviousState = history.state ? { ...history.state } : null;
+  // Si le hash courant est déjà un hash d'overlay ou de thématique (page rechargée
+  // alors qu'un overlay était ouvert), la section visible après init de scroll.js
+  // est toujours l'accueil (index 0) car le hash ne correspond à aucune section.
+  // On enregistre donc l'URL racine, pas l'URL de l'overlay, pour que fermer
+  // l'overlay restaure la bonne URL.
+  const currentHash = window.location.hash;
+  const isOverlayHash = currentHash.startsWith('#overlay/') || currentHash.startsWith('#thematique/');
+
+  if (isOverlayHash) {
+    pageOverlayPreviousUrl = `${window.location.pathname}${window.location.search}`;
+    pageOverlayPreviousState = { sectionIndex: 0 };
+  } else {
+    pageOverlayPreviousUrl = `${window.location.pathname}${window.location.search}${currentHash}`;
+    pageOverlayPreviousState = history.state ? { ...history.state } : null;
+  }
 
   const stateMethod = request.fromSearch ? "pushState" : "replaceState";
   history[stateMethod](
@@ -289,6 +308,13 @@ async function getOverlayPage(options) {
 async function setPageOverlayContent(page, fallbackTitle = "", fallbackLogo = null, { preloadedAteliers = null } = {}) {
   const content = document.getElementById("page-overlay-content");
   if (!content) return;
+
+  // Réinitialiser le layout content-only du cycle précédent
+  content.classList.remove("page-overlay__content--is-scroller");
+  const prevInner = content.parentElement;             // = __inner
+  const prevRoot  = prevInner?.parentElement;          // = .page-overlay
+  prevInner?.querySelectorAll(":scope > .page-overlay__retour-inline").forEach((el) => el.remove());
+  prevRoot?.querySelectorAll(":scope > .page-overlay__retour-inline").forEach((el) => el.remove());
 
   const isAdminOverlay = isAdminToolRequest(page, pageOverlayCurrentRequest || {});
   content.classList.toggle("page-overlay__content--admin-tool", isAdminOverlay);
@@ -419,6 +445,8 @@ async function setPageOverlayContent(page, fallbackTitle = "", fallbackLogo = nu
     ${bodySection}
     ${inlineCloseHtml}`;
 
+  makeExternalLinksNewTab(content);
+
   if (isOverlayTotalRequest(pageOverlayCurrentRequest || {})) {
     const inlineClose = content.querySelector(".page-overlay__retour-inline");
     const form = content.querySelector(".layout-formbuilder");
@@ -431,14 +459,13 @@ async function setPageOverlayContent(page, fallbackTitle = "", fallbackLogo = nu
           form.appendChild(inlineClose);
         }
       } else {
-        const bodies = [...content.querySelectorAll(".page-overlay__body")];
-        const stack = content.querySelector(".section-builder-stack--overlay");
-
-        if (stack) {
-          stack.appendChild(inlineClose);
-        } else if (bodies.length) {
-          const targetBody = bodies[bodies.length - 1];
-          targetBody.insertAdjacentElement("afterend", inlineClose);
+        // Pages fullscreen sans formulaire (mentions légales, politique de confidentialité…) :
+        // __content devient le scroller (secondary-scroll), bouton en dessous dans __inner.
+        const inner = content.parentElement; // = __inner
+        if (inner) {
+          inner.appendChild(inlineClose);
+          content.classList.add("page-overlay__content--is-scroller");
+          window.dispatchEvent(new CustomEvent("secondary-scroll:refresh"));
         }
       }
     }
@@ -1291,6 +1318,10 @@ function closePageOverlay({ keepUrl = false } = {}) {
   if (overlay.contains(document.activeElement)) {
     document.activeElement.blur();
   }
+
+  // Nettoyer le layout content-only immédiatement à la fermeture,
+  // avant que refreshSecondaryScroll (doUnlock) ne voie encore cette classe.
+  document.getElementById("page-overlay-content")?.classList.remove("page-overlay__content--is-scroller");
 
   overlay.classList.remove("is-visible");
   overlay.setAttribute("aria-hidden", "true");

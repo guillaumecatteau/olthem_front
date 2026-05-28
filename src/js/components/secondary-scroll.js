@@ -9,6 +9,7 @@ const SCROLLER_SELECTORS = [
   '.js-section-subsections-scroll',
   '#thm-overlay-inner',
   '#page-overlay .page-overlay__inner',
+  '#page-overlay .page-overlay__content--is-scroller',
   '.admin-tool__latest-scroll',
   '.admin-tool__entries-scroll',
   '.ateliers-list-col',
@@ -181,8 +182,24 @@ function updateDecorForScroller(scroller) {
   scroller.style.setProperty('--secondary-pad-top', `${padTop}px`);
   scroller.style.setProperty('--secondary-pad-bottom', `${padBottom}px`);
 
-  scope.style.setProperty('--secondary-scroll-top', `${padTop}px`);
-  scope.style.setProperty('--secondary-scroll-bottom', `${padBottom}px`);
+  // Pour le page-overlay en mode content-only, la scrollbar doit s'aligner
+  // sur la zone réelle du scroller (__content) au sein de __inner.
+  // Les autres scrollers utilisent leurs propres padTop/padBottom sans modification.
+  let scrollTopOffset = padTop;
+  let scrollBottomOffset = padBottom;
+  if (!isMobile && scroller.classList.contains('page-overlay__content--is-scroller')) {
+    const inner = scroller.closest('.page-overlay__inner');
+    if (inner) {
+      const innerStyle = getComputedStyle(inner);
+      scrollTopOffset = parseFloat(innerStyle.paddingTop) || 0;
+      const btn = inner.querySelector(':scope > .page-overlay__retour-inline');
+      const btnHeight = btn ? btn.offsetHeight : 0;
+      scrollBottomOffset = (parseFloat(innerStyle.paddingBottom) || 0) + btnHeight;
+    }
+  }
+
+  scope.style.setProperty('--secondary-scroll-top', `${scrollTopOffset}px`);
+  scope.style.setProperty('--secondary-scroll-bottom', `${scrollBottomOffset}px`);
 
   const overflow = hasOverflow(scroller);
   scope.classList.toggle('has-scrollable-content', overflow);
@@ -244,6 +261,8 @@ function getPreferredScroller(event) {
 
   const pageOverlay = document.getElementById('page-overlay');
   if (pageOverlay?.classList.contains('is-visible')) {
+    const contentScroller = pageOverlay.querySelector('.page-overlay__content--is-scroller');
+    if (contentScroller) return contentScroller;
     return pageOverlay.querySelector('.page-overlay__inner');
   }
 

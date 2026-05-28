@@ -448,11 +448,10 @@ export async function initAteliersMap(sectionEl) {
     return;
   }
 
-  window.mapboxgl.accessToken = token;
-
   const map = new window.mapboxgl.Map({
     container:        mapContainerEl,
     style:            "mapbox://styles/mapbox/light-v11",
+    accessToken:      token,
     maxBounds:        WALLONIA_BOUNDS,
     scrollZoom:       false,
     attributionControl: true

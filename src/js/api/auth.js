@@ -2,7 +2,6 @@ import { RestApiError, requestJsonAcrossRoots } from "../core/rest-client.js";
 
 const AUTH_TOKEN_KEY = "olthem.auth.token";
 const AUTH_USER_KEY = "olthem.auth.user";
-const AUTH_REMEMBER_PREFS_KEY = "olthem.auth.remember.preferences";
 const USER_ICON_PATH = "./assets/images/icons/icon_User.svg";
 const ADMIN_ICON_PATH = "./assets/images/icons/icon_Admin.svg";
 
@@ -46,51 +45,13 @@ function getStorage(kind) {
   }
 }
 
-function readRememberPreferences() {
-  const storage = getStorage("local");
-  if (!storage) return {};
-
-  try {
-    const raw = storage.getItem(AUTH_REMEMBER_PREFS_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-
-function writeRememberPreferences(preferences) {
-  const storage = getStorage("local");
-  if (!storage) return;
-
-  try {
-    storage.setItem(AUTH_REMEMBER_PREFS_KEY, JSON.stringify(preferences));
-  } catch {
-    // Ignore storage failures.
-  }
-}
-
-function resolveRememberPreference(payload, fallbackEmail = "", explicitRemember = null) {
-  if (typeof explicitRemember === "boolean") return explicitRemember;
-
-  const userRemember = payload?.user?.remember;
-  if (typeof userRemember === "boolean") return userRemember;
-
-  const email = String(payload?.user?.email || fallbackEmail || "").trim().toLowerCase();
-  if (!email) return false;
-
-  const preferences = readRememberPreferences();
-  return !!preferences[email];
-}
-
 function saveAuthSession(payload, options = {}) {
   const token = payload?.token;
   const user = normalizeUser(payload?.user);
 
   if (!token || !user) return;
 
-  const remember = resolveRememberPreference(payload, options.email, options.remember);
+  const remember = typeof options.remember === "boolean" ? options.remember : !!(payload?.user?.remember);
   const primaryStorage = remember ? getStorage("local") : getStorage("session");
   const secondaryStorage = remember ? getStorage("session") : getStorage("local");
 
@@ -140,15 +101,6 @@ export function getStoredUser() {
   } catch {
     return null;
   }
-}
-
-export function rememberAuthPreference(email, remember) {
-  const normalizedEmail = String(email || "").trim().toLowerCase();
-  if (!normalizedEmail) return;
-
-  const preferences = readRememberPreferences();
-  preferences[normalizedEmail] = !!remember;
-  writeRememberPreferences(preferences);
 }
 
 export function persistAuthSession(payload, options = {}) {

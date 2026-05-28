@@ -417,6 +417,13 @@
   }
 }
 
+// Quand le burger menu est ouvert, passer le bouton retour derrière le burger menu
+@include below($bp-xl) {
+  html.burger-open .overlay-retour-btn {
+    z-index: 1040; // sous .burger-menu (1050) et .burger-btn (1100)
+  }
+}
+
 // ─── Burger menu — plein écran ────────────────────────────────────────────────
 .burger-menu {
   display: none; // masqué sur desktop

@@ -187,6 +187,7 @@ export function openRouteOverlay(destName, destRue, destPostal, destLocalite, de
   const overlayMap = new window.mapboxgl.Map({
     container:          mapContainerEl,
     style:              "mapbox://styles/mapbox/light-v11",
+    accessToken:        token,
     scrollZoom:         true,
     attributionControl: true,
   });

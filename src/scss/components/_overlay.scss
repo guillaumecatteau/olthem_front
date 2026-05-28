@@ -298,6 +298,34 @@
     &--fullscreen &__retour-inline {
       display: inline-flex;
     }
+
+    // Fullscreen content-only (sans formulaire, ni recherche, ni admin tool) :
+    // __inner = conteneur (overflow: hidden, padding intact, justify flex-start).
+    // __content--is-scroller = le scroller (secondary-scroll s'y attache).
+    // bouton = flex child normal après __content, dans la zone utilisable.
+    &--fullscreen:not(:has(.layout-formbuilder)):not(:has(.overlay-search)):not(:has(.page-overlay__content--admin-tool)) {
+      & .page-overlay__inner {
+        overflow: hidden;
+        justify-content: flex-start;
+      }
+
+      & .page-overlay__content--is-scroller {
+        flex: 1;
+        overflow-y: auto;
+        min-height: 0;
+        scrollbar-width: none;
+        &::-webkit-scrollbar {
+          display: none;
+        }
+      }
+
+      & .page-overlay__inner > .page-overlay__retour-inline {
+        flex-shrink: 0;
+        align-self: center;
+        margin-top: 0;
+        padding-top: 20px;
+      }
+    }
   }
 }
 

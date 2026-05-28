@@ -1,11 +1,12 @@
 import { fetchThematiques } from '../api/api.js';
-import { esc, normKey as _normKey } from '../core/utils.js';
+import { esc, normKey as _normKey, makeExternalLinksNewTab } from '../core/utils.js';
 import { ImgGallerieCarousel } from '../components/img-carousel.js';
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
 const HEADER_ORDER = { premier: 1, deuxieme: 2, troisieme: 3 };
 const _MOBILE_MQ = window.matchMedia('(max-width: 1279px)');
+let _overlayLocked = false;
 
 // ─── Store global des thématiques (pour l'overlay) ───────────────────────────
 
@@ -879,6 +880,7 @@ function _renderSingleSubSection(container, subSection, thm) {
   container.style.setProperty('--thm-color', esc(_overlayColor(thm)));
   const imageSoloBlock = _hasImageSoloLayout(subSection.layouts) ? '' : _renderImageSolo(subSection.imageSolo);
   container.innerHTML = _buildThmOverlayHeader(thm) + imageSoloBlock + subSection.layouts.map(_renderLayout).join('');
+  makeExternalLinksNewTab(container);
   _setupVideoThumbFallback(container);
 
   _applyWysiwygSpacing(container);
@@ -937,6 +939,7 @@ function openOverlay(thm) {
     imageSolo: _firstImageSoloFromBuilder(thm.builder),
     layouts:   _allLayouts(thm.builder),
   };
+  if (inner) inner.scrollTop = 0;
   _renderSingleSubSection(inner, ss, thm);
   overlayRetour?.addEventListener('click', closeOverlay, { once: true });
 
@@ -1009,50 +1012,16 @@ document.addEventListener('click', e => {
   facade.replaceWith(iframe);
 });
 
-document.addEventListener('click', async (e) => {
+document.addEventListener('click', (e) => {
   const btn = e.target.closest('.layout-pdf-button__action');
   if (!btn) return;
 
   e.preventDefault();
 
   const url = btn.dataset.pdfUrl;
-  const fileName = btn.dataset.pdfFilename || 'document.pdf';
   if (!url) return;
 
-  const previous = btn.textContent;
-  btn.disabled = true;
-  btn.textContent = 'Telechargement...';
-
-  try {
-    const response = await fetch(url, { credentials: 'same-origin' });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-    const blob = await response.blob();
-    const blobUrl = URL.createObjectURL(blob);
-
-    const a = document.createElement('a');
-    a.href = blobUrl;
-    a.download = fileName.toLowerCase().endsWith('.pdf') ? fileName : `${fileName}.pdf`;
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-
-    URL.revokeObjectURL(blobUrl);
-  } catch {
-    // Fallback si fetch/blob est bloque : tentative de download direct.
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName.toLowerCase().endsWith('.pdf') ? fileName : `${fileName}.pdf`;
-    a.rel = 'noopener';
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  } finally {
-    btn.disabled = false;
-    btn.textContent = previous;
-  }
+  window.open(url, '_blank', 'noopener,noreferrer');
 });
 // ─── Délégation globale : click sur bouton "Voir la thématique" ───────────────
 // Couvre les cards du header ET du carrousel

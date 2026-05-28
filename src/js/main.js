@@ -124,3 +124,21 @@ fetchOptions().then(opts => {
   if (!hasNew && !hasLegacy) return;
   openPageOverlayWithRequest({ id: 327, exactTitle: 'Nouveau mot de passe', backLabel: 'Retour au site', overlayMode: 'overlayTotal' }, 'Nouveau mot de passe');
 })();
+
+// ─── Restauration de l'overlay à partir du hash URL au rechargement ──────────
+(function restoreOverlayFromHash() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('action') === 'reset-password' || params.has('reset_token')) return;
+
+  const hash  = window.location.hash;
+  const state = history.state;
+
+  if (hash.startsWith('#overlay/') && state?.pageOverlay) {
+    openPageOverlayWithRequest(state.pageOverlay);
+  } else if (hash.startsWith('#thematique/') && state?.thmOverlay?.id) {
+    const thmId = state.thmOverlay.id;
+    window.addEventListener('accueil:cards-ready', () => {
+      window.dispatchEvent(new CustomEvent('thm:open-by-id', { detail: { id: thmId } }));
+    }, { once: true });
+  }
+})();

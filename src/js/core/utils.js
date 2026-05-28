@@ -117,3 +117,15 @@ export function fixTitleArrowSpacing(container = document) {
     }
   });
 }
+
+export function makeExternalLinksNewTab(container) {
+  if (!container) return;
+  container.querySelectorAll('a[href]').forEach((link) => {
+    const href = link.getAttribute('href');
+    if (!href) return;
+    if (href.startsWith('http') || href.startsWith('//')) {
+      link.setAttribute('target', '_blank');
+      link.setAttribute('rel', 'noopener noreferrer');
+    }
+  });
+}

@@ -18,7 +18,6 @@ import {
   loginAuthUser,
   persistAuthSession,
   registerAuthUser,
-  rememberAuthPreference,
   getStoredToken,
   getStoredUser,
   forgotPasswordRequest,
@@ -206,6 +205,51 @@ function getRegistrationAlertMessage(error) {
   return "Problème technique";
 }
 
+// ─── Pré-remplissage du formulaire de connexion ────────────────────────────────
+
+function prefillRememberMe(form) {
+  const process = String(form.dataset.formProcess || "").trim().toLowerCase();
+  if (process !== "connexion") return;
+
+  // Corriger les attributs autocomplete pour activer le trousseau du navigateur
+  const emailHolder = [...form.querySelectorAll("[data-linked-column]")].find((h) => {
+    const ft = String(h.getAttribute("data-field-type") || "").trim().toLowerCase();
+    return ft === "email";
+  });
+  const emailInput = emailHolder?.querySelector("input");
+  if (emailInput) emailInput.setAttribute("autocomplete", "email");
+
+  const passwordHolder = [...form.querySelectorAll("[data-linked-column]")].find((h) => {
+    const ft = String(h.getAttribute("data-field-type") || "").trim().toLowerCase();
+    return ft === "password";
+  });
+  const passwordInput = passwordHolder?.querySelector("input");
+  if (passwordInput) passwordInput.setAttribute("autocomplete", "current-password");
+
+  // Credential Management API : récupère email + mot de passe depuis le trousseau
+  // du navigateur et injecte les deux champs (uniquement si disponible)
+  if (!window.PasswordCredential || !navigator.credentials?.get) return;
+  navigator.credentials.get({ password: true, mediation: "optional" })
+    .then((cred) => {
+      if (!(cred instanceof window.PasswordCredential)) return;
+      if (emailInput)    emailInput.value    = cred.id;
+      if (passwordInput) passwordInput.value = cred.password;
+
+      const rememberHolder = [...form.querySelectorAll("[data-linked-column]")].find((h) => {
+        const col = String(h.getAttribute("data-linked-column") || "").trim().toLowerCase();
+        return /remember|souvenir/.test(col);
+      });
+      const rememberCheckbox = rememberHolder?.querySelector("input[type='checkbox']");
+      if (rememberCheckbox) rememberCheckbox.checked = true;
+
+      const formHost = emailInput?.closest(".layout-formbuilder");
+      if (formHost instanceof HTMLFormElement) {
+        formHost.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+    })
+    .catch(() => {});
+}
+
 // ─── Liaison des soumissions ──────────────────────────────────────────────────
 
 /**
@@ -233,6 +277,7 @@ export function bindFormBuilderSubmissions() {
     });
 
     hydrateFormBuilderFromDraft(form);
+    prefillRememberMe(form);
     updateFormBuilderSubmitState(form);
 
     const holderForEvent = (event) => {
@@ -619,10 +664,6 @@ export function bindFormBuilderSubmissions() {
         const credentials = getFormBuilderAuthCredentials(form);
         const registrationPayload = await registerAuthUser(payload.values);
 
-        if (credentials.email) {
-          rememberAuthPreference(credentials.email, remember);
-        }
-
         const authPayload = registrationPayload?.token && registrationPayload?.user
           ? registrationPayload
           : (credentials.email && credentials.password
@@ -658,10 +699,6 @@ export function bindFormBuilderSubmissions() {
           throw new Error("Email et mot de passe requis.");
         }
 
-        if (credentials.email) {
-          rememberAuthPreference(credentials.email, remember);
-        }
-
         const authPayload = await loginAuthUser({ email: credentials.email, password: credentials.password, remember });
 
         if (!authPayload?.token || !authPayload?.user) {
@@ -669,6 +706,17 @@ export function bindFormBuilderSubmissions() {
         }
 
         persistAuthSession(authPayload, { email: credentials.email, remember });
+
+        // Stockage sécurisé dans le trousseau du navigateur (Credential Management API)
+        if (remember && window.PasswordCredential) {
+          try {
+            const cred = new window.PasswordCredential({ id: credentials.email, password: credentials.password });
+            await navigator.credentials.store(cred);
+          } catch {
+            // L'API peut ne pas être disponible ou l'utilisateur peut refuser
+          }
+        }
+
         window.dispatchEvent(new CustomEvent("auth:session-updated"));
 
         const redirectAfterLogin = _getOverlayCurrentRequest()?.redirectAfterLogin ?? null;
@@ -682,8 +730,8 @@ export function bindFormBuilderSubmissions() {
         const token = getStoredToken();
         if (!token) throw new Error("Vous n'êtes pas connecté.");
         const authPayload = await updateUserProfile(payload.values, token);
-        if (authPayload?.token && authPayload?.user) {
-          persistAuthSession(authPayload, {});
+        if (authPayload?.user) {
+          persistAuthSession({ ...authPayload, token }, {});
           window.dispatchEvent(new CustomEvent("auth:session-updated"));
         }
         message.textContent = "Profil mis à jour.";

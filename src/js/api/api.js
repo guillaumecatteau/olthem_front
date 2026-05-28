@@ -3,12 +3,38 @@ import { RestApiError, requestJsonAcrossRoots } from "../core/rest-client.js";
 import { getStoredToken } from "./auth.js";
 import { stripHtml } from "../core/utils.js";
 
+// ─── Cache localStorage pour les données statiques (thématiques, sections) ───
+const _CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+
+function _readCache(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const { ts, data } = JSON.parse(raw);
+    if (Date.now() - ts > _CACHE_TTL) return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+function _writeCache(key, data) {
+  try {
+    localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data }));
+  } catch {
+    // Ignore (navigation privée, quota dépassé, etc.)
+  }
+}
+
 export async function fetchSiteUrl() {
   const data = await requestJsonAcrossRoots("");
   return typeof data?.url === "string" ? data.url : null;
 }
 
 export async function fetchThematiques() {
+  const cached = _readCache('olthem_cache_thematiques');
+  if (cached) return cached;
+
   const items = await requestJsonAcrossRoots("/wp/v2/thematiques", {
     params: {
       per_page: 100,
@@ -19,7 +45,7 @@ export async function fetchThematiques() {
 
   if (!Array.isArray(items)) return [];
 
-  return items.map(item => ({
+  const result = items.map(item => ({
     id:                  item.id,
     slug:                item.slug               || "",
     titre:               item.titre              ?? stripHtml(item.title?.rendered ?? ""),
@@ -37,6 +63,8 @@ export async function fetchThematiques() {
     couleur_sombre:      item.couleur_sombre      ?? null,
     builder:             Array.isArray(item.builder) ? item.builder : []
   }));
+  _writeCache('olthem_cache_thematiques', result);
+  return result;
 }
 
 export async function fetchLatestPosts() {
@@ -60,6 +88,9 @@ export async function fetchLatestPosts() {
 }
 
 export async function fetchSections() {
+  const cached = _readCache('olthem_cache_sections');
+  if (cached) return cached;
+
   const items = await requestJsonAcrossRoots("/wp/v2/sections", {
     params: {
       per_page: 100,
@@ -70,12 +101,14 @@ export async function fetchSections() {
 
   if (!Array.isArray(items)) return [];
 
-  return items.map((item) => ({
+  const result = items.map((item) => ({
     id: item.id,
     slug: item.slug || "",
     title: stripHtml(item.title?.rendered ?? ""),
     builder: Array.isArray(item.builder) ? item.builder : []
   }));
+  _writeCache('olthem_cache_sections', result);
+  return result;
 }
 
 export async function fetchPage(options = {}) {

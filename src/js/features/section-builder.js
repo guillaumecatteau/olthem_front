@@ -11,6 +11,7 @@ import {
   titleLogoUrl
 } from "../helpers/acf-helpers.js";
 import { renderFormBuilderLayout } from './forms/form-builder.js';
+import { ImgGallerieCarousel } from '../components/img-carousel.js';
 
 let _sectionsPromise = Promise.resolve([]);
 export function setSectionsPromise(p) { _sectionsPromise = p; }
@@ -316,7 +317,14 @@ function renderSectionLayout(layout) {
       const dotsHtml = urls
         .map((_, idx) => `<button class="img-gallerie-dots__dot" aria-label="Image ${idx + 1}"></button>`)
         .join('');
-      setTimeout(() => window._initImgGallerieCarousel?.(trackId, dotsId, controllerId, urls.length), 0);
+      setTimeout(() => {
+        const track = document.getElementById(trackId);
+        const dotsContainer = document.getElementById(dotsId);
+        const controller = document.getElementById(controllerId);
+        if (track && dotsContainer && controller) {
+          new ImgGallerieCarousel(track, dotsContainer, controller, urls.length);
+        }
+      }, 0);
       return `
         <div class="layout-image-gallerie layout-image-gallerie--carousel" id="${controllerId}">
           <div class="img-gallerie-carousel">
