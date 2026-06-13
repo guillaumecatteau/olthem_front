@@ -41,7 +41,8 @@ function isSubsectionScroller(scroller) {
 
 function isEdgeGuardedScroller(scroller) {
   return isSubsectionScroller(scroller)
-    || !!scroller?.classList?.contains('ateliers-list-col');
+    || !!scroller?.classList?.contains('ateliers-list-col')
+    || (scroller?.id === 'thm-overlay-inner' && document.getElementById('thm-overlay')?.classList?.contains('is-visible'));
 }
 
 function hasOverflow(el) {
@@ -258,9 +259,11 @@ function pointerInsideScrollerRect(scroller, clientX, clientY) {
 function getHoveredSecondaryScroller(clientX, clientY) {
   if (clientX == null || clientY == null) return null;
 
-  const candidates = getAllScrollers().filter((scroller) =>
-    pointerInsideScrollerRect(scroller, clientX, clientY)
-  );
+  const thmOverlayOpen = document.getElementById('thm-overlay')?.classList.contains('is-visible');
+  const candidates = getAllScrollers().filter((scroller) => {
+    if (scroller.id === 'thm-overlay-inner' && !thmOverlayOpen) return false;
+    return pointerInsideScrollerRect(scroller, clientX, clientY);
+  });
 
   if (!candidates.length) return null;
 
@@ -479,7 +482,16 @@ function setupObservers() {
 
 window.addEventListener('wheel', onWheel, { passive: false });
 window.addEventListener('resize', refreshSecondaryScroll, { passive: true });
-window.addEventListener('secondary-scroll:refresh', refreshSecondaryScroll);
+window.addEventListener('secondary-scroll:refresh', () => {
+  // Si le scroller guardé n'est plus actif (ex: overlay thématique fermé), on réinitialise.
+  if (subsectionEdgeGuard.scroller) {
+    const s = subsectionEdgeGuard.scroller;
+    if (s.id === 'thm-overlay-inner' && !document.getElementById('thm-overlay')?.classList.contains('is-visible')) {
+      clearSubsectionEdgeGuard();
+    }
+  }
+  refreshSecondaryScroll();
+});
 window.addEventListener('load', () => {
   bindAllScrollers();
   refreshSecondaryScroll();

@@ -555,7 +555,7 @@ function _renderVideoCaroussel(config) {
     <div class="layout-image-gallerie layout-image-gallerie--carousel" id="${controllerId}">
       <div class="img-gallerie-carousel">
         <div class="img-gallerie-carousel__btn-wrap img-gallerie-carousel__btn-wrap--prev">
-          <img class="img-gallerie-carousel__btn img-gallerie-carousel__btn--prev" src="./assets/images/icons/icon_ArrowBold_Left.svg" alt="Vidéo précédente" role="button" tabindex="0" />
+          <img class="img-gallerie-carousel__btn img-gallerie-carousel__btn--prev" src="./assets/images/icons/icon_NavSimple_Prev.svg" alt="Vidéo précédente" role="button" tabindex="0" />
         </div>
         <div class="img-gallerie-carousel__viewport">
           <div class="img-gallerie-carousel__track" id="${trackId}">
@@ -563,7 +563,7 @@ function _renderVideoCaroussel(config) {
           </div>
         </div>
         <div class="img-gallerie-carousel__btn-wrap img-gallerie-carousel__btn-wrap--next">
-          <img class="img-gallerie-carousel__btn img-gallerie-carousel__btn--next" src="./assets/images/icons/icon_ArrowBold_Right.svg" alt="Vidéo suivante" role="button" tabindex="0" />
+          <img class="img-gallerie-carousel__btn img-gallerie-carousel__btn--next" src="./assets/images/icons/icon_NavSimple_Next.svg" alt="Vidéo suivante" role="button" tabindex="0" />
         </div>
       </div>
       <div class="img-gallerie-dots" id="${dotsId}">
@@ -1232,7 +1232,9 @@ function buildCard(thm, context) {
         </div>
       </div>`;
 
-  const rawDescriptif = (_SMALL_DESKTOP_MQ.matches ? thm.descriptif_mobile : thm.descriptif_desktop) ?? '';
+  const rawDescriptif = (context === 'header'
+    ? thm.descriptif_desktop
+    : (_SMALL_DESKTOP_MQ.matches ? thm.descriptif_mobile : thm.descriptif_desktop)) ?? '';
   const descriptif = _cardDescriptifHtml(rawDescriptif);
 
   return `

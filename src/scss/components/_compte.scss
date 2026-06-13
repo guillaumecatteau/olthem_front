@@ -273,23 +273,25 @@
   }
 }
 
-// Dans le layout sticky compte (desktop) : la liste s'adapte à l'espace restant
-// quand le message de réinitialisation (ou tout autre élément) agrandit le bloc du dessus.
-.page-overlay__content--compte-layout {
-  > .compte-ateliers {
-    flex: 1;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-
-    .compte-ateliers__list-wrap {
+// Dans le layout sticky compte (desktop uniquement) : la liste s'adapte à l'espace restant.
+// Sur mobile, __list-scroll garde son max-height naturel et __inner scrolle librement.
+@include above($bp-xl) {
+  .page-overlay__content--compte-layout {
+    > .compte-ateliers {
       flex: 1;
       min-height: 0;
-    }
+      display: flex;
+      flex-direction: column;
 
-    .compte-ateliers__list-scroll {
-      max-height: none;
-      height: 100%;
+      .compte-ateliers__list-wrap {
+        flex: 1;
+        min-height: 0;
+      }
+
+      .compte-ateliers__list-scroll {
+        max-height: none;
+        height: 100%;
+      }
     }
   }
 }

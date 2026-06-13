@@ -71,11 +71,14 @@ export function renderFormBuilderField(item, groupIndex, fieldIndex) {
       ? `<button class="layout-formbuilder__password-toggle" type="button" aria-label="Afficher le mot de passe" aria-pressed="false"><img src="./assets/images/icons/icon_EyeClosed.svg" alt="" aria-hidden="true" /></button>`
       : "";
 
+    const inputAndToggle = type === "password"
+      ? `<div class="layout-formbuilder__input-wrap"><input id="${esc(id)}" class="layout-formbuilder__input" type="${esc(inputType)}" placeholder="${esc(label)}" autocomplete="${esc(auto)}" />${passwordToggle}</div>`
+      : `<input id="${esc(id)}" class="layout-formbuilder__input" type="${esc(inputType)}" placeholder="${esc(label)}" autocomplete="${esc(auto)}" />`;
+
     return `
       <label class="layout-formbuilder__field layout-formbuilder__field--${size}${type === "password" ? " layout-formbuilder__field--password" : ""}" for="${esc(id)}" data-linked-column="${esc(linkedColumn)}" data-field-type="${esc(type)}">
         ${fieldTitleHtml}
-        <input id="${esc(id)}" class="layout-formbuilder__input" type="${esc(inputType)}" placeholder="${esc(label)}" autocomplete="${esc(auto)}" />
-        ${passwordToggle}
+        ${inputAndToggle}
         <p class="layout-formbuilder__error" aria-live="polite"></p>
       </label>`;
   }
