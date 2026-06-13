@@ -738,4 +738,31 @@
       font-size: 10px;
     }
   }
+
+  // Layout adaptatif à la hauteur de fenêtre
+  .route-overlay__inner {
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 56px 22px 0;
+  }
+
+  .route-overlay__content {
+    flex: 1;
+    min-height: 0;
+    justify-content: flex-start;
+    gap: 16px;
+  }
+
+  .route-overlay__double {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
+    gap: 32px;
+  }
+
+  .route-overlay__close {
+    flex-shrink: 0;
+    padding: 16px 0;
+  }
 }
