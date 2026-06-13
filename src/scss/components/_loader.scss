@@ -82,6 +82,20 @@
   100% { width: 95%; }   // S'arrête à 95% ; le JS finit à 100% avant de masquer
 }
 
+// ─── Desktop intermédiaire (1280px – 1919px) ─────────────────────────────────
+@include small-desktop {
+  .site-loader {
+    &__logo {
+      transform: scale(0.75);
+      transform-origin: center;
+    }
+
+    &__bar-wrap {
+      width: 225px; // 300px × 0.75
+    }
+  }
+}
+
 // ─── Animations d'entrée des éléments d'accueil ──────────────────────────────
 // Déclenchées via JS après la disparition du loader.
 

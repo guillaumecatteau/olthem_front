@@ -255,9 +255,31 @@ function pointerInsideScrollerRect(scroller, clientX, clientY) {
   return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
 }
 
+function getHoveredSecondaryScroller(clientX, clientY) {
+  if (clientX == null || clientY == null) return null;
+
+  const candidates = getAllScrollers().filter((scroller) =>
+    pointerInsideScrollerRect(scroller, clientX, clientY)
+  );
+
+  if (!candidates.length) return null;
+
+  // Priorité au scroller le plus spécifique (plus petite surface).
+  candidates.sort((a, b) => {
+    const ra = a.getBoundingClientRect();
+    const rb = b.getBoundingClientRect();
+    return (ra.width * ra.height) - (rb.width * rb.height);
+  });
+
+  return candidates[0] || null;
+}
+
 function getPreferredScroller(event) {
   const clientX = event?.clientX;
   const clientY = event?.clientY;
+
+  const hoveredScroller = getHoveredSecondaryScroller(clientX, clientY);
+  if (hoveredScroller) return hoveredScroller;
 
   const pageOverlay = document.getElementById('page-overlay');
   if (pageOverlay?.classList.contains('is-visible')) {
@@ -316,7 +338,6 @@ function getPreferredScroller(event) {
 function shouldRouteWheelToSecondaryScroll(event) {
   const preferred = getPreferredScroller(event);
   if (!preferred) return false;
-  if (!pointerInsideLargeContainer(event.clientX)) return false;
   if (!pointerInsideScrollerRect(preferred, event.clientX, event.clientY)) return false;
   if (!hasOverflow(preferred)) return false;
   if (!getScrollableByDirection(preferred, event.deltaY)) return false;
@@ -329,7 +350,6 @@ function isWheelInsideSubsectionContentZone(event) {
   const preferred = getPreferredScroller(event);
   if (!preferred) return false;
   if (!isSubsectionScroller(preferred)) return false;
-  if (!pointerInsideLargeContainer(event.clientX)) return false;
   if (!pointerInsideScrollerRect(preferred, event.clientX, event.clientY)) return false;
   return true;
 }
@@ -343,9 +363,8 @@ function routeWheelToSecondaryScroll(event) {
     return false;
   }
 
-  const inLargeZone = pointerInsideLargeContainer(event.clientX);
   const inScrollerZone = pointerInsideScrollerRect(preferred, event.clientX, event.clientY);
-  if (!inLargeZone || !inScrollerZone) {
+  if (!inScrollerZone) {
     clearSubsectionEdgeGuard();
     return false;
   }

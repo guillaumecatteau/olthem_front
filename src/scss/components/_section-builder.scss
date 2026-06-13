@@ -504,6 +504,38 @@
   }
 }
 
+// ─── Desktop intermédiaire (1280px – 1919px) ─────────────────────────────────
+
+@include small-desktop {
+  .section-builder-cta {
+    height: 120px;
+
+    &__inner { width: min(100%, 1080px); }
+    &__title { font-size: 20px; }
+    &__text  { font-size: 14px; }
+    &__image { height: 60px; }
+
+    &__button.buttonRound {
+      height: 40px;
+      padding: 0 42px;
+      font-size: 16px;
+    }
+  }
+
+  .section-builder-title__title-wrap .thm-arrow {
+    height: 16px;
+    width: auto;
+  }
+
+  .section-builder-title__title {
+    font-size: 36px;
+  }
+
+  .section-builder-title__subtitle {
+    font-size: 14px;
+  }
+}
+
 // ─── Accordéon inner-titles (mobile, section initiative) ──────────────────────
 
 @include below($bp-xl) {

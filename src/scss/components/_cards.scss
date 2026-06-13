@@ -605,3 +605,104 @@
     }
   }
 }
+
+// ─── Desktop intermédiaire (1280px – 1919px) ─────────────────────────────────
+
+@include small-desktop {
+  .thm-card--carousel {
+    width: 320px;  // 400px × 0.8 — ratio conservé (base 480×600)
+    height: 400px; // active à scale 1.1 = 440px visuel
+
+    &.thm-card { --banner-h: 60px; } // recalibre visuel + episode-box + hover
+    .thm-card__banner {
+      height: 60px;
+      padding: 0 12px; // réduit depuis 24px — libère ~24px pour le titre (156px → 180px)
+    }
+    .thm-card__action { height: 60px; }
+    .thm-card__banner .thm-card__title-wrap { gap: 8px; } // réduit depuis 12px
+    // min-width: 0 indispensable pour que flex: 1 fonctionne dans _fitCarouselBannerTitle
+    .thm-card__banner .thm-card__title { min-width: 0; }
+
+    .thm-card__title {
+      font-size: 16px;
+      text-align: center;
+      line-height: 1.15;
+    }
+    .thm-card__subtitle { font-size: 16px; line-height: 1.1; }
+    .thm-card__personnage { font-size: 24px; }
+    .thm-card__title-wrap--episode {
+      gap: 8px;
+      .thm-arrow { height: 14px; }
+    }
+    .thm-card__episode-box {
+      padding: 10px 20px 0;
+      // Fallback CSS si JS pas encore exécuté ; inline style.bottom prend le dessus ensuite
+      bottom: calc(var(--banner-h) - var(--ep-info-h) + 8px);
+      will-change: transform;
+    }
+
+    .thm-card__descriptif {
+      font-size: 12px;
+      z-index: 6;
+      bottom: calc(var(--descriptif-bottom, var(--banner-h)) + var(--banner-h));
+      padding: 32px;
+      overflow: hidden;
+      align-items: stretch;
+
+      p {
+        font-size: 12px;
+        font-weight: 600;
+      }
+    }
+
+    &.is-active:hover .thm-card__descriptif {
+      bottom: calc(var(--descriptif-bottom, var(--banner-h)) + var(--banner-h));
+    }
+    .thm-card__action .buttonRound {
+      height: 40px;
+      padding: 0 42px;
+      font-size: 16px;
+    }
+  }
+
+  .accueil-header-cards .thm-card {
+    .thm-card__personnage { font-size: 42px; }
+    .thm-card__subtitle   { font-size: 20.5px; }
+    .thm-arrow            { height: 16px; }
+    .thm-card__title-wrap { gap: 8px; }
+
+    .thm-card__descriptif p { font-size: 15px; }
+
+    .thm-card__banner { height: 70px; }
+    .thm-card__action { height: 70px; }
+    &.thm-card        { --banner-h: 70px; --ep-box-h: 76px; }
+
+    .thm-card__descriptif {
+      // positionné entre le haut de la card et le haut de episode-box
+      bottom: calc(var(--banner-h) - var(--ep-info-h) + 4px + var(--ep-box-h));
+    }
+
+    &:hover .thm-card__descriptif {
+      bottom: calc(2 * var(--banner-h) - var(--ep-info-h) + 4px + var(--ep-box-h));
+    }
+
+    .thm-card__episode-box {
+      bottom: calc(var(--banner-h) - var(--ep-info-h) + 4px);
+    }
+
+    .thm-card__visual img {
+      will-change: transform;
+      backface-visibility: hidden;
+    }
+
+    .thm-card__action {
+      padding-bottom: calc(var(--banner-h) - 36px);
+    }
+
+    .buttonRound {
+      height: 40px;
+      padding: 0 42px;
+      font-size: 16px;
+    }
+  }
+}

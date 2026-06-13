@@ -1,4 +1,4 @@
-﻿@use "../base/variables" as *;
+@use "../base/variables" as *;
 
 .page-overlay {
   position: fixed;
@@ -37,6 +37,19 @@
     margin-top: 0;
     align-self: center;
     opacity: 0.85;
+    max-width: calc(100vw - 44px);
+    box-sizing: border-box;
+
+    .icon-link {
+      max-width: 100%;
+    }
+
+    .icon-link__label {
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
   }
 
   .layout-formbuilder + &__retour-inline {
@@ -241,15 +254,42 @@
     display: none;
   }
 
+  // Titre hissé dans __inner par le layout sticky — reproduit les styles de
+  // __content .section-builder-title--overlay pour que l'apparence soit identique.
+  &__inner > .section-builder-title--overlay {
+    flex-shrink: 0;
+    width: 100%;
+    max-width: $container-max-width;
+    box-sizing: border-box;
+    margin-bottom: 48px;
+
+    .section-builder-title__subtitle {
+      margin: 4px 0 0;
+      font-size: 14px;
+      font-weight: $font-weight-regular;
+      color: $grey-light;
+      text-align: center;
+
+      strong { font-weight: $font-weight-regular; color: $grey-light; }
+    }
+  }
+
   @include below($bp-xl) {
     &__retour {
-      display: none; // remplacé par #overlay-retour-btn
+      display: none; // remplace par #overlay-retour-btn
     }
 
-    // Masqué sur mobile même en fullscreen — le bouton retour fixe prend le relais
+    // Masque sur mobile meme en fullscreen - le bouton retour fixe prend le relais
     &__retour-inline,
     &--fullscreen &__retour-inline {
       display: none;
+    }
+
+    // Titre dans __inner sur mobile : même marge que dans __content
+    // (ne s’applique plus en pratique, le titre reste dans __content,
+    // mais conservé par sécurité si le JS le remontait dans certains cas)
+    &__inner > .section-builder-title--overlay {
+      margin-bottom: 32px;
     }
 
     &__inner {
@@ -263,8 +303,8 @@
     }
 
     // Centrage vertical sur mobile pour les overlays simples (connexion, mot de
-    // passe oublié). La classe est gérée côté JS dans applyPageOverlayMode +
-    // setPageOverlayContent en fonction du slug de la page chargée.
+    // passe oublie). La classe est geree cote JS dans applyPageOverlayMode +
+    // setPageOverlayContent en fonction du slug de la page chargee.
     &--fullscreen#{&}--mobile-centered &__inner {
       justify-content: center;
     }
@@ -299,37 +339,170 @@
       display: inline-flex;
     }
 
-    // Fullscreen content-only (sans formulaire, ni recherche, ni admin tool) :
-    // __inner = conteneur (overflow: hidden, padding intact, justify flex-start).
-    // __content--is-scroller = le scroller (secondary-scroll s'y attache).
-    // bouton = flex child normal après __content, dans la zone utilisable.
-    &--fullscreen:not(:has(.layout-formbuilder)):not(:has(.overlay-search)):not(:has(.page-overlay__content--admin-tool)) {
-      & .page-overlay__inner {
-        overflow: hidden;
-        justify-content: flex-start;
+    // Layout sticky : titre pinned haut, __content scrollable, retour pinned bas.
+    // La classe est ajoutée par JS (setPageOverlayContent) pour tous les overlays-total
+    // hors admin tool. Le layout s'active seulement si le contenu déborde.
+    &__inner--sticky-layout {
+      overflow: hidden;
+      justify-content: flex-start;
+      padding-bottom: 0;
+    }
+
+    &__inner--sticky-layout > &__content--is-scroller {
+      flex: 1;
+      overflow-y: auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      scrollbar-width: none;
+
+      &::-webkit-scrollbar {
+        display: none;
       }
 
-      & .page-overlay__content--is-scroller {
+      // Les pseudo-éléments flex:1 encadrent TOUS les enfants (titre + formulaire).
+      // Quand le contenu tient en hauteur → les spacers s'équilibrent → centrage.
+      // Quand le contenu déborde → les spacers se réduisent à 0 → scroll depuis le haut.
+      &::before,
+      &::after {
+        content: "";
         flex: 1;
-        overflow-y: auto;
         min-height: 0;
-        scrollbar-width: none;
-        &::-webkit-scrollbar {
-          display: none;
-        }
       }
 
-      & .page-overlay__inner > .page-overlay__retour-inline {
+      > * {
         flex-shrink: 0;
-        align-self: center;
-        margin-top: 0;
-        padding-top: 20px;
+        width: 100%;
+        max-width: $container-max-width;
+        box-sizing: border-box;
       }
+    }
+
+    &__inner--sticky-layout > &__retour-inline {
+      flex-shrink: 0;
+      align-self: center;
+      padding: 20px 0;
+      margin: 0;
+    }
+
+    // Layout compte : __content est un flex-col non scrollant ;
+    // compte-readonly prend sa hauteur naturelle,
+    // compte-ateliers__list s'adapte à l'espace restant.
+    &__inner--sticky-layout > &__content--compte-layout {
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+      justify-content: flex-start;
     }
   }
 }
 
-// â”€â”€â”€ Search overlay â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+@include small-desktop {
+  // Titre de l'overlay
+  .page-overlay__content .section-builder-title--overlay {
+    margin-bottom: 32px;
+  }
+
+  .page-overlay__inner {
+    padding-top: 56px;
+    padding-bottom: 56px;
+  }
+
+  .page-overlay--fullscreen .page-overlay__inner {
+    padding-top: 56px;
+    padding-bottom: 56px;
+  }
+
+  .page-overlay__content--admin-tool > .page-overlay__retour-inline {
+    margin-top: 20px;
+    padding: 12px 0 0;
+  }
+
+  // Logo du titre : limité à 84px de hauteur en small-desktop
+  .page-overlay .section-builder-title__logo-wrap img {
+    max-height: 84px;
+    width: auto;
+  }
+
+  // Formulaires dans les overlays
+  .page-overlay .layout-formbuilder {
+    gap: 16px; // espace entre __group et __actions
+
+    &__field-title {
+      font-size: 12px;
+    }
+
+    &__group-title {
+      font-size: 12px;
+      // Respiration supplémentaire au-dessus du titre de groupe (section "période…")
+      // et symétrique au premier __group pour un rythme visuel uniforme.
+      padding-top: 14px;
+    }
+
+    &__group {
+      gap: 6px; // espace interne entre group-title et __fields
+    }
+
+    &__fields {
+      gap: 8px;
+    }
+
+    &__field {
+      gap: 4px;
+    }
+
+    &__field-title + .layout-formbuilder__input,
+    &__field-title + .layout-formbuilder__select,
+    &__field-title + .layout-formbuilder__input-wrap,
+    &__field-title + .layout-formbuilder__dropdown {
+      margin-top: 0;
+    }
+
+    &__input {
+      height: 32px;
+      min-height: 32px;
+      font-size: 12px;
+
+      &::placeholder {
+        font-size: 12px;
+      }
+    }
+
+    &__date-placeholder {
+      font-size: 12px;
+    }
+
+    &__dropdown-toggle {
+      height: 32px;
+      min-height: 32px;
+      font-size: 12px;
+    }
+
+    &__dropdown-item {
+      font-size: 12px;
+      padding: 5px 12px;
+    }
+  }
+
+  // Texte des overlays résultats (inscription réussie, erreur 404, etc.)
+  .page-overlay .page-overlay__body--simpletext p,
+  .page-overlay .page-overlay__body--simpletext li {
+    font-size: 12px;
+  }
+
+  .page-overlay .layout-formbuilder__checks .layout-formbuilder__check-option ~ .layout-formbuilder__error {
+    display: none;
+  }
+
+  // Barre de scroll : recalculée par rapport au container overlay (960px)
+  // pour ne pas se superposer au contenu (la règle globale utilise 800px).
+  .page-overlay > .secondary-scrollbar {
+    right: max(8px, calc((100% - min(#{$container-max-width}, 100% - 44px)) / 2 - 32px));
+  }
+}
+
+// ─── Search overlay ───────────────────────────────────────────────────────────
 
 .overlay-search {
   width: 100%;
@@ -520,7 +693,7 @@
       position: relative;  // scope anchor pour .secondary-scrollbar
       overflow: hidden;
 
-      // Override : rail aligné sur la zone de scroll visible
+      // Override : rail aligne sur la zone de scroll visible
       .secondary-scrollbar {
         right: 0;
         top: 0;
@@ -540,8 +713,8 @@
     }
   }
 
-  // â”€â”€â”€ FormBuilder intÃ©grÃ© (cas spÃ©cial page Recherche) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  // Le form est disposÃ© en ligne : champ Ã  gauche, bouton rond Ã  droite.
+  // ─── FormBuilder intégré (cas spécial page Recherche) ──────────────────
+  // Le form est disposé en ligne : champ à gauche, bouton rond à droite.
   .layout-formbuilder {
     display: flex;
     flex-direction: row;
@@ -556,7 +729,7 @@
     }
 
     // Masquer le message d'erreur pour corriger la hauteur du champ
-    // (sans lui, __field = 42px = mÃªme hauteur que le bouton â†’ alignement parfait)
+    // (sans lui, __field = 42px = même hauteur que le bouton → alignement parfait)
     .layout-formbuilder__error {
       display: none;
     }
@@ -571,7 +744,7 @@
     }
   }
 
-  // Bouton circulaire : fond gris par dÃ©faut, blanc au hover
+  // Bouton circulaire : fond gris par défaut, blanc au hover
   .layout-formbuilder__submit.buttonRound {
     padding: 0;
     width: 44px;

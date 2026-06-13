@@ -232,6 +232,15 @@ export async function bindAdminToolOverlay(content, page, options = {}) {
       panels.overview.querySelectorAll(".admin-tool__latest-item").forEach((item, i) => {
         item.style.animationDelay = `${i * 30}ms`;
       });
+
+      // Active le scroll molette sur les listes scrollables de l'overview.
+      panels.overview.querySelectorAll(".admin-tool__latest-scroll").forEach((scrollEl) => {
+        scrollEl.addEventListener("wheel", (e) => {
+          if (e.deltaY === 0) return;
+          scrollEl.scrollTop += e.deltaY;
+          e.preventDefault();
+        }, { passive: false });
+      });
     } catch (error) {
       panels.overview.innerHTML = `<p class="admin-tool__error">Impossible de charger l'overview: ${esc(error?.message || "Erreur")}</p>`;
     }

@@ -119,6 +119,14 @@ body.is-secondary-scroll-dragging * {
   cursor: grabbing !important;
 }
 
+@include small-desktop {
+  // 32px à droite du bord droit du contenu (800px centré)
+  // right = marge_droite - 32px = (100% - 800px)/2 - 32px
+  .secondary-scrollbar {
+    right: max(8px, calc((100% - min(800px, 100% - 44px)) / 2 - 32px));
+  }
+}
+
 @include below($bp-xl) {
   .secondary-scrollbar { display: none; }
   // Exception : scrollbar de la liste ateliers — toujours visible

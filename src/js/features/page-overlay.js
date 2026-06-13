@@ -309,11 +309,13 @@ async function setPageOverlayContent(page, fallbackTitle = "", fallbackLogo = nu
   const content = document.getElementById("page-overlay-content");
   if (!content) return;
 
-  // Réinitialiser le layout content-only du cycle précédent
+  // Réinitialiser le layout sticky du cycle précédent
   content.classList.remove("page-overlay__content--is-scroller");
+  content.classList.remove("page-overlay__content--compte-layout");
   const prevInner = content.parentElement;             // = __inner
   const prevRoot  = prevInner?.parentElement;          // = .page-overlay
   prevInner?.querySelectorAll(":scope > .page-overlay__retour-inline").forEach((el) => el.remove());
+  prevInner?.classList.remove("page-overlay__inner--sticky-layout");
   prevRoot?.querySelectorAll(":scope > .page-overlay__retour-inline").forEach((el) => el.remove());
 
   const isAdminOverlay = isAdminToolRequest(page, pageOverlayCurrentRequest || {});
@@ -447,30 +449,6 @@ async function setPageOverlayContent(page, fallbackTitle = "", fallbackLogo = nu
 
   makeExternalLinksNewTab(content);
 
-  if (isOverlayTotalRequest(pageOverlayCurrentRequest || {})) {
-    const inlineClose = content.querySelector(".page-overlay__retour-inline");
-    const form = content.querySelector(".layout-formbuilder");
-    if (inlineClose) {
-      if (form) {
-        const actions = form.querySelector(".layout-formbuilder__actions");
-        if (actions && actions.parentElement === form) {
-          actions.insertAdjacentElement("afterend", inlineClose);
-        } else {
-          form.appendChild(inlineClose);
-        }
-      } else {
-        // Pages fullscreen sans formulaire (mentions légales, politique de confidentialité…) :
-        // __content devient le scroller (secondary-scroll), bouton en dessous dans __inner.
-        const inner = content.parentElement; // = __inner
-        if (inner) {
-          inner.appendChild(inlineClose);
-          content.classList.add("page-overlay__content--is-scroller");
-          window.dispatchEvent(new CustomEvent("secondary-scroll:refresh"));
-        }
-      }
-    }
-  }
-
   applyPageOverlayMode(pageOverlayCurrentRequest || {});
 
   // Confirmation du centrage mobile selon le slug réellement chargé.
@@ -502,8 +480,27 @@ async function setPageOverlayContent(page, fallbackTitle = "", fallbackLogo = nu
     atelierEditContext = null;
   }
 
+  // Layout sticky pour les overlays total (hors admin tool) :
+  // __content devient le scroller (titre inclus), le retour est pinné en bas de __inner.
+  if (isOverlayTotalRequest(pageOverlayCurrentRequest || {}) && !isAdminOverlay) {
+    const inner = content.parentElement; // = __inner
+    if (inner) {
+      // Retour → __inner après __content (flex-shrink: 0, pinned bottom)
+      const retour = content.querySelector(".page-overlay__retour-inline");
+      if (retour) inner.appendChild(retour);
+
+      inner.classList.add("page-overlay__inner--sticky-layout");
+      content.classList.add(
+        page.slug === "compte-utilisateur"
+          ? "page-overlay__content--compte-layout"
+          : "page-overlay__content--is-scroller"
+      );
+      window.dispatchEvent(new CustomEvent("secondary-scroll:refresh"));
+    }
+  }
+
   content.classList.remove("page-overlay__content--hydrating");
-  fixTitleArrowSpacing(content);
+  fixTitleArrowSpacing(content.parentElement ?? content);
   const overlayInner = document.querySelector("#page-overlay .page-overlay__inner");
   if (overlayInner) overlayInner.scrollTop = 0;
 }
@@ -826,6 +823,13 @@ function bindCompteUtilisateurOverlay(content, preloadedAteliers = null) {
           clearTimeout(ateliersScrollHideTimer);
           ateliersScrollHideTimer = setTimeout(() => listWrapEl.classList.remove("is-scrolling"), 800);
         }, { passive: true });
+
+        // Sécurité: scroll molette explicite sur la liste ateliers compte.
+        listScrollEl.addEventListener("wheel", (e) => {
+          if (e.deltaY === 0) return;
+          listScrollEl.scrollTop += e.deltaY;
+          e.preventDefault();
+        }, { passive: false });
       }
       window.dispatchEvent(new CustomEvent("secondary-scroll:refresh"));
 

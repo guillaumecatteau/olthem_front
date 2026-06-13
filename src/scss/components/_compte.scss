@@ -75,6 +75,13 @@
   }
 }
 
+.compte-reset-password-msg {
+  margin: 8px 0 0;
+  font-size: 12px;
+  text-align: center;
+  color: $grey-light;
+}
+
 .compte-ateliers {
   width: 100%;
   max-width: 600px;
@@ -140,7 +147,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 8px;
+    margin-bottom: 0;
     gap: 12px;
   }
 
@@ -174,7 +181,7 @@
   &__item-dates {
     font-size: 13px;
     color: $grey-light;
-    margin-bottom: 4px;
+    margin-bottom: 0;
 
     &--confirmed {
       font-weight: $font-weight-bold;
@@ -217,6 +224,72 @@
     &:hover {
       border-color: $white;
       color: $white;
+    }
+  }
+}
+
+@include small-desktop {
+  .compte-readonly {
+    &__row {
+      padding: 8px 0;
+    }
+
+    &__label {
+      font-size: 10px;
+    }
+
+    &__value {
+      font-size: 12px;
+    }
+  }
+
+  .compte-ateliers {
+    margin-top: 20px;
+
+    &__title {
+      font-size: 18px;
+      margin-bottom: 12px;
+    }
+
+    &__item {
+      padding-top: 10px;
+    }
+
+    &__thematique {
+      font-size: 14px;
+    }
+
+    &__item-dates {
+      font-size: 12px;
+    }
+
+    &__item-lieu {
+      font-size: 12px;
+    }
+
+    &__list {
+      gap: 10px;
+    }
+  }
+}
+
+// Dans le layout sticky compte (desktop) : la liste s'adapte à l'espace restant
+// quand le message de réinitialisation (ou tout autre élément) agrandit le bloc du dessus.
+.page-overlay__content--compte-layout {
+  > .compte-ateliers {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+
+    .compte-ateliers__list-wrap {
+      flex: 1;
+      min-height: 0;
+    }
+
+    .compte-ateliers__list-scroll {
+      max-height: none;
+      height: 100%;
     }
   }
 }

@@ -75,7 +75,6 @@ export function renderFormBuilderField(item, groupIndex, fieldIndex) {
       <label class="layout-formbuilder__field layout-formbuilder__field--${size}${type === "password" ? " layout-formbuilder__field--password" : ""}" for="${esc(id)}" data-linked-column="${esc(linkedColumn)}" data-field-type="${esc(type)}">
         ${fieldTitleHtml}
         <input id="${esc(id)}" class="layout-formbuilder__input" type="${esc(inputType)}" placeholder="${esc(label)}" autocomplete="${esc(auto)}" />
-        <span class="layout-formbuilder__valid-icon" aria-hidden="true"><img src="./assets/images/icons/icon_check.svg" alt="" /></span>
         ${passwordToggle}
         <p class="layout-formbuilder__error" aria-live="polite"></p>
       </label>`;
@@ -90,7 +89,6 @@ export function renderFormBuilderField(item, groupIndex, fieldIndex) {
           <span class="layout-formbuilder__date-placeholder">-- ${esc(label)} --</span>
           <span class="layout-formbuilder__icon-calendar" aria-hidden="true"></span>
         </div>
-        <span class="layout-formbuilder__valid-icon" aria-hidden="true"><img src="./assets/images/icons/icon_check.svg" alt="" /></span>
         <p class="layout-formbuilder__error" aria-live="polite"></p>
       </label>`;
   }
@@ -123,7 +121,6 @@ export function renderFormBuilderField(item, groupIndex, fieldIndex) {
             <button class="layout-formbuilder__number-arrow layout-formbuilder__number-arrow--down" type="button" tabindex="-1"></button>
           </div>
         </div>
-        <span class="layout-formbuilder__valid-icon" aria-hidden="true"><img src="./assets/images/icons/icon_check.svg" alt="" /></span>
         <p class="layout-formbuilder__error" aria-live="polite"></p>
       </label>`;
   }
@@ -144,7 +141,6 @@ export function renderFormBuilderField(item, groupIndex, fieldIndex) {
           </button>
           <ul class="layout-formbuilder__dropdown-list"></ul>
         </div>
-        <span class="layout-formbuilder__valid-icon" aria-hidden="true"><img src="./assets/images/icons/icon_check.svg" alt="" /></span>
         <p class="layout-formbuilder__error" aria-live="polite"></p>
       </label>`;
   }

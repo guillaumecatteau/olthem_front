@@ -107,4 +107,16 @@
   }
 }
 
+@include small-desktop {
+  .buttonRound,
+  .buttonRound--ghost,
+  .buttonRoundNav,
+  .buttonRoundAct {
+    height: 40px;
+    font-size: 16px;
+  }
 
+  .buttonRoundAct {
+    padding: 0 42px;
+  }
+}

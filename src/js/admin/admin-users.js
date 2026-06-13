@@ -145,8 +145,8 @@ export function createUsersPanel(state, panels, token, deps) {
           </label>
         </div>
       </div>
-      <p class="admin-tool__entry-edit-msg" data-edit-msg></p>
       <div class="admin-tool__entry-actions">
+        <p class="admin-tool__entry-edit-msg" data-edit-msg></p>
         <button type="button" class="buttonRoundAct" data-delete-user>Supprimer</button>
         <button type="submit" class="buttonRoundAct" data-save-edit disabled>Sauvegarder</button>
       </div>
@@ -306,6 +306,16 @@ export function createUsersPanel(state, panels, token, deps) {
 
   const bindUsersStaticInteractions = () => {
     if (!panels.users) return;
+
+    // Scroll à la souris sur les listes avec secondary scroll
+    const entriesScroll = panels.users.querySelector(".admin-tool__entries-scroll");
+    if (entriesScroll) {
+      entriesScroll.addEventListener("wheel", (e) => {
+        if (e.deltaY === 0) return;
+        entriesScroll.scrollTop += e.deltaY;
+        e.preventDefault();
+      }, { passive: false });
+    }
 
     const searchBtn    = panels.users.querySelector("[data-user-search]");
     const filterInputs = [...panels.users.querySelectorAll(".admin-tool__filter")];

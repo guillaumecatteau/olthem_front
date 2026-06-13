@@ -28,6 +28,8 @@ function setCurrentYear() {
 
 setCurrentYear();
 
+
+
 // ─── Loader : masquage + animations d'entrée de l'accueil ────────────────────
 // Signal unique : accueil:cards-ready (thematiques.js, après renderHeaderCards)
 // On n'attend plus section:hydrated — cet event dépend de l'API sections WP

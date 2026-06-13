@@ -293,3 +293,10 @@
     padding-right: 0;
   }
 }
+
+@include small-desktop {
+  .thm-overlay__inner {
+    padding-top: 56px;
+    padding-bottom: 56px;
+  }
+}

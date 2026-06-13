@@ -322,11 +322,15 @@
 #ateliers    { background: $dark; }
 #partenaires { background: $dark; }
 
+
+
 // Ateliers — section-inner scrollable pour accueillir la carte + liste
 #ateliers .section-inner {
   overflow-y: auto;
   color: $white;
 }
+
+
 
 // Force the map block to fill the full panel width and height
 #ateliers .section-subsections-double__panel {
@@ -683,5 +687,43 @@
     .site-footer__row--bottom .footer-SideLinks:last-child {
       justify-content: center;
     }
+  }
+}
+
+// ─── Desktop intermédiaire (1280px – 1919px) ─────────────────────────────────
+@include small-desktop {
+  .section-inner {
+    max-width: 800px;
+  }
+
+  // Padding haut/bas des sections (base 72px/100px → 56px)
+  .section-subsections__content {
+    padding-top: 56px;
+    padding-bottom: 56px;
+  }
+
+  .section-subsections:not(.has-nav) .section-subsections__content {
+    padding-top: 56px;
+  }
+
+  // p dans les sections
+  .section-subsections p { font-size: 12px; }
+
+  // ─── Ateliers ───────────────────────────────────────────────────────────────
+  #ateliers {
+    .section-inner { max-width: 1024px; } // override le 800px global
+    .section-subsections__title { font-size: 36px; }
+    .section-subsections__title-wrap .thm-arrow { height: 16px; width: auto; }
+    .section-subsections-double.section-subsections-double--dominant-right {
+      width: min(100%, 1024px);
+      grid-template-columns: 2fr 3fr;
+    }
+  }
+
+  // ─── Partenaires ────────────────────────────────────────────────────────────
+  #partenaires {
+    .section-inner { max-width: 1024px; } // override le 800px global
+    .section-builder-logos { margin-top: 56px; }
+    .site-footer { padding: 16px 0; }
   }
 }

@@ -67,6 +67,53 @@ export async function fetchThematiques() {
   return result;
 }
 
+// Fetch léger : tous les champs sauf `builder` (contenu des overlays).
+// Utilisé au démarrage pour afficher les cards et le carousel rapidement,
+// avant que le fetch complet (avec builder) ne soit disponible.
+const _LIGHT_FIELDS = [
+  'id','slug','titre','descriptif_desktop','descriptif_mobile',
+  'episode','episode_numero','personnage',
+  'header','header_position',
+  'visuel','visuel_mobile','mobile_header_scale',
+  'couleur','couleur_sombre'
+].join(',');
+
+export async function fetchThematiquesLight() {
+  // Si le cache complet existe déjà, on l'utilise directement (builder inclus)
+  const cached = _readCache('olthem_cache_thematiques');
+  if (cached) return cached;
+
+  const items = await requestJsonAcrossRoots("/wp/v2/thematiques", {
+    params: {
+      per_page: 100,
+      orderby: "menu_order",
+      order: "asc",
+      _fields: _LIGHT_FIELDS
+    }
+  });
+
+  if (!Array.isArray(items)) return [];
+
+  return items.map(item => ({
+    id:                  item.id,
+    slug:                item.slug               || "",
+    titre:               item.titre              ?? stripHtml(item.title?.rendered ?? ""),
+    descriptif_desktop:  item.descriptif_desktop ?? "",
+    descriptif_mobile:   item.descriptif_mobile  ?? "",
+    episode:             !!item.episode,
+    episode_numero:      item.episode_numero     ?? null,
+    personnage:          item.personnage         ?? "",
+    header:              !!item.header,
+    header_position:     item.header_position    ?? "premier",
+    visuel:              item.visuel             ?? null,
+    visuel_mobile:       item.visuel_mobile      ?? null,
+    mobile_header_scale: item.mobile_header_scale != null ? parseFloat(item.mobile_header_scale) : null,
+    couleur:             item.couleur            ?? "#3F3F48",
+    couleur_sombre:      item.couleur_sombre      ?? null,
+    builder:             [] // vide — sera rempli par fetchThematiques() en arrière-plan
+  }));
+}
+
 export async function fetchLatestPosts() {
   const posts = await requestJsonAcrossRoots("/wp/v2/posts", {
     params: {

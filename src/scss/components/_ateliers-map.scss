@@ -702,3 +702,40 @@
     display: none; // remplacé par overlay-retour-btn
   }
 }
+
+@include small-desktop {
+  .ateliers-list {
+    padding: 0 2rem 0 0;
+  }
+
+  .atelier-item {
+    padding: 0.25rem 0.25rem;
+    border-bottom-color: $grey;
+
+    &:first-child {
+      border-top-color: $grey;
+    }
+  }
+
+  .route-overlay__dest {
+    font-size: 20px;
+  }
+
+  .route-summary__duration,
+  .route-summary__distance {
+    font-size: 12px;
+  }
+
+  .route-step {
+    padding-top: 8px;
+    padding-bottom: 8px;
+
+    &__instruction {
+      font-size: 12px;
+    }
+
+    &__dist {
+      font-size: 10px;
+    }
+  }
+}

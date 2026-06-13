@@ -9,6 +9,7 @@ $bp-sm:  480px;   // petit mobile
 $bp-md:  768px;   // tablette portrait
 $bp-lg: 1024px;   // tablette paysage
 $bp-xl: 1280px;   // pivot principal mobile ↔ grand écran
+$bp-2xl: 2560px;  // desktop intermédiaire ↔ grand desktop (QHD/4K)
 
 // ─── Mixins responsive ───────────────────────────────────────────────────────
 @mixin below($bp) {
@@ -16,6 +17,12 @@ $bp-xl: 1280px;   // pivot principal mobile ↔ grand écran
 }
 @mixin above($bp) {
   @media (min-width: #{$bp}) { @content; }
+}
+// Desktop intermédiaire : 1280..2559px en CSS px, uniquement écrans densité "standard".
+// Évite qu'un écran 4K avec mise à l'échelle (ex: 200% => viewport CSS ~1920px)
+// soit classé à tort en small-desktop.
+@mixin small-desktop {
+  @media (min-width: #{$bp-xl}) and (max-width: #{$bp-2xl - 1px}) and (max-resolution: 1.5dppx) { @content; }
 }
 
 // ─── Couleurs ────────────────────────────────────────────────────────────────

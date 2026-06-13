@@ -621,3 +621,15 @@
     }
   }
 }
+
+// ─── Desktop intermédiaire (1280px – 1919px) ─────────────────────────────────
+@include small-desktop {
+  .layout-paragraph-title {
+    font-size: 20px;
+    margin-top: 48px;
+  }
+
+  .layout-video__heading {
+    font-size: 16px;
+  }
+}

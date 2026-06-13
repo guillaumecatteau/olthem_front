@@ -144,36 +144,10 @@
     padding-right: 46px;
   }
 
-  &__valid-icon {
-    position: absolute;
-    right: calc(-1 * ((var(--field-column-gap) / 2) + (var(--validation-icon-size) / 2)));
-    top: 21px;
-    transform: translateY(-50%);
-    width: var(--validation-icon-size);
-    height: var(--validation-icon-size);
-    opacity: 0;
-    pointer-events: none;
-    background-color: $validGreen;
-    -webkit-mask: center / contain no-repeat url("../images/icons/icon_check.svg");
-    mask: center / contain no-repeat url("../images/icons/icon_check.svg");
-
-    img {
-      display: none;
-    }
-  }
-
-  &__field.is-valid &__valid-icon {
-    opacity: 1;
-  }
-
-  &__field--password &__valid-icon {
-    right: calc(-1 * ((var(--field-column-gap) / 2) + (var(--validation-icon-size) / 2)));
-  }
-
   &__password-toggle {
     position: absolute;
     right: 14px;
-    top: 21px;
+    top: 50%;
     transform: translateY(-50%);
     width: 18px;
     height: 18px;
@@ -285,7 +259,7 @@
   }
 
   &__dropdown.is-open &__icon-arrow-down {
-    transform: translateY(-50%) rotate(180deg);
+    transform: translateY(-50%) rotate(-135deg);
   }
 
   &__dropdown-label {
@@ -429,17 +403,16 @@
     pointer-events: none;
   }
 
-  // Category selector arrow (inside dropdown-toggle)
+  // Category selector arrow (inside dropdown-toggle) — CSS chevron, same style as admin-tool
   &__icon-arrow-down {
     position: absolute;
-    right: 14px;
+    right: 16px;
     top: 50%;
-    transform: translateY(-50%);
-    width: 16px;
-    height: 16px;
-    background-color: $grey-light;
-    -webkit-mask: center / contain no-repeat url("../images/icons/icon_ArrowBold_Down.svg");
-    mask: center / contain no-repeat url("../images/icons/icon_ArrowBold_Down.svg");
+    transform: translateY(-50%) rotate(45deg);
+    width: 6px;
+    height: 6px;
+    border-right: 1.5px solid $grey-light;
+    border-bottom: 1.5px solid $grey-light;
     pointer-events: none;
     transition: transform 0.2s ease;
     flex-shrink: 0;
@@ -456,41 +429,56 @@
     }
   }
 
-  // Number selector arrows (inside input-wrap)
+  // Number selector arrows (inside input-wrap) — full-height panel, CSS chevron, same style as admin-tool
   &__number-arrows {
     position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 36px;
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    margin-right: 4px;
+    border-left: 1px solid rgba($white, 0.25);
+    border-radius: 0 24px 24px 0;
+    overflow: hidden;
   }
 
   &__number-arrow {
-    display: block;
-    width: 12px;
-    height: 12px;
-    padding: 0;
+    flex: 1;
+    background: transparent;
     border: none;
-    background-color: $grey-light;
     cursor: pointer;
-    -webkit-mask: center / contain no-repeat;
-    mask: center / contain no-repeat;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
 
-    &--up {
-      -webkit-mask-image: url("../images/icons/icon_ArrowBold_Up.svg");
-      mask-image: url("../images/icons/icon_ArrowBold_Up.svg");
+    &::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 5px;
+      height: 5px;
+      border-right: 1.5px solid $grey-light;
+      border-bottom: 1.5px solid $grey-light;
     }
 
-    &--down {
-      -webkit-mask-image: url("../images/icons/icon_ArrowBold_Down.svg");
-      mask-image: url("../images/icons/icon_ArrowBold_Down.svg");
+    &--up::after {
+      transform: translate(-50%, calc(-50% + 2px)) rotate(-135deg);
     }
 
-    &:hover {
-      background-color: $white;
+    &--down::after {
+      transform: translate(-50%, calc(-50% - 2px)) rotate(45deg);
+    }
+
+    &:hover::after {
+      border-color: $white;
+    }
+
+    &:first-child {
+      border-bottom: 1px solid rgba($white, 0.25);
     }
   }
 
@@ -554,15 +542,13 @@
   }
 
   // Center placeholders in selectors
-  &__field[data-field-type="date"] &__input,
-  &__field[data-field-type="number"] &__input {
+  &__field[data-field-type="date"] &__input {
     text-align: center;
   }
 
-  // Valid-icon: adjust for fields with field-title + input-wrap/dropdown
-  &__field-title ~ &__input-wrap ~ &__valid-icon,
-  &__field-title ~ &__dropdown ~ &__valid-icon {
-    top: calc(21px + 19px + 6px + 12px);
+  &__field[data-field-type="number"] &__input {
+    text-align: center;
+    padding-right: 44px;
   }
 
   // Disabled fields (Mundaneum toggle)
@@ -662,10 +648,6 @@
     &__input,
     &__dropdown-toggle {
       font-size: 14px;
-    }
-
-    &__valid-icon {
-      display: none;
     }
 
     &__columns {

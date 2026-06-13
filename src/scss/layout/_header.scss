@@ -686,3 +686,114 @@
     }
   }
 }
+
+// ─── Desktop intermédiaire (1280px – 1919px) ─────────────────────────────────
+
+@include small-desktop {
+  .site-header {
+    padding: 16px;
+
+    &__left {
+      width: 280px;
+      align-items: flex-start;
+    }
+
+    &__right {
+      width: auto;
+      min-width: max-content;
+      align-items: flex-start;
+      overflow: visible;
+    }
+  }
+
+  :root {
+    --header-height: 97px; // logo 65px + padding-top 16px + padding-bottom 16px
+  }
+
+  .site-logo {
+    &__img {
+      width: 200px;
+    }
+
+    &__tagline {
+      width: 200px;
+      font-size: 9px;
+      white-space: nowrap;
+      text-align: justify;
+      text-align-last: justify;
+      letter-spacing: normal;
+    }
+  }
+
+  .site-nav {
+    gap: 20px;
+
+    &__link {
+      font-size: 16px;
+
+      &.is-active {
+        font-size: 18px;
+      }
+    }
+  }
+
+  .site-header .icon-link {
+    &__icon {
+      height: 14px;
+    }
+
+    &__label {
+      font-size: 12px;
+    }
+  }
+
+  .header-search {
+    padding-left: 10px;
+    min-height: 26px;
+    align-self: center;
+  }
+
+  .header-actions__top-row {
+    height: auto;
+    align-items: center;
+    width: auto;
+  }
+
+  .header-actions__top-row,
+  .header-actions__auth-group {
+    gap: 10px;
+  }
+
+  .header-actions {
+    width: auto;
+    min-width: max-content;
+    flex-shrink: 0;
+  }
+
+  .header-actions__auth-group,
+  .header-user-actions {
+    width: max-content;
+    min-width: max-content;
+    flex-wrap: nowrap;
+    flex-shrink: 0;
+  }
+
+  .header-actions .icon-link {
+    flex-shrink: 0;
+  }
+
+  .header-actions .icon-link__label {
+    white-space: nowrap;
+  }
+
+  .site-search__input {
+    font-size: 12px;
+    height: 28px;
+    border-color: $grey-light;
+
+    &:focus {
+      border-color: $grey-light;
+    }
+  }
+
+}

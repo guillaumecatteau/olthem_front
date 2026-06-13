@@ -1,4 +1,4 @@
-import { fetchThematiques } from '../api/api.js';
+import { fetchThematiques, fetchThematiquesLight } from '../api/api.js';
 import { esc, normKey as _normKey, makeExternalLinksNewTab } from '../core/utils.js';
 import { ImgGallerieCarousel } from '../components/img-carousel.js';
 
@@ -1074,6 +1074,58 @@ function _fitMcTitleWrap(article) {
   if (maxW > 0) title.style.width = maxW + 'px';
 }
 
+// Adapte la largeur du span titre au carousel desktop :
+// quand le texte wrape sur 2 lignes, la box prend la largeur de la ligne la plus longue
+// pour que les flèches se collent exactement au texte.
+// Positionne dynamiquement __episode-box par rapport au sommet de __subtitle.
+// Quand le subtitle wrape sur 2 lignes, la box monte avec lui.
+// offsetTop est en px CSS — insensible au scale() du carousel.
+function _fitEpisodeBoxPosition(article) {
+  const episodeBox = article.querySelector('.thm-card__episode-box');
+  const banner     = article.querySelector('.thm-card__banner');
+  const subtitle   = banner?.querySelector('.thm-card__subtitle');
+  if (!episodeBox || !subtitle || !banner) return;
+
+  // Le banner est position:absolute, height connue (offsetHeight), display:flex align-items:center.
+  // Le subtitle est centré verticalement donc son bord supérieur depuis le haut du banner =
+  //   (bannerH - subtitleH) / 2
+  // Distance depuis le BAS de la card jusqu'au sommet du subtitle =
+  //   bannerH - (bannerH - subtitleH) / 2 = (bannerH + subtitleH) / 2
+  const bannerH             = banner.offsetHeight;
+  const subtitleH           = subtitle.offsetHeight;
+  const subtitleTopFromBottom = (bannerH + subtitleH) / 2;
+  const epBoxBottom         = Math.round(subtitleTopFromBottom + 8);
+  episodeBox.style.bottom   = epBoxBottom + 'px';
+
+  requestAnimationFrame(() => {
+    const descriptifBottom = epBoxBottom + episodeBox.offsetHeight;
+    article.style.setProperty('--descriptif-bottom', descriptifBottom + 'px');
+  });
+}
+
+function _fitCarouselBannerTitle(article) {
+  const title = article.querySelector('.thm-card__banner .thm-card__title');
+  const wrap  = article.querySelector('.thm-card__banner .thm-card__title-wrap');
+  if (!title || !wrap) return;
+
+  // getClientRects() retourne des px visuels — inclut le scale() du carousel.
+  // On divise par le scale courant pour obtenir des px CSS réels.
+  const matrix = new DOMMatrix(getComputedStyle(article).transform);
+  const scale  = matrix.a || 1;
+
+  wrap.style.width  = '100%';
+  title.style.width = '';
+
+  const range = document.createRange();
+  range.selectNodeContents(title);
+  const rects = Array.from(range.getClientRects());
+
+  wrap.style.width = '';
+  if (!rects.length) return;
+  const maxW = Math.ceil(Math.max(...rects.map(r => r.width)) / scale);
+  if (maxW > 0) title.style.width = maxW + 'px';
+}
+
 function applyVisualFit(img) {
   if (!img.naturalWidth || !img.naturalHeight) return;
   const card = img.closest('.thm-card');
@@ -1180,7 +1232,7 @@ function buildCard(thm, context) {
         </div>
       </div>`;
 
-  const rawDescriptif = thm.descriptif_desktop ?? '';
+  const rawDescriptif = (_SMALL_DESKTOP_MQ.matches ? thm.descriptif_mobile : thm.descriptif_desktop) ?? '';
   const descriptif = _cardDescriptifHtml(rawDescriptif);
 
   return `
@@ -1331,7 +1383,10 @@ function renderHeaderCards(thematiques) {
 
 const SLOT_EXTRA = 8;                    // cards rendues de chaque côté
 const SLOT_TOTAL = SLOT_EXTRA * 2 + 1;  // 17 éléments au total
-const CARD_W     = 480;                  // doit correspondre au CSS
+const _SMALL_DESKTOP_MQ = window.matchMedia('(min-width: 1280px) and (max-width: 2559px) and (max-resolution: 1.5dppx)');
+// Largeur de la card selon la résolution — doit correspondre au CSS
+// Grand desktop : 480px, Petit desktop : 262px (ratio 0.8 conservé, hauteur 327px)
+function getCardW() { return _SMALL_DESKTOP_MQ.matches ? 320 : 480; }
 const SLOT_GAP   = 32;                   // gap visuel constant entre toutes les cards
 
 // Scale selon distance au centre
@@ -1342,12 +1397,13 @@ function _carouselScale(abs) {
 // Offset X cumulatif du centre de la card (gap visuel réel = SLOT_GAP entre arêtes)
 function _carouselOffset(slot) {
   if (slot === 0) return 0;
+  const cardW = getCardW();
   const sign = slot > 0 ? 1 : -1;
   const abs  = Math.abs(slot);
   let offset = 0;
   for (let k = 1; k <= abs; k++) {
-    const halfPrev = CARD_W * _carouselScale(k - 1) / 2;
-    const halfCurr = CARD_W * _carouselScale(k)     / 2;
+    const halfPrev = cardW * _carouselScale(k - 1) / 2;
+    const halfCurr = cardW * _carouselScale(k)     / 2;
     offset += halfPrev + SLOT_GAP + halfCurr;
   }
   return sign * offset;
@@ -1402,6 +1458,16 @@ class ThmCarousel {
       });
     }
 
+    // Ajuster la largeur du titre et position episode-box (petit desktop)
+    if (_SMALL_DESKTOP_MQ.matches) {
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        this._elems.forEach(({ el }) => {
+          _fitCarouselBannerTitle(el);
+          _fitEpisodeBoxPosition(el);
+        });
+      }));
+    }
+
     // Dots
     this.dotsEl.innerHTML = this.items
       .map((_, i) => `<button class="thm-carousel-dots__dot" aria-label="Thématique ${i + 1}"></button>`)
@@ -1439,6 +1505,10 @@ class ThmCarousel {
     });
 
     if (_MOBILE_MQ.matches) _fitMcTitleWrap(newEl);
+    if (_SMALL_DESKTOP_MQ.matches) requestAnimationFrame(() => {
+      _fitCarouselBannerTitle(newEl);
+      _fitEpisodeBoxPosition(newEl);
+    });
   }
 
   // ── Mise à jour des transforms ──
@@ -1620,15 +1690,33 @@ function _waitForImages(container) {
 
 async function init() {
   try {
-    const thematiques = await fetchThematiques();
-    _thematiquesStore = thematiques;
-    renderHeaderCards(thematiques);
-    renderCarousel(thematiques);
-    // Attendre que les images des header cards soient réellement chargées
-    // avant de cacher le loader — évite l'affichage de cards vides.
+    // ── Étape 1 : fetch léger (sans builder) ─────────────────────────────────
+    // Permet d'afficher les header cards et le carousel rapidement.
+    const lightData = await fetchThematiquesLight();
+    _thematiquesStore = lightData;
+    renderHeaderCards(lightData);
+    renderCarousel(lightData);
+
+    // Attendre le chargement des images des header cards puis masquer le loader
+    // Timeout de 3s max : si les images tardent, on affiche quand même.
     const container = document.getElementById('accueil-header-cards');
-    if (container) await _waitForImages(container);
+    if (container) {
+      await Promise.race([
+        _waitForImages(container),
+        new Promise(resolve => setTimeout(resolve, 3000))
+      ]);
+    }
     window.dispatchEvent(new CustomEvent('accueil:cards-ready'));
+
+    // ── Étape 2 : fetch complet (avec builder) en arrière-plan ───────────────
+    // Met à jour le store silencieusement — les overlays seront prêts
+    // quand l'utilisateur cliquera sur une thématique.
+    fetchThematiques().then(fullData => {
+      _thematiquesStore = fullData;
+    }).catch(err => {
+      console.warn('[thematiques] fetch complet échoué, overlays indisponibles', err);
+    });
+
   } catch (err) {
     console.error('[thematiques]', err);
     const container = document.getElementById('accueil-header-cards');
@@ -1650,23 +1738,44 @@ init();
 // Se déclenche une seule fois au moment exact du passage 1279px ↔ 1280px.
 // Re-rend les header cards (templates différents mobile/desktop) et le carousel
 // (buildCard utilise _MOBILE_MQ.matches pour le src visuel).
-_MOBILE_MQ.addEventListener('change', () => {
+function _rerenderThematiquesResponsive() {
   if (_thematiquesStore.length === 0) return;
   renderHeaderCards(_thematiquesStore);
   renderCarousel(_thematiquesStore);
   window.dispatchEvent(new CustomEvent('secondary-scroll:refresh'));
+}
+
+_MOBILE_MQ.addEventListener('change', () => {
+  _rerenderThematiquesResponsive();
+});
+
+// Re-render aussi lors du passage small-desktop <-> grand-desktop
+// (même sans franchir le breakpoint mobile/desktop).
+_SMALL_DESKTOP_MQ.addEventListener('change', () => {
+  _rerenderThematiquesResponsive();
 });
 
 // Recalcul des positions d'images des cartes mobile header sur resize sans
 // franchissement du breakpoint (ex: rotation d'écran restant en mode mobile).
 let _mobileResizeRaf = null;
+let _desktopResizeTimer = null;
 window.addEventListener('resize', () => {
-  if (!_MOBILE_MQ.matches) return;
-  if (_mobileResizeRaf) return;
-  _mobileResizeRaf = requestAnimationFrame(() => {
-    _mobileResizeRaf = null;
-    const container = document.getElementById('accueil-header-cards');
-    if (!container) return;
-    container.querySelectorAll('.thm-card--mobile-header').forEach(_applyMobileCardBgPosition);
-  });
+  if (_MOBILE_MQ.matches) {
+    if (_mobileResizeRaf) return;
+    _mobileResizeRaf = requestAnimationFrame(() => {
+      _mobileResizeRaf = null;
+      const container = document.getElementById('accueil-header-cards');
+      if (!container) return;
+      container.querySelectorAll('.thm-card--mobile-header').forEach(_applyMobileCardBgPosition);
+    });
+    return;
+  }
+
+  // Desktop : certains calculs sont faits au build (width card, fit titres, etc.).
+  // On re-rend après stabilisation du resize pour garder un rendu cohérent.
+  if (_desktopResizeTimer) clearTimeout(_desktopResizeTimer);
+  _desktopResizeTimer = setTimeout(() => {
+    _desktopResizeTimer = null;
+    _rerenderThematiquesResponsive();
+  }, 140);
 }, { passive: true });

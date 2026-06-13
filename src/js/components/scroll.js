@@ -29,7 +29,11 @@ if (isMobileLayout()) {
   history.scrollRestoration = 'manual';
 }
 
-const HEADER_HEIGHT  = 140;   // px — synchroniser avec $header-height dans _variables.scss
+// Lit --header-height depuis la CSS variable (mise à jour automatique selon la résolution)
+function getHeaderHeight() {
+  const val = getComputedStyle(document.documentElement).getPropertyValue('--header-height').trim();
+  return parseInt(val, 10) || 140;
+}
 const DELTA_THRESHOLD = 80;   // delta roue cumulé nécessaire pour déclencher le changement de section
 const SUBSECTION_ZONE_THRESHOLD_MULTIPLIER = 1.15;
 const ANIM_DURATION   = 800;  // ms — animation de changement de section
@@ -72,7 +76,7 @@ function syncNativeScrollbarPosition(idx) {
 }
 
 function sectionH() {
-  return window.innerHeight - HEADER_HEIGHT;
+  return window.innerHeight - getHeaderHeight();
 }
 
 function lockNativeScrollToCurrentSection() {

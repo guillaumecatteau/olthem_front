@@ -80,7 +80,7 @@
 
   &__panel {
     display: none;
-    padding-top: 24px;
+    padding-top: 0;
     min-height: 0;
     overflow: hidden;
 
@@ -105,6 +105,10 @@
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 14px;
     margin-bottom: 10px;
+
+    &--4 {
+      margin-top: 10px;
+    }
 
     &--3 {
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -217,6 +221,7 @@
     min-height: 0;
     flex: 1 1 auto;
     overflow-y: auto;
+    padding-bottom: 16px;
   }
 
   &__latest-item {
@@ -289,7 +294,10 @@
 
   &__filters-wrap {
     border: 1px solid rgba($white, 0.2);
+    border-top: none;
     border-radius: 10px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
     padding: 16px;
     margin-bottom: 16px;
     background: rgba($white, 0.03);
@@ -673,6 +681,9 @@
 
   &__entry-body {
     padding: 12px 24px;
+    max-height: calc(100vh - 280px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 
   &__entry-details {
@@ -942,6 +953,7 @@
     background: transparent;
     border: none;
     cursor: pointer;
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -949,19 +961,21 @@
 
     &::after {
       content: "";
-      display: block;
-      width: 6px;
-      height: 6px;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 5px;
+      height: 5px;
       border-right: 1.5px solid $grey-light;
       border-bottom: 1.5px solid $grey-light;
     }
 
     &--up::after {
-      transform: rotate(-135deg) translateY(2px);
+      transform: translate(-50%, calc(-50% + 2px)) rotate(-135deg);
     }
 
     &--down::after {
-      transform: rotate(45deg) translateY(-2px);
+      transform: translate(-50%, calc(-50% - 2px)) rotate(45deg);
     }
 
     &:hover::after {
@@ -1036,6 +1050,10 @@
     color: #ff9f9f;
     font-size: 12px;
     min-height: 18px;
+    margin-right: auto;
+    text-align: left;
+    align-self: center;
+    padding-right: 10px;
   }
 
   &__pager {
@@ -1058,6 +1076,95 @@
     .admin-tool__latest-head,
     .admin-tool__latest-item {
       grid-template-columns: 72px minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 0.9fr) 88px;
+    }
+  }
+}
+
+@include small-desktop {
+  .admin-tool {
+    &__counter {
+      padding-top: 8px;
+      padding-bottom: 8px;
+
+      p {
+        font-size: 18px;
+      }
+    }
+
+    // Boutons d'action (Rechercher / Supprimer / Sauvegarder)
+    .buttonRoundAct {
+      padding: 0 42px;
+    }
+
+    &__filter {
+      height: 32px;
+    }
+
+    // Filtrage / tri des listes
+    &__sort-wrap select {
+      height: 32px;
+    }
+
+    // Champs éditables dans les entrées dépliées
+    &__edit-input-wrap input,
+    &__entry-edit input[type="text"],
+    &__entry-edit input[type="email"],
+    &__entry-edit textarea,
+    &__entry-edit select {
+      height: 32px;
+      font-size: 12px;
+    }
+
+    // Forcer les variantes date/select/number à 32px en small desktop
+    &__edit-input-wrap--date input[type="date"],
+    &__edit-input-wrap--select select,
+    &__edit-input-wrap--number input {
+      height: 32px;
+      font-size: 12px;
+    }
+
+    // Centrage des flèches du number selector
+    &__number-arrow::after {
+      width: 5px;
+      height: 5px;
+    }
+
+    &__number-arrow--up::after {
+      transform: translate(-50%, calc(-50% + 2px)) rotate(-135deg);
+    }
+
+    &__number-arrow--down::after {
+      transform: translate(-50%, calc(-50% - 2px)) rotate(45deg);
+    }
+
+    // Texte des infos affichées dans les entrées
+    &__entry-main,
+    &__entry-details,
+    &__entry-details dt,
+    &__entry-details dd {
+      font-size: 12px;
+    }
+
+    &__edit-label {
+      font-size: 10px;
+    }
+
+    &__edit-section-title {
+      padding-top: 10px;
+    }
+
+    // Entrées ateliers uniquement
+    &__panel[data-admin-panel="ateliers"] &__edit-section-title {
+      padding-top: 0;
+    }
+
+    &__panel[data-admin-panel="ateliers"] &__check-option {
+      padding-top: 6px;
+    }
+
+    // Espace avant le lien "Retour au site" en bas d'overlay
+    &__pager {
+      margin-bottom: 16px;
     }
   }
 }
@@ -1179,3 +1286,4 @@
     }
   }
 }
+

@@ -19,6 +19,7 @@
   html {
     overflow-x: hidden;
     overflow-y: scroll;
+    scrollbar-gutter: stable;
     min-height: 1080px;
   }
 
@@ -90,6 +91,13 @@ h2 {
   color: var(--color-grey-light);
   text-transform: uppercase;
   letter-spacing: 0.08em;
+}
+
+// ─── Desktop intermédiaire (1280px – 1919px) ─────────────────────────────────
+@include small-desktop {
+  p {
+    font-size: 14px;
+  }
 }
 
 .text-italic {
